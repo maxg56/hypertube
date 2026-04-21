@@ -10,7 +10,7 @@
 #                                                                              #
 # **************************************************************************** #
 
-NAME				=	matcha
+NAME				=	hypertube
 
 DOCKER_COMPOSE_CMD	=	docker-compose
 DOCKER_COMPOSE_PATH	=	docker-compose.dev.yml
@@ -19,7 +19,7 @@ DOCKER_COMPOSE_PATH_PROD	=	docker-compose.prode.yml
 all:
 	@if [ -f ".env" ]; then \
 		echo "Creating volumes..."; \
-		mkdir -p volumes/ volumes/redis volumes/data volumes/media_uploads; \
+		mkdir -p volumes/ volumes/redis volumes/data volumes/torrents; \
 		echo "Launching containers..."; \
 		$(DOCKER_COMPOSE_CMD) --env-file .env -p $(NAME) -f $(DOCKER_COMPOSE_PATH) up --build -d; \
 	else \
