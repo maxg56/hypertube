@@ -296,12 +296,12 @@ services:
       context: ./frontend
       target: development
       network: host
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     volumes:
       - ./frontend:/app
       - /app/node_modules
-      - /app/.next
     depends_on:
       - gateway
     networks:
