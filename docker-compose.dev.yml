@@ -67,6 +67,7 @@ services:
     build:
       context: ./api/gateway
       target: development
+      network: host
     environment:
       PORT: 8080
       JWT_SECRET: ${JWT_SECRET}
@@ -99,6 +100,7 @@ services:
     build:
       context: ./api/auth-service
       target: development
+      network: host
     environment:
       PORT: 8001
       DB_HOST: ${DB_HOST:-postgres}
@@ -139,6 +141,7 @@ services:
     build:
       context: ./api/user-service
       target: development
+      network: host
     environment:
       PORT: 8002
       DB_HOST: ${DB_HOST:-postgres}
@@ -169,6 +172,7 @@ services:
     build:
       context: ./api/library-service
       target: development
+      network: host
     environment:
       PORT: 8003
       DB_HOST: ${DB_HOST:-postgres}
@@ -198,6 +202,7 @@ services:
     build:
       context: ./api/torrent-service
       target: development
+      network: host
     environment:
       PORT: 8004
       DB_HOST: ${DB_HOST:-postgres}
@@ -229,6 +234,7 @@ services:
     build:
       context: ./api/comment-service
       target: development
+      network: host
     environment:
       PORT: 8005
       DB_HOST: ${DB_HOST:-postgres}
@@ -257,6 +263,7 @@ services:
     build:
       context: ./api/worker-service
       target: development
+      network: host
     environment:
       PORT: 8006
       DB_HOST: ${DB_HOST:-postgres}
@@ -288,6 +295,7 @@ services:
     build:
       context: ./frontend
       target: development
+      network: host
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
     volumes:
