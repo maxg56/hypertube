@@ -1,0 +1,348 @@
+services:
+  caddy:
+    image: caddy:latest
+    container_name: caddy-dev
+    environment:
+      HOSTNAME: ${HOSTNAME:-localhost}
+    volumes:
+      - ./services/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    ports:
+      - "8000:80"
+      - "8443:443"
+    depends_on:
+      - gateway
+      - frontend
+    networks:
+      - frontend
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME:-hypertube}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    volumes:
+      - postgres_data_dev:/var/lib/postgresql/data
+      - ./services/database:/docker-entrypoint-initdb.d
+    networks:
+      - DB
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - SETGID
+      - SETUID
+
+  adminer:
+    image: adminer
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+  redis:
+    image: redis:8-alpine
+    networks:
+      - DB
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  gateway:
+    build:
+      context: ./api/gateway
+      target: development
+      network: host
+    environment:
+      PORT: 8080
+      JWT_SECRET: ${JWT_SECRET}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+      GIN_MODE: debug
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      REDIS_ADDR: redis:6379
+    volumes:
+      - ./api/gateway/src:/app/src
+      - ./api/gateway/go.mod:/app/go.mod
+      - ./api/gateway/go.sum:/app/go.sum
+      - ./api/gateway/.air.toml:/app/.air.toml
+    depends_on:
+      - auth-service
+      - user-service
+      - library-service
+      - torrent-service
+      - comment-service
+      - worker-service
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  auth-service:
+    build:
+      context: ./api/auth-service
+      target: development
+      network: host
+    environment:
+      PORT: 8001
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: 6379
+      GIN_MODE: debug
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
+      FROM_EMAIL: ${FROM_EMAIL}
+      FROM_NAME: ${FROM_NAME:-Hypertube}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+    volumes:
+      - ./api/auth-service/src:/app/src
+      - ./api/auth-service/templates:/app/templates
+      - ./api/auth-service/go.mod:/app/go.mod
+      - ./api/auth-service/go.sum:/app/go.sum
+      - ./api/auth-service/.air.toml:/app/.air.toml
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  user-service:
+    build:
+      context: ./api/user-service
+      target: development
+      network: host
+    environment:
+      PORT: 8002
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      GIN_MODE: debug
+    volumes:
+      - ./api/user-service/src:/app/src
+      - ./api/user-service/go.mod:/app/go.mod
+      - ./api/user-service/go.sum:/app/go.sum
+      - ./api/user-service/.air.toml:/app/.air.toml
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  library-service:
+    build:
+      context: ./api/library-service
+      target: development
+      network: host
+    environment:
+      PORT: 8003
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      GIN_MODE: debug
+    volumes:
+      - ./api/library-service/src:/app/src
+      - ./api/library-service/go.mod:/app/go.mod
+      - ./api/library-service/go.sum:/app/go.sum
+      - ./api/library-service/.air.toml:/app/.air.toml
+    depends_on:
+      - postgres
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  torrent-service:
+    build:
+      context: ./api/torrent-service
+      target: development
+      network: host
+    environment:
+      PORT: 8004
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      TORRENT_DOWNLOAD_PATH: /data/torrents
+      STREAM_BUFFER_SIZE: ${STREAM_BUFFER_SIZE:-10}
+      GIN_MODE: debug
+    volumes:
+      - ./api/torrent-service/src:/app/src
+      - ./api/torrent-service/go.mod:/app/go.mod
+      - ./api/torrent-service/go.sum:/app/go.sum
+      - ./api/torrent-service/.air.toml:/app/.air.toml
+      - torrent_data_dev:/data/torrents
+    depends_on:
+      - postgres
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  comment-service:
+    build:
+      context: ./api/comment-service
+      target: development
+      network: host
+    environment:
+      PORT: 8005
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      GIN_MODE: debug
+    volumes:
+      - ./api/comment-service/src:/app/src
+      - ./api/comment-service/go.mod:/app/go.mod
+      - ./api/comment-service/go.sum:/app/go.sum
+      - ./api/comment-service/.air.toml:/app/.air.toml
+    depends_on:
+      - postgres
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  worker-service:
+    build:
+      context: ./api/worker-service
+      target: development
+      network: host
+    environment:
+      PORT: 8006
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      TORRENT_DOWNLOAD_PATH: /data/torrents
+    volumes:
+      - ./api/worker-service/src:/app/src
+      - ./api/worker-service/go.mod:/app/go.mod
+      - ./api/worker-service/go.sum:/app/go.sum
+      - ./api/worker-service/.air.toml:/app/.air.toml
+      - torrent_data_dev:/data/torrents
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  frontend:
+    build:
+      context: ./frontend
+      target: development
+      network: host
+    user: "${UID:-1000}:${GID:-1000}"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - gateway
+    networks:
+      - frontend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp
+
+volumes:
+  postgres_data_dev:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/data
+      o: bind
+  torrent_data_dev:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/torrents
+      o: bind
+  caddy_data:
+
+networks:
+  frontend:
+  backend:
+  DB:

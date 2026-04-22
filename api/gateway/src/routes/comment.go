@@ -1,0 +1,18 @@
+package routes
+
+import (
+	"gateway/src/middleware"
+	"gateway/src/proxy"
+
+	"github.com/gin-gonic/gin"
+)
+
+func SetupCommentRoutes(r *gin.Engine) {
+	comment := r.Group("/api/v1/comments")
+	comment.Use(middleware.JWTMiddleware())
+	{
+		comment.GET("/:movieId", proxy.ProxyRequest("comment", "/api/v1/comments/:movieId"))
+		comment.POST("/:movieId", proxy.ProxyRequest("comment", "/api/v1/comments/:movieId"))
+		comment.DELETE("/:id", proxy.ProxyRequest("comment", "/api/v1/comments/:id"))
+	}
+}
