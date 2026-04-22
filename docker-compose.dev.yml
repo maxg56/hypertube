@@ -47,6 +47,19 @@ services:
       - SETGID
       - SETUID
 
+  adminer:
+    image: adminer
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
   redis:
     image: redis:8-alpine
     networks:
