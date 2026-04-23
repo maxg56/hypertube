@@ -37,6 +37,34 @@ func generateVerificationCode() (string, error) {
 	return string(code), nil
 }
 
+// sendVerificationCode generates and persists a verification code, then emails it.
+// Returns an error only if code generation or DB write fails; email send failures are logged but not returned.
+func sendVerificationCode(email string) error {
+	code, err := generateVerificationCode()
+	if err != nil {
+		return fmt.Errorf("failed to generate verification code: %w", err)
+	}
+
+	db.DB.Where("email = ?", email).Delete(&EmailVerification{})
+
+	verification := EmailVerification{
+		Email:            email,
+		VerificationCode: code,
+		ExpiresAt:        time.Now().Add(15 * time.Minute),
+	}
+	if err := db.DB.Create(&verification).Error; err != nil {
+		return fmt.Errorf("failed to create verification record: %w", err)
+	}
+
+	emailService := services.NewEmailService()
+	if err := emailService.SendVerificationEmail(email, code); err != nil {
+		fmt.Printf("Failed to send verification email to %s: %v\n", email, err)
+		fmt.Printf("Verification code for %s: %s (email failed to send)\n", email, code)
+	}
+
+	return nil
+}
+
 // SendEmailVerificationHandler handles sending email verification codes
 func SendEmailVerificationHandler(c *gin.Context) {
 	var req types.EmailVerificationRequest
@@ -62,35 +90,9 @@ func SendEmailVerificationHandler(c *gin.Context) {
 		return
 	}
 
-	// Generate verification code
-	code, err := generateVerificationCode()
-	if err != nil {
-		utils.RespondError(c, http.StatusInternalServerError, "Failed to generate verification code")
+	if err := sendVerificationCode(req.Email); err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
-	}
-
-	// Create or update verification record
-	verification := EmailVerification{
-		Email:            req.Email,
-		VerificationCode: code,
-		ExpiresAt:        time.Now().Add(15 * time.Minute), // 15 minutes expiry
-	}
-
-	// Delete any existing verification for this email
-	db.DB.Where("email = ?", req.Email).Delete(&EmailVerification{})
-
-	// Create new verification record
-	if err := db.DB.Create(&verification).Error; err != nil {
-		utils.RespondError(c, http.StatusInternalServerError, "Failed to create verification record")
-		return
-	}
-
-	// Send verification email
-	emailService := services.NewEmailService()
-	if err := emailService.SendVerificationEmail(req.Email, code); err != nil {
-		// Log error but don't fail the request - code is still valid
-		fmt.Printf("Failed to send verification email to %s: %v\n", req.Email, err)
-		fmt.Printf("Verification code for %s: %s (email failed to send)\n", req.Email, code)
 	}
 
 	utils.RespondSuccess(c, http.StatusOK, gin.H{
