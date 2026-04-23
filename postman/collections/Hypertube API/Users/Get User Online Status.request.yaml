@@ -1,5 +1,5 @@
 $kind: http-request
 name: Get User Online Status
-url: '{{baseUrl}}/api/v1/users/{{userId}}/online-status'
+url: "{{baseUrl}}/api/v1/users/{{userId}}/online-status"
 method: GET
 order: 5000

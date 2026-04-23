@@ -1,5 +1,5 @@
 $kind: http-request
 name: Gateway Health
-url: '{{baseUrl}}/api/health'
+url: "{{baseUrl}}/api/health"
 method: GET
 order: 1000

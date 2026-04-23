@@ -1,6 +1,6 @@
 $kind: http-request
 name: Send Email Verification
-url: '{{baseUrl}}/api/v1/auth/send-email-verification'
+url: "{{baseUrl}}/api/v1/auth/send-email-verification"
 method: POST
 header:
   - key: Content-Type

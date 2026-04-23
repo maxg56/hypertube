@@ -1,6 +1,6 @@
 $kind: http-request
 name: Update Profile
-url: '{{baseUrl}}/api/v1/users/profile/{{userId}}'
+url: "{{baseUrl}}/api/v1/users/profile/{{userId}}"
 method: PUT
 header:
   - key: Authorization

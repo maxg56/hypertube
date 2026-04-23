@@ -1,6 +1,6 @@
 $kind: http-request
 name: Check Availability
-url: '{{baseUrl}}/api/v1/auth/check-availability'
+url: "{{baseUrl}}/api/v1/auth/check-availability"
 method: POST
 header:
   - key: Content-Type

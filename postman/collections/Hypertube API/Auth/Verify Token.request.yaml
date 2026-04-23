@@ -1,6 +1,6 @@
 $kind: http-request
 name: Verify Token
-url: '{{baseUrl}}/api/v1/auth/verify'
+url: "{{baseUrl}}/api/v1/auth/verify"
 method: GET
 header:
   - key: Authorization

@@ -1,6 +1,6 @@
 $kind: http-request
 name: Get Own Profile
-url: '{{baseUrl}}/api/v1/users/profile'
+url: "{{baseUrl}}/api/v1/users/profile"
 method: GET
 header:
   - key: Authorization
