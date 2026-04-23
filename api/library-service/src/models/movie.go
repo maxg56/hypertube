@@ -6,8 +6,19 @@ type CastMember struct {
 	Order     int    `json:"order"`
 }
 
+type Torrent struct {
+	URL     string `json:"url"`
+	Hash    string `json:"hash"`
+	Quality string `json:"quality"`
+	Type    string `json:"type"`
+	Size    string `json:"size"`
+	Seeds   int    `json:"seeds"`
+	Peers   int    `json:"peers"`
+}
+
 type Movie struct {
 	ID          int          `json:"id"`
+	IMDbID      string       `json:"imdb_id,omitempty"`
 	Title       string       `json:"title"`
 	Year        string       `json:"year"`
 	Overview    string       `json:"overview"`
@@ -17,6 +28,7 @@ type Movie struct {
 	BackdropURL string       `json:"backdrop_url"`
 	Genres      []string     `json:"genres"`
 	Cast        []CastMember `json:"cast"`
+	Torrents    []Torrent    `json:"torrents,omitempty"`
 	Source      string       `json:"source"`
 }
 

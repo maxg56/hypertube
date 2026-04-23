@@ -51,15 +51,16 @@ type tmdbMovieResult struct {
 }
 
 type tmdbDetailResponse struct {
-	ID          int    `json:"id"`
-	Title       string `json:"title"`
-	ReleaseDate string `json:"release_date"`
-	Overview    string `json:"overview"`
-	Runtime     int    `json:"runtime"`
-	VoteAverage float64 `json:"vote_average"`
-	PosterPath  string `json:"poster_path"`
-	BackdropPath string `json:"backdrop_path"`
-	Genres      []struct {
+	ID           int     `json:"id"`
+	IMDbID       string  `json:"imdb_id"`
+	Title        string  `json:"title"`
+	ReleaseDate  string  `json:"release_date"`
+	Overview     string  `json:"overview"`
+	Runtime      int     `json:"runtime"`
+	VoteAverage  float64 `json:"vote_average"`
+	PosterPath   string  `json:"poster_path"`
+	BackdropPath string  `json:"backdrop_path"`
+	Genres       []struct {
 		Name string `json:"name"`
 	} `json:"genres"`
 	Credits struct {
@@ -147,6 +148,7 @@ func (c *TMDbClient) GetMovie(id int) (*models.Movie, error) {
 
 	movie := &models.Movie{
 		ID:          raw.ID,
+		IMDbID:      raw.IMDbID,
 		Title:       raw.Title,
 		Year:        releaseYear(raw.ReleaseDate),
 		Overview:    raw.Overview,

@@ -28,6 +28,7 @@ func main() {
 			movies := library.Group("/movies")
 			h := handlers.NewMovieHandler()
 			movies.GET("/search", h.Search)
+			movies.GET("/yts", h.SearchYTS)
 			movies.GET("/:id", h.GetMovie)
 		}
 	}
