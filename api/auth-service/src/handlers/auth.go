@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -14,8 +15,6 @@ import (
 	"auth-service/src/utils"
 )
 
-
-// CheckAvailabilityHandler handles username/email availability checks
 func CheckAvailabilityHandler(c *gin.Context) {
 	var req types.AvailabilityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -23,61 +22,48 @@ func CheckAvailabilityHandler(c *gin.Context) {
 		return
 	}
 
-	// At least one field must be provided
 	if req.Username == "" && req.Email == "" {
 		utils.RespondError(c, http.StatusBadRequest, "either username or email must be provided")
 		return
 	}
 
-	// Check username availability
 	if req.Username != "" {
 		available, err := utils.CheckUsernameAvailability(req.Username)
 		if err != nil {
 			utils.RespondError(c, http.StatusInternalServerError, err.Error())
 			return
 		}
-		
 		if !available {
 			suggestions := utils.GenerateUsernameSuggestions(req.Username)
-			response := types.AvailabilityResponse{
+			c.JSON(http.StatusConflict, types.AvailabilityResponse{
 				Status:      "error",
 				Available:   false,
 				Message:     "username déjà utilisé",
 				Suggestions: suggestions,
-			}
-			c.JSON(http.StatusConflict, response)
+			})
 			return
 		}
 	}
 
-	// Check email availability
 	if req.Email != "" {
 		available, err := utils.CheckEmailAvailability(req.Email)
 		if err != nil {
 			utils.RespondError(c, http.StatusInternalServerError, err.Error())
 			return
 		}
-		
 		if !available {
-			response := types.AvailabilityResponse{
+			c.JSON(http.StatusConflict, types.AvailabilityResponse{
 				Status:    "error",
 				Available: false,
 				Message:   "Email déjà utilisé",
-			}
-			c.JSON(http.StatusConflict, response)
+			})
 			return
 		}
 	}
 
-	// Both fields are available
-	response := types.AvailabilityResponse{
-		Status:    "success",
-		Available: true,
-	}
-	c.JSON(http.StatusOK, response)
+	c.JSON(http.StatusOK, types.AvailabilityResponse{Status: "success", Available: true})
 }
 
-// RegisterHandler handles user registration
 func RegisterHandler(c *gin.Context) {
 	var req types.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -85,7 +71,6 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	// Check username uniqueness
 	usernameAvailable, err := utils.CheckUsernameAvailability(req.Username)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -97,7 +82,6 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	// Check email uniqueness
 	emailAvailable, err := utils.CheckEmailAvailability(req.Email)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -108,14 +92,16 @@ func RegisterHandler(c *gin.Context) {
 		return
 	}
 
-	// Create user
 	user, err := services.CreateUser(req)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	// Generate tokens
+	if err := sendVerificationCode(user.Email); err != nil {
+		fmt.Printf("Failed to queue verification email for %s: %v\n", user.Email, err)
+	}
+
 	tokens, err := utils.GenerateTokenPair(user.ID)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
@@ -136,7 +122,6 @@ func RegisterHandler(c *gin.Context) {
 	})
 }
 
-// LoginHandler handles user login
 func LoginHandler(c *gin.Context) {
 	var req types.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -144,20 +129,17 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	// Find user by username or email
 	var user models.Users
 	if err := db.DB.Where("username = ? OR email = ?", req.Login, req.Login).First(&user).Error; err != nil || user.ID == 0 {
 		utils.RespondError(c, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
-	// Compare password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
 		utils.RespondError(c, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
 
-	// Issue JWT & refresh tokens
 	tokens, err := utils.GenerateTokenPair(user.ID)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
