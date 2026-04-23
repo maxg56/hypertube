@@ -20,7 +20,6 @@ import (
 	db "auth-service/src/conf"
 	"auth-service/src/handlers"
 	models "auth-service/src/models"
-	types "auth-service/src/types"
 )
 
 func setupTestDB() *gorm.DB {
@@ -175,15 +174,11 @@ func TestLoginHandler(t *testing.T) {
 
 	// First create a test user
 	user := models.Users{
-		Username:         "loginuser",
-		Email:            "login@example.com",
-		PasswordHash:     "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // "password"
-		FirstName:        "Login",
-		LastName:         "User",
-		BirthDate:        time.Date(1990, 1, 1, 0, 0, 0, 0, time.UTC),
-		Gender:           string(types.GenderMale),
-		SexPref:          string(types.SexPrefBoth),
-		RelationshipType: "long_term",
+		Username:     "loginuser",
+		Email:        "login@example.com",
+		PasswordHash: "$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi", // "password"
+		FirstName:    "Login",
+		LastName:     "User",
 	}
 	db.DB.Create(&user)
 
@@ -545,10 +540,6 @@ func TestForgotPasswordHandler(t *testing.T) {
 					LastName:     "User",
 					Email:        tt.payload["email"].(string),
 					PasswordHash: "$2a$10$abcdefg", // dummy hash
-					BirthDate:    time.Now().AddDate(-25, 0, 0),
-					Gender:       "male",
-					SexPref:      "both",
-					RelationshipType: "serious",
 				}
 				db.DB.Create(&user)
 				defer db.DB.Delete(&user)
@@ -586,14 +577,10 @@ func TestResetPasswordHandler(t *testing.T) {
 	// Setup test user
 	user := models.Users{
 		Username:     "testuser",
-		FirstName:    "Test", 
+		FirstName:    "Test",
 		LastName:     "User",
 		Email:        "test@example.com",
 		PasswordHash: "$2a$10$abcdefg", // dummy hash
-		BirthDate:    time.Now().AddDate(-25, 0, 0),
-		Gender:       "male",
-		SexPref:      "both",
-		RelationshipType: "serious",
 	}
 	db.DB.Create(&user)
 	defer db.DB.Delete(&user)
