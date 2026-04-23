@@ -1,8 +1,16 @@
 $kind: http-request
 name: Get Movie by ID
-url: "{{baseUrl}}/api/v1/library/movies/{{movieId}}"
+url: "{{baseUrl}}/api/v1/library/movies/:movieId"
 method: GET
 header:
   - key: Authorization
     value: "Bearer {{accessToken}}"
+pathVariables:
+  - key: movieId
+    value: test
+    $type: ""
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
 order: 2000

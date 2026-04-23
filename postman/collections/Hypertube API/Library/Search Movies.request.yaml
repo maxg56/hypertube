@@ -5,4 +5,8 @@ method: GET
 header:
   - key: Authorization
     value: "Bearer {{accessToken}}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
 order: 1000
