@@ -17,13 +17,9 @@ import (
 	"auth-service/src/utils"
 )
 
-// User alias pour models.Users
 type User = models.Users
-
-// EmailVerification alias pour models.EmailVerification  
 type EmailVerification = models.EmailVerification
 
-// generateVerificationCode generates a 6-digit verification code
 func generateVerificationCode() (string, error) {
 	const digits = "0123456789"
 	code := make([]byte, 6)
@@ -37,8 +33,8 @@ func generateVerificationCode() (string, error) {
 	return string(code), nil
 }
 
-// sendVerificationCode generates and persists a verification code, then emails it.
-// Returns an error only if code generation or DB write fails; email send failures are logged but not returned.
+// sendVerificationCode persists a verification code and emails it.
+// Email send failures are non-fatal: registration still succeeds and the code remains valid.
 func sendVerificationCode(email string) error {
 	code, err := generateVerificationCode()
 	if err != nil {
@@ -65,7 +61,6 @@ func sendVerificationCode(email string) error {
 	return nil
 }
 
-// SendEmailVerificationHandler handles sending email verification codes
 func SendEmailVerificationHandler(c *gin.Context) {
 	var req types.EmailVerificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -73,7 +68,6 @@ func SendEmailVerificationHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if user exists
 	var user User
 	if err := db.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -84,7 +78,6 @@ func SendEmailVerificationHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if user is already verified
 	if user.EmailVerified {
 		utils.RespondError(c, http.StatusBadRequest, "Email already verified")
 		return
@@ -100,7 +93,6 @@ func SendEmailVerificationHandler(c *gin.Context) {
 	})
 }
 
-// VerifyEmailHandler handles email verification with code
 func VerifyEmailHandler(c *gin.Context) {
 	var req types.VerifyEmailRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -108,7 +100,6 @@ func VerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
-	// Find verification record
 	var verification EmailVerification
 	if err := db.DB.Where("email = ? AND verification_code = ?", req.Email, req.VerificationCode).First(&verification).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -119,21 +110,17 @@ func VerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
-	// Check if code is expired
 	if time.Now().After(verification.ExpiresAt) {
-		// Delete expired verification
 		db.DB.Delete(&verification)
 		utils.RespondError(c, http.StatusBadRequest, "Verification code expired")
 		return
 	}
 
-	// Update user as verified
 	if err := db.DB.Model(&User{}).Where("email = ?", req.Email).Update("email_verified", true).Error; err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "Failed to update user verification status")
 		return
 	}
 
-	// Delete the verification record
 	db.DB.Delete(&verification)
 
 	utils.RespondSuccess(c, http.StatusOK, gin.H{
