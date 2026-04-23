@@ -1,0 +1,15 @@
+$kind: http-request
+name: Login
+url: '{{baseUrl}}/api/v1/auth/login'
+method: POST
+header:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "login": "testuser",
+      "password": "Password123!"
+    }
+order: 2000

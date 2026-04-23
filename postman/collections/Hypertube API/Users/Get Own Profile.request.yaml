@@ -1,0 +1,8 @@
+$kind: http-request
+name: Get Own Profile
+url: '{{baseUrl}}/api/v1/users/profile'
+method: GET
+header:
+  - key: Authorization
+    value: Bearer {{accessToken}}
+order: 1000

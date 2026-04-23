@@ -1,0 +1,15 @@
+$kind: http-request
+name: Check Availability
+url: '{{baseUrl}}/api/v1/auth/check-availability'
+method: POST
+header:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "testuser",
+      "email": "testuser@example.com"
+    }
+order: 6000

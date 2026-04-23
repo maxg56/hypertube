@@ -1,0 +1,33 @@
+$kind: collection
+events:
+  - listen: prerequest
+    script:
+      type: text/javascript
+      exec: |
+        const accessToken = pm.environment.get("accessToken");
+        if (!accessToken) return;
+
+        try {
+            const payload = JSON.parse(atob(accessToken.split('.')[1]));
+            const now = Math.floor(Date.now() / 1000);
+
+            if (!payload.exp || now < payload.exp - 60) return;
+
+            const refreshToken = pm.environment.get("refreshToken");
+            if (!refreshToken) return;
+
+            pm.sendRequest({
+                url: pm.environment.get("baseUrl") + "/api/v1/auth/refresh",
+                method: "POST",
+                header: { "Content-Type": "application/json" },
+                body: {
+                    mode: "raw",
+                    raw: JSON.stringify({ refresh_token: refreshToken })
+                }
+            }, function(err, res) {
+                if (err || res.code !== 200) return;
+                const data = res.json().data;
+                pm.environment.set("accessToken", data.access_token);
+                pm.environment.set("refreshToken", data.refresh_token);
+            });
+        } catch (e) {}

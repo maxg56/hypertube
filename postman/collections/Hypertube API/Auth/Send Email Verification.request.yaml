@@ -1,0 +1,14 @@
+$kind: http-request
+name: Send Email Verification
+url: '{{baseUrl}}/api/v1/auth/send-email-verification'
+method: POST
+header:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "testuser@example.com"
+    }
+order: 9000
