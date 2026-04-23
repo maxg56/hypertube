@@ -18,6 +18,11 @@ type RefreshRequest struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
+// LogoutRequest represents logout payload with optional refresh token
+type LogoutRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 // VerifyTokenHandler validates JWT tokens
 func VerifyTokenHandler(c *gin.Context) {
 	auth := c.GetHeader("Authorization")
@@ -37,6 +42,12 @@ func VerifyTokenHandler(c *gin.Context) {
 	claims, err := utils.ParseToken(token, secret)
 	if err != nil {
 		utils.RespondError(c, http.StatusUnauthorized, "invalid token")
+		return
+	}
+
+	// Check token blacklist
+	if blacklisted, err := db.IsTokenBlacklisted(token); err == nil && blacklisted {
+		utils.RespondError(c, http.StatusUnauthorized, "token has been revoked")
 		return
 	}
 
@@ -89,6 +100,12 @@ func RefreshTokenHandler(c *gin.Context) {
 		return
 	}
 
+	// Check refresh token blacklist
+	if blacklisted, err := db.IsTokenBlacklisted(req.RefreshToken); err == nil && blacklisted {
+		utils.RespondError(c, http.StatusUnauthorized, "refresh token has been revoked")
+		return
+	}
+
 	// Verify it's a refresh token
 	scope, ok := claims["scope"].(string)
 	if !ok || scope != "refresh" {
@@ -111,7 +128,7 @@ func RefreshTokenHandler(c *gin.Context) {
 	}
 
 	// Issue new tokens
-	accessTTL := utils.GetDurationFromEnv("JWT_ACCESS_TTL", 6*time.Hour)
+	accessTTL := utils.GetDurationFromEnv("JWT_ACCESS_TTL", 15*time.Minute)
 	refreshTTL := utils.GetDurationFromEnv("JWT_REFRESH_TTL", 7*24*time.Hour)
 
 	now := time.Now()
@@ -147,58 +164,46 @@ func RefreshTokenHandler(c *gin.Context) {
 	})
 }
 
+// blacklistIfValid parses a token and adds it to the blacklist if valid and not yet expired.
+func blacklistIfValid(tokenString, secret string) {
+	claims, err := utils.ParseToken(tokenString, secret)
+	if err != nil {
+		return
+	}
+	exp, ok := claims["exp"].(float64)
+	if !ok {
+		return
+	}
+	ttl := time.Until(time.Unix(int64(exp), 0))
+	if ttl > 0 {
+		_ = db.BlacklistToken(tokenString, ttl)
+	}
+}
+
 // LogoutHandler handles user logout and token blacklisting
 func LogoutHandler(c *gin.Context) {
-	// Extract JWT token from Authorization header
 	auth := c.GetHeader("Authorization")
 	if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
 		utils.RespondError(c, http.StatusUnauthorized, "missing bearer token")
 		return
 	}
 
-	tokenString := strings.TrimPrefix(auth, "Bearer ")
-
-	// Parse token to get expiration and user info
 	secret := os.Getenv("JWT_SECRET")
 	if secret == "" {
 		utils.RespondError(c, http.StatusInternalServerError, "server misconfigured: missing JWT_SECRET")
 		return
 	}
 
-	claims, err := utils.ParseToken(tokenString, secret)
-	if err != nil {
-		// Token is already invalid, consider logout successful
-		utils.RespondSuccess(c, http.StatusOK, gin.H{"message": "logged out"})
-		return
-	}
+	blacklistIfValid(strings.TrimPrefix(auth, "Bearer "), secret)
 
-	// Get token expiration for TTL
-	var ttl time.Duration
-	if exp, ok := claims["exp"].(float64); ok {
-		expTime := time.Unix(int64(exp), 0)
-		ttl = time.Until(expTime)
-		if ttl <= 0 {
-			// Token already expired
-			utils.RespondSuccess(c, http.StatusOK, gin.H{"message": "logged out"})
-			return
+	var req LogoutRequest
+	if err := c.ShouldBindJSON(&req); err == nil && req.RefreshToken != "" {
+		refreshSecret := os.Getenv("JWT_REFRESH_SECRET")
+		if refreshSecret == "" {
+			refreshSecret = secret
 		}
-	} else {
-		// Default TTL if no expiration found
-		ttl = 24 * time.Hour
+		blacklistIfValid(req.RefreshToken, refreshSecret)
 	}
 
-	// Blacklist the token
-	err = db.BlacklistToken(tokenString, ttl)
-	if err != nil {
-		// Log error but still consider logout successful
-		utils.RespondSuccess(c, http.StatusOK, gin.H{
-			"message": "logged out successfully",
-			"warning": "token blacklisting failed - token may remain valid until expiration",
-		})
-		return
-	}
-
-	utils.RespondSuccess(c, http.StatusOK, gin.H{
-		"message": "logged out successfully",
-	})
+	utils.RespondSuccess(c, http.StatusOK, gin.H{"message": "logged out successfully"})
 }
