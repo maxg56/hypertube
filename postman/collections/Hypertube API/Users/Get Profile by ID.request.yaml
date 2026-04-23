@@ -1,0 +1,5 @@
+$kind: http-request
+name: Get Profile by ID
+url: "{{baseUrl}}/api/v1/users/profile/{{userId}}"
+method: GET
+order: 2000

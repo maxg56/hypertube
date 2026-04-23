@@ -1,0 +1,44 @@
+$kind: http-example
+request:
+  url: "{{baseUrl}}/api/v1/auth/login"
+  method: POST
+  body:
+    type: json
+    content: |-
+      {
+        "login": "testuser",
+        "password": "Password123!"
+      }
+response:
+  statusCode: 200
+  statusText: OK
+  headers:
+    access-control-allow-credentials: "false"
+    access-control-allow-headers: Origin,Content-Type,Accept,Authorization
+    access-control-allow-methods: GET,POST,PUT,DELETE,OPTIONS
+    access-control-allow-origin: "*"
+    alt-svc: h3=":443"; ma=2592000
+    content-length: "574"
+    content-type: application/json; charset=utf-8
+    date: Thu, 23 Apr 2026 10:57:50 GMT
+    vary: Origin
+    via: 1.1 Caddy
+  body:
+    type: json
+    content: |-
+      {
+        "success": true,
+        "data": {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NzY5NDI3NzAsImlhdCI6MTc3Njk0MTg3MCwibmJmIjoxNzc2OTQxODcwLCJzY29wZSI6ImFjY2VzcyIsInN1YiI6IjEifQ.RhjfU5grv1PDf6Te2f0Zg8aQLukOTzh6xMBzuzUOGbY",
+          "expires_in": 900,
+          "message": "Login successful",
+          "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3Nzc1NDY2NzAsImlhdCI6MTc3Njk0MTg3MCwibmJmIjoxNzc2OTQxODcwLCJzY29wZSI6InJlZnJlc2giLCJzdWIiOiIxIn0.TBdf6iAiAc19a8xQyU1YEA7AocIKcXLEARyUdneE8Ls",
+          "token_type": "Bearer",
+          "user": {
+            "email": "testuser@example.com",
+            "id": 1,
+            "username": "testuser"
+          }
+        }
+      }
+order: 1776941879123

@@ -1,0 +1,8 @@
+$kind: http-request
+name: Delete Profile
+url: "{{baseUrl}}/api/v1/users/profile/{{userId}}"
+method: DELETE
+header:
+  - key: Authorization
+    value: Bearer {{accessToken}}
+order: 4000

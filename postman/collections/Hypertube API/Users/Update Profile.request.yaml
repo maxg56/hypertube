@@ -1,0 +1,18 @@
+$kind: http-request
+name: Update Profile
+url: "{{baseUrl}}/api/v1/users/profile/{{userId}}"
+method: PUT
+header:
+  - key: Authorization
+    value: Bearer {{accessToken}}
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "first_name": "John",
+      "last_name": "Doe",
+      "avatar_url": "https://example.com/avatar.jpg"
+    }
+order: 3000
