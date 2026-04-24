@@ -311,7 +311,8 @@ services:
       network: host
     user: "${UID:-1000}:${GID:-1000}"
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://localhost:8443/api/v1}
+      API_URL: http://caddy
     volumes:
       - ./frontend:/app
       - /app/node_modules
