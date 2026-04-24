@@ -12,7 +12,7 @@ import {
 } from '@/lib/definitions'
 import { setTokens, clearTokens, getAccessToken, getRefreshToken } from '@/lib/session'
 
-const API = process.env.API_URL ?? 'http://localhost:8080'
+const API = process.env.API_URL ?? 'https://localhost:8443'
 
 async function apiFetch(path: string, options: RequestInit = {}) {
   const { headers = {}, ...rest } = options
