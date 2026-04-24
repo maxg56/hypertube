@@ -1,0 +1,8 @@
+$kind: http-request
+name: Search YTS
+url: "{{baseUrl}}/api/v1/library/movies/yts?q=inception&page=1"
+method: GET
+header:
+  - key: Authorization
+    value: "Bearer {{accessToken}}"
+order: 3000
