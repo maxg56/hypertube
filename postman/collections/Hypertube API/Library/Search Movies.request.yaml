@@ -1,0 +1,12 @@
+$kind: http-request
+name: Search Movies
+url: "{{baseUrl}}/api/v1/library/movies/search?q=inception&page=1"
+method: GET
+header:
+  - key: Authorization
+    value: "Bearer {{accessToken}}"
+auth:
+  type: bearer
+  credentials:
+    token: "{{accessToken}}"
+order: 1000
