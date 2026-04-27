@@ -1,14 +1,23 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect } from 'react'
 import Link from 'next/link'
 import { login } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuthContext } from '@/context/auth-context'
 
-export default function LoginForm() {
+export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [state, action, pending] = useActionState(login, undefined)
+  const { triggerLoginSuccess } = useAuthContext()
+
+  useEffect(() => {
+    if (state && !state.message && !state.errors) {
+      onSuccess?.()
+      triggerLoginSuccess()
+    }
+  }, [state, onSuccess, triggerLoginSuccess])
 
   return (
     <form action={action} className="space-y-4">
