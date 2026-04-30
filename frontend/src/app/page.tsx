@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import HomeClient from './home-client'
+import HomeClient from './(main)/home-client'
 
 export const metadata: Metadata = {
   title: 'Accueil — Hypertube',
 }
 
-export default function MainPage() {
+export default function HomePage() {
   return <HomeClient />
 }
