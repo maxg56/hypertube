@@ -51,19 +51,32 @@ const MOCK_FILMS: Film[] = [
 
 export default function Thumbnails() {
   const [films] = useState<Film[]>(MOCK_FILMS)
+  const [readFilms, setReadFilms] = useState<Set<number>>(new Set())
+
+  const toggleRead = (index: number) => {
+    const newReadFilms = new Set(readFilms)
+    if (newReadFilms.has(index)) {
+      newReadFilms.delete(index)
+    } else {
+      newReadFilms.add(index)
+    }
+    setReadFilms(newReadFilms)
+  }
 
   return (
     <div className="w-full bg-gradient-to-t from-orange-400 to-blue-400 p-6 shadow-lg min-h-screen">
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full">
-        {films.map((film, index) => (
-          <div key={index} className="group cursor-pointer flex flex-col h-full">
-            <div className="bg-gray-800 rounded-lg overflow-hidden hover:shadow-blue transition-shadow flex flex-col flex-1">
+        {films.map((film, index) => {
+          const isRead = readFilms.has(index)
+          return (
+          <div key={index} className="group cursor-pointer flex flex-col h-full" onClick={() => toggleRead(index)}>
+            <div className={`bg-gray-800 rounded-lg overflow-hidden hover:shadow-blue transition-all flex flex-col flex-1 ${isRead ? 'opacity-50' : ''}`}>
               <div className="bg-gray-300 w-full flex-1 min-h-0 overflow-hidden flex items-center justify-center">
                 {film.poster || film.thumbnail ? (
                   <img
                     src={film.poster || film.thumbnail}
                     alt={film.title}
-                    className="w-full h-full object-contain group-hover:scale-105 transition-transform"
+                    className={`w-full h-full object-contain group-hover:scale-105 transition-transform ${isRead ? 'grayscale' : ''}`}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-gray-800">
@@ -73,7 +86,10 @@ export default function Thumbnails() {
               </div>
 
               <div className="p-3 bg-gray-900 text-white flex flex-col gap-2 flex-shrink-0">
-                <p className="text-sm font-bold truncate">{film.title}</p>
+                <div className="flex justify-between items-center">
+                  <p className="text-sm font-bold truncate">{film.title}</p>
+                  {isRead && <div className="text-white text-lg">✓</div>}
+                </div>
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-gray-300"><span className="font-semibold">{film.year}</span></p>
                   {film.imdbRating && (
@@ -86,7 +102,8 @@ export default function Thumbnails() {
               </div>
             </div>
           </div>
-        ))}
+        )
+        })}
       </div>
     </div>
   )
