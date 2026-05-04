@@ -131,7 +131,7 @@ GET /stream/:id
     └─ GetTorrentReader()
           ├─ torrent actif  → file.NewReader() (bloque sur morceaux manquants)
           └─ torrent terminé → os.Open(file_path)
-                └─ http.ServeContent() — gère Range/206 automatiquement
+          └─ http.ServeContent() — gère Range/206 automatiquement (les deux chemins)
 ```
 
 Le client `anacrolix/torrent` est un singleton partagé entre tous les téléchargements. Au démarrage, `reattachPendingTorrents()` recharge automatiquement les torrents dont le statut est `pending` ou `downloading`.
@@ -166,7 +166,6 @@ src/
 |----------|--------|-------------|
 | `PORT` | `8004` | Port d'écoute |
 | `TORRENT_DOWNLOAD_PATH` | `/data/torrents` | Répertoire de stockage des fichiers |
-| `STREAM_BUFFER_SIZE` | — | Taille du buffer de stream (MiB, non utilisé directement) |
 | `DB_HOST` | `localhost` | Hôte PostgreSQL |
 | `DB_PORT` | `5432` | Port PostgreSQL |
 | `DB_NAME` | `hypertube` | Nom de la base |
@@ -184,7 +183,7 @@ Les tests utilisent SQLite en mémoire (`github.com/glebarez/sqlite`, pur Go) po
 | Package | Tests |
 |---------|-------|
 | `services` | `extractInfoHash`, `findOrCreateRecord`, `GetRecord`, `StartDownload` |
-| `handlers` | health check, download (validation + erreurs), status (tous statuts), stream (pending/error/fichier manquant) |
+| `handlers` | health check, download (validation + erreurs), status (tous statuts), stream (pending/error/fichier manquant/succès/Range 206/MIME types) |
 
 ## Gestion des erreurs
 
