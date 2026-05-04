@@ -18,13 +18,15 @@ import (
 // StartDownload adds a magnet URI to the client and begins downloading.
 // It is idempotent: calling it twice with the same magnet returns the existing state.
 func StartDownload(magnetURI string, movieID int) (string, error) {
-	if client == nil {
-		return "", errors.New("torrent client not initialized")
-	}
-
+	// Validate the magnet URI first so callers get a clear 4xx error for bad input
+	// regardless of whether the client is ready.
 	infoHash, err := extractInfoHash(magnetURI)
 	if err != nil {
 		return "", fmt.Errorf("invalid magnet URI: %w", err)
+	}
+
+	if client == nil {
+		return "", errors.New("torrent client not initialized")
 	}
 
 	if _, ok := activeTorrents.Load(infoHash); ok {
