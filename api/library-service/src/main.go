@@ -17,6 +17,10 @@ func main() {
 		log.Println("Redis connected")
 	}
 
+	if err := conf.InitDB(); err != nil {
+		log.Printf("Database initialization failed: %v — watched status disabled", err)
+	}
+
 	r := gin.Default()
 
 	r.GET("/health", handlers.HealthCheckHandler)

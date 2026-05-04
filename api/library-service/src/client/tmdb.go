@@ -151,6 +151,7 @@ func (c *TMDbClient) GetMovie(id int) (*models.Movie, error) {
 		IMDbID:      raw.IMDbID,
 		Title:       raw.Title,
 		Year:        releaseYear(raw.ReleaseDate),
+		ReleaseDate: raw.ReleaseDate,
 		Overview:    raw.Overview,
 		Runtime:     raw.Runtime,
 		Rating:      raw.VoteAverage,
