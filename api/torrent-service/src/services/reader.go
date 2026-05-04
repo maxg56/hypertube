@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/anacrolix/torrent"
@@ -15,7 +16,7 @@ import (
 // GetTorrentReader returns an io.ReadSeeker for the largest file in the torrent.
 // For an in-progress torrent it uses the anacrolix reader (blocks on missing pieces).
 // For a completed torrent it reads directly from disk.
-func GetTorrentReader(infoHash string) (readerResult, error) {
+func GetTorrentReader(infoHash string) (ReaderResult, error) {
 	if v, ok := activeTorrents.Load(infoHash); ok {
 		return readerFromActiveTorrent(v.(*torrent.Torrent))
 	}
@@ -31,10 +32,11 @@ func GetRecord(infoHash string) (*models.TorrentRecord, error) {
 	return &record, nil
 }
 
-type readerResult struct {
+type ReaderResult struct {
 	Reader   torrentReader
 	Size     int64
 	FileName string
+	FilePath string // absolute path on disk; empty while pieces are still downloading
 }
 
 // torrentReader is satisfied by both *os.File and torrent.Reader.
@@ -43,35 +45,36 @@ type torrentReader interface {
 	Seek(offset int64, whence int) (int64, error)
 }
 
-func readerFromActiveTorrent(t *torrent.Torrent) (readerResult, error) {
+func readerFromActiveTorrent(t *torrent.Torrent) (ReaderResult, error) {
 	select {
 	case <-t.GotInfo():
 	case <-time.After(30 * time.Second):
-		return readerResult{}, errors.New("torrent info not yet available")
+		return ReaderResult{}, errors.New("torrent info not yet available")
 	}
 
 	f := largestFile(t)
 	if f == nil {
-		return readerResult{}, errors.New("no files in torrent")
+		return ReaderResult{}, errors.New("no files in torrent")
 	}
 
 	r := f.NewReader()
 	r.SetReadahead(5 << 20) // 5 MiB readahead for smooth streaming
-	return readerResult{Reader: r, Size: f.Length(), FileName: f.DisplayPath()}, nil
+	filePath := downloadDir() + "/" + strings.ToLower(t.InfoHash().HexString()) + "/" + f.DisplayPath()
+	return ReaderResult{Reader: r, Size: f.Length(), FileName: f.DisplayPath(), FilePath: filePath}, nil
 }
 
-func readerFromDisk(infoHash string) (readerResult, error) {
+func readerFromDisk(infoHash string) (ReaderResult, error) {
 	record, err := GetRecord(infoHash)
 	if err != nil {
-		return readerResult{}, fmt.Errorf("torrent not found: %w", err)
+		return ReaderResult{}, fmt.Errorf("torrent not found: %w", err)
 	}
 	if record.Status != models.StatusReady || record.FilePath == "" {
-		return readerResult{}, errors.New("torrent not ready")
+		return ReaderResult{}, errors.New("torrent not ready")
 	}
 
 	f, err := os.Open(record.FilePath)
 	if err != nil {
-		return readerResult{}, fmt.Errorf("open file: %w", err)
+		return ReaderResult{}, fmt.Errorf("open file: %w", err)
 	}
-	return readerResult{Reader: f, Size: record.FileSize, FileName: record.FilePath}, nil
+	return ReaderResult{Reader: f, Size: record.FileSize, FileName: record.FilePath, FilePath: record.FilePath}, nil
 }
