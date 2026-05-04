@@ -10,6 +10,7 @@ import (
 
 	"library-service/src/client"
 	"library-service/src/conf"
+	"library-service/src/models"
 	"library-service/src/utils"
 )
 
@@ -18,12 +19,32 @@ const (
 	freeCacheTTL = 2 * time.Hour
 )
 
+type tmdbClient interface {
+	Available() bool
+	Search(query string, page int) (*models.SearchResult, error)
+	GetMovie(id int) (*models.Movie, error)
+}
+
+type searchClient interface {
+	Available() bool
+	Search(query string, page int) (*models.SearchResult, error)
+}
+
+type ytsClient interface {
+	Search(query string, page int) (*models.SearchResult, error)
+	GetMovieByIMDbID(imdbID string) (*models.Movie, error)
+}
+
+type freeClient interface {
+	Search(query string, page int) (*models.SearchResult, error)
+}
+
 type MovieHandler struct {
-	tmdb    *client.TMDbClient
-	omdb    *client.OMDbClient
-	yts     *client.YTSClient
-	legit   *client.LegitTorrentsClient
-	archive *client.ArchiveClient
+	tmdb    tmdbClient
+	omdb    searchClient
+	yts     ytsClient
+	legit   freeClient
+	archive freeClient
 }
 
 func NewMovieHandler() *MovieHandler {
