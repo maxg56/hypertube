@@ -4,6 +4,7 @@ Fournit les métadonnées films et les liens torrent pour Hypertube. Agrège tro
 
 ## Responsibilities
 
+- Catalogue films avec recherche, filtres et pagination infinie (cursor-based)
 - Recherche de films via TMDb ou OMDb (fallback)
 - Détail d'un film enrichi avec les torrents YTS
 - Recherche directe sur YTS (films disponibles en torrent avec seeds/peers)
@@ -14,9 +15,51 @@ Fournit les métadonnées films et les liens torrent pour Hypertube. Agrège tro
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | `GET` | `/health` | — | Health check |
+| `GET` | `/api/v1/library/movies` | JWT | Films populaires / recherche avec filtres et pagination infinie |
 | `GET` | `/api/v1/library/movies/search` | JWT | Recherche TMDb / OMDb |
 | `GET` | `/api/v1/library/movies/yts` | JWT | Recherche YTS (avec torrents) |
 | `GET` | `/api/v1/library/movies/:id` | JWT | Détail d'un film (TMDb + torrents YTS) |
+
+---
+
+### GET /api/v1/library/movies
+
+Retourne les films populaires (triés par seeds par défaut) ou les résultats d'une recherche, avec pagination infinie par curseur.
+
+| Paramètre | Type | Requis | Description |
+|-----------|------|--------|-------------|
+| `q` | string | non | Terme de recherche (omis = films populaires) |
+| `genre` | string | non | Filtre par genre (ex : `Action`, `Comedy`) |
+| `rating` | float | non | Note minimale (ex : `7.0`) |
+| `year` | int | non | Filtre par année de sortie |
+| `sort_by` | string | non | Tri : `seeds` (défaut), `title`, `rating`, `year` |
+| `cursor` | string | non | Curseur de pagination (valeur `next_cursor` de la réponse précédente) |
+
+```json
+// 200 OK
+{
+  "success": true,
+  "data": {
+    "results": [
+      {
+        "id": 15442,
+        "imdb_id": "tt1375666",
+        "title": "Inception",
+        "year": "2010",
+        "rating": 8.8,
+        "poster_url": "https://yts.mx/assets/images/movies/...",
+        "genres": ["Action", "Sci-Fi"],
+        "watched": false,
+        "source": "yts"
+      }
+    ],
+    "next_cursor": "Mg==",
+    "total": 500
+  }
+}
+```
+
+Erreurs : `502` YTS injoignable
 
 ---
 
@@ -163,6 +206,7 @@ La logique de fallback pour la recherche : TMDb → OMDb (si TMDb KO). Pour le d
 
 | Clé | TTL | Contenu |
 |-----|-----|---------|
+| `movies:q:…:genre:…:page:{n}` | 1h | Résultats catalogue /movies |
 | `search:{q}:page:{n}` | 24h | Résultats de recherche TMDb/OMDb |
 | `movie:{tmdb_id}` | 24h | Détail film enrichi (métadonnées + torrents) |
 | `yts:search:{q}:page:{n}` | 1h | Résultats YTS (TTL court — seeds varient) |
@@ -189,18 +233,22 @@ Redis est optionnel : si indisponible au démarrage, le service fonctionne sans 
 ```
 src/
 ├── client/
-│   ├── tmdb.go     # Client HTTP TMDb (search + detail + credits)
-│   ├── omdb.go     # Client HTTP OMDb (search + title lookup)
-│   └── yts.go      # Client HTTP YTS (search + lookup par IMDb ID)
+│   ├── tmdb.go            # Client HTTP TMDb (search + detail + credits)
+│   ├── omdb.go            # Client HTTP OMDb (search + title lookup)
+│   └── yts.go             # Client HTTP YTS (List + search + lookup par IMDb ID)
 ├── conf/
-│   └── redis.go    # Connexion Redis + helpers GetCache/SetCache
+│   └── redis.go           # Connexion Redis + helpers GetCache/SetCache
 ├── handlers/
-│   └── movie.go    # Handlers Search, GetMovie, SearchYTS
+│   ├── handler.go         # Init handler + interfaces clients + helpers cache
+│   ├── movies.go          # Handler Movies (catalogue + pagination cursor)
+│   ├── search.go          # Handlers Search, SearchYTS
+│   ├── free.go            # Handler SearchFree (LegitTorrents + Archive.org)
+│   └── detail.go          # Handler GetMovie (TMDb + torrents YTS)
 ├── models/
-│   └── movie.go    # Movie, CastMember, Torrent, SearchResult
+│   └── movie.go           # Movie, CastMember, Torrent, SearchResult, CursorResult
 ├── utils/
-│   └── response.go # RespondSuccess / RespondError
-└── main.go         # Routes Gin + init Redis
+│   └── response.go        # RespondSuccess / RespondError
+└── main.go                # Routes Gin + init Redis
 ```
 
 ## Development
