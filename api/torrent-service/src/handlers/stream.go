@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mime"
 	"net/http"
-	"path/filepath"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,6 +12,16 @@ import (
 	"torrent-service/src/services"
 	"torrent-service/src/utils"
 )
+
+func init() {
+	mime.AddExtensionType(".mkv", "video/x-matroska")
+	mime.AddExtensionType(".webm", "video/webm")
+	mime.AddExtensionType(".mp4", "video/mp4")
+	mime.AddExtensionType(".avi", "video/x-msvideo")
+	mime.AddExtensionType(".mov", "video/quicktime")
+	mime.AddExtensionType(".ogg", "video/ogg")
+	mime.AddExtensionType(".m4v", "video/mp4")
+}
 
 func StreamHandler(c *gin.Context) {
 	hash := c.Param("id")
@@ -43,12 +52,6 @@ func StreamHandler(c *gin.Context) {
 		return
 	}
 
-	contentType := mime.TypeByExtension(filepath.Ext(result.FileName))
-	if contentType == "" {
-		contentType = "application/octet-stream"
-	}
-
-	c.Header("Content-Type", contentType)
 	c.Header("Accept-Ranges", "bytes")
 	if result.Size > 0 {
 		c.Header("X-Content-Length", fmt.Sprint(result.Size))

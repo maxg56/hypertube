@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -257,4 +258,91 @@ func TestStreamHandler_Ready_FileMissing(t *testing.T) {
 	r := newRouter()
 	w := get(r, "/api/v1/stream/"+validInfoHash)
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+}
+
+// makeTempVideoFile creates a temp file with the given extension and content,
+// registers a StatusReady DB record for it, and returns the file path.
+func makeTempVideoFile(t *testing.T, ext string, content []byte) string {
+	t.Helper()
+	f, err := os.CreateTemp(t.TempDir(), "testvideo*"+ext)
+	require.NoError(t, err)
+	_, err = f.Write(content)
+	require.NoError(t, err)
+	require.NoError(t, f.Close())
+	return f.Name()
+}
+
+func TestStreamHandler_Ready_Success(t *testing.T) {
+	setupTestDB(t)
+	content := bytes.Repeat([]byte("A"), 100)
+	path := makeTempVideoFile(t, ".mp4", content)
+	conf.DB.Create(&models.TorrentRecord{
+		InfoHash:  validInfoHash,
+		MagnetURI: validMagnet,
+		MovieID:   1,
+		Status:    models.StatusReady,
+		FilePath:  path,
+		FileSize:  int64(len(content)),
+	})
+	r := newRouter()
+	w := get(r, "/api/v1/stream/"+validInfoHash)
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "bytes", w.Header().Get("Accept-Ranges"))
+	assert.Equal(t, len(content), w.Body.Len())
+}
+
+func TestStreamHandler_Range_PartialContent(t *testing.T) {
+	setupTestDB(t)
+	content := make([]byte, 100)
+	for i := range content {
+		content[i] = byte(i)
+	}
+	path := makeTempVideoFile(t, ".mp4", content)
+	conf.DB.Create(&models.TorrentRecord{
+		InfoHash:  validInfoHash,
+		MagnetURI: validMagnet,
+		MovieID:   1,
+		Status:    models.StatusReady,
+		FilePath:  path,
+		FileSize:  int64(len(content)),
+	})
+
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/stream/"+validInfoHash, nil)
+	req.Header.Set("Range", "bytes=0-9")
+	w := httptest.NewRecorder()
+	newRouter().ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusPartialContent, w.Code)
+	assert.Equal(t, "bytes 0-9/100", w.Header().Get("Content-Range"))
+	assert.Equal(t, 10, w.Body.Len())
+	assert.Equal(t, content[:10], w.Body.Bytes())
+}
+
+func TestStreamHandler_MimeType(t *testing.T) {
+	tests := []struct {
+		ext      string
+		wantMime string
+	}{
+		{".mp4", "video/mp4"},
+		{".webm", "video/webm"},
+		{".mkv", "video/x-matroska"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.ext, func(t *testing.T) {
+			setupTestDB(t)
+			path := makeTempVideoFile(t, tt.ext, bytes.Repeat([]byte("B"), 20))
+			conf.DB.Create(&models.TorrentRecord{
+				InfoHash:  validInfoHash,
+				MagnetURI: validMagnet,
+				MovieID:   1,
+				Status:    models.StatusReady,
+				FilePath:  path,
+				FileSize:  20,
+			})
+			r := newRouter()
+			w := get(r, "/api/v1/stream/"+validInfoHash)
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Contains(t, w.Header().Get("Content-Type"), tt.wantMime)
+		})
+	}
 }
