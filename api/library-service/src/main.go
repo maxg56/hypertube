@@ -29,6 +29,7 @@ func main() {
 			h := handlers.NewMovieHandler()
 			movies.GET("/search", h.Search)
 			movies.GET("/yts", h.SearchYTS)
+			movies.GET("/free", h.SearchFree)
 			movies.GET("/:id", h.GetMovie)
 		}
 	}
