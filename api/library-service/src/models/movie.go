@@ -30,10 +30,18 @@ type Movie struct {
 	Cast        []CastMember `json:"cast"`
 	Torrents    []Torrent    `json:"torrents,omitempty"`
 	Source      string       `json:"source"`
+	Watched     bool         `json:"watched"`
 }
 
 type SearchResult struct {
 	Page       int     `json:"page"`
 	TotalPages int     `json:"total_pages"`
+	TotalCount int     `json:"total_count"`
 	Results    []Movie `json:"results"`
+}
+
+type CursorResult struct {
+	Results    []Movie `json:"results"`
+	NextCursor string  `json:"next_cursor,omitempty"`
+	Total      int     `json:"total"`
 }

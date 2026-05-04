@@ -1,0 +1,87 @@
+package handlers
+
+import (
+	"encoding/base64"
+	"fmt"
+	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
+
+	"library-service/src/client"
+	"library-service/src/models"
+	"library-service/src/utils"
+)
+
+func (h *MovieHandler) Movies(c *gin.Context) {
+	query := c.Query("q")
+	genre := c.Query("genre")
+	ratingStr := c.Query("rating")
+	yearStr := c.Query("year")
+	sortBy := c.DefaultQuery("sort_by", "seeds")
+	cursor := c.Query("cursor")
+
+	page := decodeCursor(cursor)
+
+	var minRating float64
+	if ratingStr != "" {
+		minRating, _ = strconv.ParseFloat(ratingStr, 64)
+	}
+	var year int
+	if yearStr != "" {
+		year, _ = strconv.Atoi(yearStr)
+	}
+
+	cacheKey := fmt.Sprintf("movies:q:%s:genre:%s:rating:%.1f:year:%d:sort:%s:page:%d",
+		query, genre, minRating, year, sortBy, page)
+
+	var result models.CursorResult
+	if cacheGet(cacheKey, &result) {
+		utils.RespondSuccess(c, http.StatusOK, result)
+		return
+	}
+
+	params := client.ListParams{
+		Query:     query,
+		Genre:     genre,
+		MinRating: minRating,
+		Year:      year,
+		SortBy:    sortBy,
+		Page:      page,
+	}
+	searchResult, err := h.yts.List(params)
+	if err != nil {
+		utils.RespondError(c, http.StatusBadGateway, "failed to fetch movies")
+		return
+	}
+
+	result = models.CursorResult{
+		Results: searchResult.Results,
+		Total:   searchResult.TotalCount,
+	}
+	if page < searchResult.TotalPages {
+		result.NextCursor = encodeCursor(page + 1)
+	}
+
+	cacheSet(cacheKey, result, ytsCacheTTL)
+	utils.RespondSuccess(c, http.StatusOK, result)
+}
+
+func encodeCursor(page int) string {
+	return base64.StdEncoding.EncodeToString([]byte(strconv.Itoa(page)))
+}
+
+func decodeCursor(s string) int {
+	if s == "" {
+		return 1
+	}
+	b, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		return 1
+	}
+	page, _ := strconv.Atoi(string(b))
+	if page < 1 {
+		return 1
+	}
+	return page
+}

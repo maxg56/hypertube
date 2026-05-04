@@ -14,6 +14,7 @@ import (
 	"library-service/src/utils"
 )
 
+
 const (
 	ytsCacheTTL  = 1 * time.Hour
 	freeCacheTTL = 2 * time.Hour
@@ -32,6 +33,7 @@ type searchClient interface {
 
 type ytsClient interface {
 	Search(query string, page int) (*models.SearchResult, error)
+	List(p client.ListParams) (*models.SearchResult, error)
 	GetMovieByIMDbID(imdbID string) (*models.Movie, error)
 }
 
