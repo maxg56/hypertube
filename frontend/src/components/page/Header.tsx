@@ -1,6 +1,8 @@
 import React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "../ui/avatar";
 import {Button} from "../ui/button";
+import LogoutButton from "../../app/(auth)/logout/logout";
+import LanguageSwitcher from "./LanguageSwitcher";
 
 export default function Header() {
     return (
@@ -14,9 +16,10 @@ export default function Header() {
                     <AvatarFallback>HT</AvatarFallback>
                 </Avatar>
                 <h1 className="text-2xl text-gray-800 font-bold text-center flex-1">Hypertube</h1>
-                <Button className="mr-8 bg-red-500 hover:bg-red-600 text-white">
-                    Se déconnecter
-                </Button>
+                <div className="flex items-center gap-4">
+                    <LanguageSwitcher />
+                    <LogoutButton />
+                </div>
             </div>            
         </header>
     );
