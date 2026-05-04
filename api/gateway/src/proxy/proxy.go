@@ -15,6 +15,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// streamingClient has no timeout — used for video/audio streaming responses.
+var streamingClient = &http.Client{}
+
+// defaultClient has a 30-second timeout for all regular requests.
+var defaultClient = &http.Client{Timeout: 30 * time.Second}
+
 // ProxyRequest creates a handler that proxies requests to the specified service
 func ProxyRequest(serviceName, path string) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -26,45 +32,22 @@ func ProxyRequest(serviceName, path string) gin.HandlerFunc {
 			return
 		}
 
-		// Build target URL
 		targetURL := service.URL + replacePlaceholders(path, c)
-
-		// Copy query parameters
 		if c.Request.URL.RawQuery != "" {
 			targetURL += "?" + c.Request.URL.RawQuery
 		}
 
-		// Create request
-		var body io.Reader
-		if c.Request.Body != nil {
-			bodyBytes, err := io.ReadAll(c.Request.Body)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "Failed to read request body",
-				})
-				return
-			}
-			body = bytes.NewReader(bodyBytes)
-		}
-
-		req, err := http.NewRequest(c.Request.Method, targetURL, body)
+		req, err := buildRequest(c, targetURL)
 		if err != nil {
 			log.Printf("Error creating request to %s: %v", targetURL, err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Failed to create request",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
 			return
 		}
 
-		// Copy headers
 		copyHeaders(c, req)
 
-		// Execute request
-		client := &http.Client{
-			Timeout: 30 * time.Second,
-		}
-
-		resp, err := client.Do(req)
+		httpClient := clientForPath(c.Request.URL.Path)
+		resp, err := httpClient.Do(req)
 		if err != nil {
 			log.Printf("Error proxying request to %s: %v", targetURL, err)
 			c.JSON(http.StatusBadGateway, gin.H{
@@ -74,27 +57,42 @@ func ProxyRequest(serviceName, path string) gin.HandlerFunc {
 		}
 		defer resp.Body.Close()
 
-		// Copy response
 		copyResponse(c, resp)
 	}
+}
+
+func buildRequest(c *gin.Context, targetURL string) (*http.Request, error) {
+	var body io.Reader
+	if c.Request.Body != nil {
+		bodyBytes, err := io.ReadAll(c.Request.Body)
+		if err != nil {
+			return nil, err
+		}
+		body = bytes.NewReader(bodyBytes)
+	}
+	return http.NewRequest(c.Request.Method, targetURL, body)
+}
+
+// clientForPath returns the streaming (no-timeout) client for stream routes,
+// and the default client for everything else.
+func clientForPath(path string) *http.Client {
+	if strings.HasPrefix(path, "/api/v1/stream/") {
+		return streamingClient
+	}
+	return defaultClient
 }
 
 // replacePlaceholders replaces path parameters in the target path
 func replacePlaceholders(path string, c *gin.Context) string {
 	result := path
-
-	// Replace path parameters
 	for _, param := range c.Params {
-		placeholder := fmt.Sprintf(":%s", param.Key)
-		result = strings.ReplaceAll(result, placeholder, param.Value)
+		result = strings.ReplaceAll(result, ":"+param.Key, param.Value)
 	}
-
 	return result
 }
 
 // copyHeaders copies request headers and adds user context headers
 func copyHeaders(c *gin.Context, req *http.Request) {
-	// Copy all headers except Host, preserving multiple values
 	for key, values := range c.Request.Header {
 		if key == "Host" {
 			continue
@@ -104,7 +102,6 @@ func copyHeaders(c *gin.Context, req *http.Request) {
 		}
 	}
 
-	// Propagate authenticated user id if present in context
 	if v, ok := c.Get(middleware.CtxUserIDKey); ok {
 		if s, ok := v.(string); ok && s != "" {
 			req.Header.Set("X-User-ID", s)
@@ -112,15 +109,17 @@ func copyHeaders(c *gin.Context, req *http.Request) {
 		}
 	}
 
-	// Forward original JWT token for services that need it
 	if token := utils.ExtractToken(c); token != "" {
 		req.Header.Set("X-JWT-Token", token)
 	}
 }
 
-// copyResponse copies the upstream response to the client
+// copyResponse copies the upstream response to the client.
+// For video/audio content types it streams the body incrementally instead of
+// buffering it all in memory, which is required for HTTP Range / 206 responses.
 func copyResponse(c *gin.Context, resp *http.Response) {
-	// Set status code and copy headers (including multiple Set-Cookie values)
+	contentType := resp.Header.Get("Content-Type")
+
 	c.Status(resp.StatusCode)
 	for key, values := range resp.Header {
 		for _, v := range values {
@@ -128,14 +127,42 @@ func copyResponse(c *gin.Context, resp *http.Response) {
 		}
 	}
 
-	// Copy body
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to read response body",
-		})
+	if isStreamingContentType(contentType) {
+		streamBody(c, resp)
 		return
 	}
 
-	c.Data(resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response body"})
+		return
+	}
+	c.Data(resp.StatusCode, contentType, body)
+}
+
+func streamBody(c *gin.Context, resp *http.Response) {
+	c.Writer.WriteHeader(resp.StatusCode)
+	flusher, canFlush := c.Writer.(http.Flusher)
+	buf := make([]byte, 32*1024)
+	for {
+		n, readErr := resp.Body.Read(buf)
+		if n > 0 {
+			c.Writer.Write(buf[:n]) //nolint:errcheck
+			if canFlush {
+				flusher.Flush()
+			}
+		}
+		if readErr != nil {
+			break
+		}
+	}
+}
+
+func isStreamingContentType(ct string) bool {
+	for _, prefix := range []string{"video/", "audio/", "application/octet-stream"} {
+		if strings.HasPrefix(ct, prefix) {
+			return true
+		}
+	}
+	return false
 }

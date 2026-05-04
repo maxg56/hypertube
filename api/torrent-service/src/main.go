@@ -4,22 +4,44 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
+
+	"torrent-service/src/conf"
+	"torrent-service/src/handlers"
+	"torrent-service/src/services"
 )
 
 func main() {
+	conf.InitDB()
+
+	if err := services.InitTorrentClient(); err != nil {
+		log.Fatal("Failed to initialize torrent client:", err)
+	}
+
+	r := gin.Default()
+
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "torrent-service"})
+	})
+
+	api := r.Group("/api/v1")
+	{
+		t := api.Group("/torrent")
+		{
+			t.POST("/download", handlers.DownloadHandler)
+			t.GET("/status/:id", handlers.StatusHandler)
+		}
+		api.GET("/stream/:id", handlers.StreamHandler)
+		api.GET("/subtitle/:id", func(c *gin.Context) {
+			c.JSON(http.StatusNotImplemented, gin.H{"error": "subtitles not yet implemented"})
+		})
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8004"
 	}
-
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"status":"ok","service":"torrent-service"}`))
-	})
-
 	log.Printf("torrent-service starting on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
