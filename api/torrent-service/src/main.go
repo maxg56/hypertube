@@ -33,6 +33,7 @@ func main() {
 			t.GET("/status/:id", handlers.StatusHandler)
 		}
 		api.GET("/stream/:id", handlers.StreamHandler)
+		api.GET("/movies/:id/watched", handlers.WatchedHandler)
 		api.GET("/subtitle/:id", func(c *gin.Context) {
 			c.JSON(http.StatusNotImplemented, gin.H{"error": "subtitles not yet implemented"})
 		})

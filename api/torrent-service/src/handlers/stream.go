@@ -47,6 +47,10 @@ func StreamHandler(c *gin.Context) {
 		return
 	}
 
+	if userID, ok := userIDFromHeader(c); ok && record.MovieID > 0 {
+		services.RecordWatch(userID, record.MovieID) //nolint:errcheck
+	}
+
 	result, err := services.GetTorrentReader(hash)
 	if err != nil {
 		utils.RespondError(c, http.StatusServiceUnavailable, "cannot open torrent: "+err.Error())
