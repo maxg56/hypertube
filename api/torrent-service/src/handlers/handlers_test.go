@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -319,13 +321,14 @@ func TestStreamHandler_Range_PartialContent(t *testing.T) {
 }
 
 func TestStreamHandler_MimeType(t *testing.T) {
+	// Only native formats go through http.ServeContent which infers MIME from extension.
+	// Non-native formats (mkv, avi, …) are transcoded and always return video/mp4.
 	tests := []struct {
 		ext      string
 		wantMime string
 	}{
 		{".mp4", "video/mp4"},
 		{".webm", "video/webm"},
-		{".mkv", "video/x-matroska"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.ext, func(t *testing.T) {
@@ -345,4 +348,70 @@ func TestStreamHandler_MimeType(t *testing.T) {
 			assert.Contains(t, w.Header().Get("Content-Type"), tt.wantMime)
 		})
 	}
+}
+
+// makeTestMKVFile creates a real 1-second H.264/AAC MKV via ffmpeg and registers
+// it in the DB as StatusReady. Skips the test if ffmpeg is not in PATH.
+func makeTestMKVFile(t *testing.T) string {
+	t.Helper()
+	if _, err := exec.LookPath("ffmpeg"); err != nil {
+		t.Skip("ffmpeg not in PATH")
+	}
+	out := filepath.Join(t.TempDir(), "test.mkv")
+	cmd := exec.Command("ffmpeg",
+		"-f", "lavfi", "-i", "testsrc=duration=1:size=64x64:rate=1",
+		"-f", "lavfi", "-i", "sine=frequency=440:duration=1",
+		"-c:v", "libx264", "-c:a", "aac",
+		"-t", "1", "-y", out,
+	)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, "ffmpeg test-video generation failed: %s", output)
+	return out
+}
+
+func TestStreamHandler_Transcode_ContentType(t *testing.T) {
+	setupTestDB(t)
+	path := makeTestMKVFile(t)
+
+	info, _ := os.Stat(path)
+	conf.DB.Create(&models.TorrentRecord{
+		InfoHash:  validInfoHash,
+		MagnetURI: validMagnet,
+		MovieID:   1,
+		Status:    models.StatusReady,
+		FilePath:  path,
+		FileSize:  info.Size(),
+	})
+
+	r := newRouter()
+	w := get(r, "/api/v1/stream/"+validInfoHash)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Header().Get("Content-Type"), "video/mp4")
+	assert.Greater(t, w.Body.Len(), 64, "transcoded output should contain MP4 data")
+}
+
+func TestStreamHandler_Transcode_NoByteRange(t *testing.T) {
+	// Transcoded streams do not support byte-range (ffmpeg pipe is not seekable).
+	setupTestDB(t)
+	path := makeTestMKVFile(t)
+
+	info, _ := os.Stat(path)
+	conf.DB.Create(&models.TorrentRecord{
+		InfoHash:  validInfoHash,
+		MagnetURI: validMagnet,
+		MovieID:   1,
+		Status:    models.StatusReady,
+		FilePath:  path,
+		FileSize:  info.Size(),
+	})
+
+	req, _ := http.NewRequest(http.MethodGet, "/api/v1/stream/"+validInfoHash, nil)
+	req.Header.Set("Range", "bytes=0-99")
+	w := httptest.NewRecorder()
+	newRouter().ServeHTTP(w, req)
+
+	// Transcoded response is always 200 (full stream), never 206 Partial Content.
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Empty(t, w.Header().Get("Accept-Ranges"))
 }

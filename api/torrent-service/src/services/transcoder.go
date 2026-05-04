@@ -106,8 +106,8 @@ func StartTranscode(reader io.Reader, codecInfo *CodecInfo) (*TranscodeJob, erro
 }
 
 func buildFFmpegArgs(info *CodecInfo) []string {
-	base := []string{
-		"-i", "pipe:0",
+	// -i must come first; all codec and format flags are output options.
+	output := []string{
 		"-f", "mp4",
 		"-movflags", "frag_keyframe+empty_moov+default_base_moof",
 		"pipe:1",
@@ -115,17 +115,18 @@ func buildFFmpegArgs(info *CodecInfo) []string {
 
 	if canCopyStream(info) {
 		// Remux only — no re-encoding, very fast.
-		return append([]string{"-c", "copy"}, base...)
+		return append([]string{"-i", "pipe:0", "-c", "copy"}, output...)
 	}
 
 	// Full transcode to H.264/AAC for maximum browser compatibility.
 	return append([]string{
+		"-i", "pipe:0",
 		"-c:v", "libx264",
 		"-preset", "ultrafast",
 		"-tune", "zerolatency",
 		"-c:a", "aac",
 		"-b:a", "128k",
-	}, base...)
+	}, output...)
 }
 
 // prefixWriter writes log lines prefixed with a label.
