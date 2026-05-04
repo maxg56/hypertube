@@ -37,24 +37,22 @@ func StreamHandler(c *gin.Context) {
 		return
 	}
 
-	reader, size, name, err := services.GetTorrentReader(hash)
+	result, err := services.GetTorrentReader(hash)
 	if err != nil {
 		utils.RespondError(c, http.StatusServiceUnavailable, "cannot open torrent: "+err.Error())
 		return
 	}
 
-	ext := filepath.Ext(name)
-	contentType := mime.TypeByExtension(ext)
+	contentType := mime.TypeByExtension(filepath.Ext(result.FileName))
 	if contentType == "" {
 		contentType = "application/octet-stream"
 	}
 
 	c.Header("Content-Type", contentType)
 	c.Header("Accept-Ranges", "bytes")
-	if size > 0 {
-		c.Header("X-Content-Length", fmt.Sprint(size))
+	if result.Size > 0 {
+		c.Header("X-Content-Length", fmt.Sprint(result.Size))
 	}
 
-	// http.ServeContent handles Range headers, 206 Partial Content, and ETag automatically.
-	http.ServeContent(c.Writer, c.Request, name, time.Time{}, reader)
+	http.ServeContent(c.Writer, c.Request, result.FileName, time.Time{}, result.Reader)
 }
