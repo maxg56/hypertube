@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"library-service/src/client"
 	"library-service/src/models"
 )
 
@@ -58,6 +59,9 @@ type mockYTS struct {
 }
 
 func (m *mockYTS) Search(_ string, _ int) (*models.SearchResult, error) {
+	return m.searchResult, m.searchErr
+}
+func (m *mockYTS) List(_ client.ListParams) (*models.SearchResult, error) {
 	return m.searchResult, m.searchErr
 }
 func (m *mockYTS) GetMovieByIMDbID(_ string) (*models.Movie, error) {
