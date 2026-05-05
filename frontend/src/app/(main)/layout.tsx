@@ -27,9 +27,12 @@ export default function MainLayout({ children }: { children: ReactNode }) {
                 </div>
             </div>            
         </header>
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+      <main className="w-full bg-gradient-to-t from-orange-400 to-blue-400 p-6 shadow-lg min-h-screen">
         {children}
       </main>
+          <footer className="bg-orange-400 text-white p-4 mt-auto">
+            <p className="text-center">&copy; 2024 Hypertube. Tous droits réservés.</p>
+          </footer>
     </div>
   )
 }
