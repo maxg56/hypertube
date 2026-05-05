@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"log"
 	"time"
 	"user-service/src/conf"
 )
@@ -45,7 +46,7 @@ func (ps *PresenceService) GetUserPresence(userID uint) (*UserPresence, error) {
 		lastSeen, err := conf.GetUserLastSeen(userID)
 		if err != nil {
 			// Log error but don't fail the request
-			fmt.Printf("Warning: failed to get last seen for user %d: %v\n", userID, err)
+			log.Printf("warning: failed to get last seen for user %d: %v", userID, err)
 		} else {
 			presence.LastSeen = lastSeen
 		}
@@ -90,7 +91,7 @@ func (ps *PresenceService) GetMultipleUsersPresence(userIDs []uint) (map[uint]*U
 			lastSeen, err := conf.GetUserLastSeen(userID)
 			if err != nil {
 				// Log error but don't fail the request
-				fmt.Printf("Warning: failed to get last seen for user %d: %v\n", userID, err)
+				log.Printf("warning: failed to get last seen for user %d: %v", userID, err)
 			} else {
 				presence.LastSeen = lastSeen
 			}

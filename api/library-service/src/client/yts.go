@@ -83,15 +83,45 @@ type ytsTorrent struct {
 	Peers   int    `json:"peers"`
 }
 
+// ListParams holds optional filters and sort options for List.
+type ListParams struct {
+	Query     string
+	Genre     string
+	MinRating float64
+	Year      int    // filtered client-side (YTS has no year param)
+	SortBy    string // "seeds" | "title" | "year" | "rating"
+	Page      int
+}
+
 func (c *YTSClient) Search(query string, page int) (*models.SearchResult, error) {
-	if page < 1 {
-		page = 1
+	return c.List(ListParams{Query: query, Page: page, SortBy: "seeds"})
+}
+
+// List fetches movies from YTS with optional filters and sorting.
+func (c *YTSClient) List(p ListParams) (*models.SearchResult, error) {
+	if p.Page < 1 {
+		p.Page = 1
 	}
+
+	validSort := map[string]bool{"seeds": true, "title": true, "year": true, "rating": true, "download_count": true}
+	sortBy := "seeds"
+	if validSort[p.SortBy] {
+		sortBy = p.SortBy
+	}
+
 	params := url.Values{}
-	params.Set("query_term", query)
-	params.Set("page", strconv.Itoa(page))
+	if p.Query != "" {
+		params.Set("query_term", p.Query)
+	}
+	if p.Genre != "" {
+		params.Set("genre", p.Genre)
+	}
+	if p.MinRating > 0 {
+		params.Set("minimum_rating", strconv.FormatFloat(p.MinRating, 'f', 0, 64))
+	}
+	params.Set("sort_by", sortBy)
+	params.Set("page", strconv.Itoa(p.Page))
 	params.Set("limit", "20")
-	params.Set("sort_by", "seeds")
 
 	body, err := c.get(fmt.Sprintf("%s/list_movies.json?%s", ytsBaseURL, params.Encode()))
 	if err != nil {
@@ -112,11 +142,16 @@ func (c *YTSClient) Search(query string, page int) (*models.SearchResult, error)
 	}
 
 	result := &models.SearchResult{
-		Page:       page,
+		Page:       p.Page,
 		TotalPages: totalPages,
+		TotalCount: raw.Data.MovieCount,
 	}
 	for _, m := range raw.Data.Movies {
-		result.Results = append(result.Results, listMovieToModel(m))
+		movie := listMovieToModel(m)
+		if p.Year > 0 && m.Year != p.Year {
+			continue
+		}
+		result.Results = append(result.Results, movie)
 	}
 	return result, nil
 }
