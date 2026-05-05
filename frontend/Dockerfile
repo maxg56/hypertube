@@ -7,6 +7,8 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 ENV NEXT_TELEMETRY_DISABLED=1
+# Ensure /app directory is writable by any user for development
+RUN mkdir -p .next && chmod -R 777 /app
 EXPOSE 3000
 CMD ["pnpm", "dev"]
 
