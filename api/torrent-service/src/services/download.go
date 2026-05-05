@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/anacrolix/torrent"
 	"gorm.io/gorm"
@@ -103,8 +106,35 @@ func addToClient(uri string) (*torrent.Torrent, error) {
 	return addTorrentFromURL(uri)
 }
 
-func addTorrentFromURL(url string) (*torrent.Torrent, error) {
-	resp, err := http.Get(url) //nolint:gosec
+func validateTorrentURL(rawURL string) error {
+	parsed, err := url.ParseRequestURI(rawURL)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return errors.New("only http/https URLs are allowed")
+	}
+	host := parsed.Hostname()
+	ips, err := net.LookupHost(host)
+	if err != nil {
+		return fmt.Errorf("could not resolve host: %w", err)
+	}
+	for _, ipStr := range ips {
+		ip := net.ParseIP(ipStr)
+		if ip == nil || ip.IsLoopback() || ip.IsPrivate() || ip.IsLinkLocalUnicast() || ip.IsLinkLocalMulticast() {
+			return errors.New("URL resolves to a private or reserved address")
+		}
+	}
+	return nil
+}
+
+var torrentHTTPClient = &http.Client{Timeout: 30 * time.Second}
+
+func addTorrentFromURL(rawURL string) (*torrent.Torrent, error) {
+	if err := validateTorrentURL(rawURL); err != nil {
+		return nil, fmt.Errorf("rejected torrent URL: %w", err)
+	}
+	resp, err := torrentHTTPClient.Get(rawURL)
 	if err != nil {
 		return nil, fmt.Errorf("fetch torrent file: %w", err)
 	}
