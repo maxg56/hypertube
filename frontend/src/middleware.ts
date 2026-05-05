@@ -15,7 +15,9 @@ export default function proxy(req: NextRequest) {
   const accessToken = req.cookies.get('access_token')?.value
 
   if (!isPublic && !accessToken) {
-    return NextResponse.redirect(new URL('/login', req.nextUrl))
+    const loginUrl = new URL('/login', req.nextUrl)
+    loginUrl.searchParams.set('callbackUrl', pathname)
+    return NextResponse.redirect(loginUrl)
   }
 
   if (isPublic && accessToken) {

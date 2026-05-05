@@ -1,3 +1,66 @@
 {
-    "Log Out": "Log Out"
+  "app_tagline": "Watch your movies in streaming",
+
+  "auth": {
+    "login_title": "Log in",
+    "login_subtitle": "Welcome! Enter your credentials to continue.",
+    "login_identifier_label": "Username or email",
+    "login_identifier_placeholder": "johndoe or john@example.com",
+    "login_password_label": "Password",
+    "login_forgot_password": "Forgot password?",
+    "login_submit": "Log in",
+    "login_submitting": "Logging in…",
+    "login_or": "or continue with",
+    "login_no_account": "Don't have an account?",
+    "login_register_link": "Register",
+
+    "register_title": "Create an account",
+    "register_subtitle": "Join Hypertube to start watching.",
+    "register_first_name": "First name",
+    "register_first_name_placeholder": "John",
+    "register_last_name": "Last name",
+    "register_last_name_placeholder": "Doe",
+    "register_username": "Username",
+    "register_username_placeholder": "johndoe",
+    "register_email": "Email",
+    "register_email_placeholder": "john@example.com",
+    "register_password": "Password",
+    "register_password_placeholder": "••••••••",
+    "register_submit": "Register",
+    "register_submitting": "Registering…",
+    "register_already_account": "Already have an account?",
+    "register_login_link": "Log in",
+
+    "forgot_password_title": "Forgot password",
+    "forgot_password_subtitle": "Enter your email to receive a reset link.",
+    "forgot_password_email": "Email",
+    "forgot_password_email_placeholder": "john@example.com",
+    "forgot_password_submit": "Send link",
+    "forgot_password_submitting": "Sending…",
+    "forgot_password_back": "Back to login",
+
+    "reset_password_title": "New password",
+    "reset_password_subtitle": "Choose a new secure password.",
+    "reset_password_new_label": "New password",
+    "reset_password_confirm_label": "Confirm password",
+    "reset_password_placeholder": "••••••••",
+    "reset_password_submit": "Reset",
+    "reset_password_submitting": "Resetting…",
+    "reset_password_back": "Back to login",
+
+    "verify_email_title": "Verify your email",
+    "verify_email_subtitle": "Enter the 6-digit code sent to your email address.",
+    "verify_email_label": "Email",
+    "verify_email_placeholder": "john@example.com",
+    "verify_code_label": "Verification code",
+    "verify_code_placeholder": "123456",
+    "verify_email_submit": "Verify",
+    "verify_email_submitting": "Verifying…",
+    "verify_email_no_code": "Didn't receive the code?",
+    "verify_email_resend": "Resend code",
+    "verify_email_resending": "Sending…",
+    "verify_email_login_link": "Log in",
+
+    "logout": "Log out"
+  }
 }

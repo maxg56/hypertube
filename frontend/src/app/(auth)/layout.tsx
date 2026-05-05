@@ -1,14 +1,17 @@
+'use client'
+
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-3xl font-bold tracking-tight">Hypertube</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Regardez vos films en streaming
-          </p>
+          <p className="text-muted-foreground text-sm mt-1">{t('app_tagline')}</p>
         </div>
         <div className="bg-card border rounded-xl p-6 shadow-sm">
           {children}
