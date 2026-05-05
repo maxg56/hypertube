@@ -49,10 +49,19 @@ func StreamHandler(c *gin.Context) {
 		return
 	}
 
+	if userID, ok := userIDFromHeader(c); ok && record.MovieID > 0 {
+		services.RecordWatch(userID, record.MovieID) //nolint:errcheck
+	}
+
 	result, err := services.GetTorrentReader(hash)
 	if err != nil {
 		log.Printf("cannot open torrent %s: %v", hash, err)
 		utils.RespondError(c, http.StatusServiceUnavailable, "torrent not available")
+		return
+	}
+
+	if services.NeedsTranscoding(result.FileName) {
+		serveTranscoded(c, result)
 		return
 	}
 
@@ -76,6 +85,7 @@ func serveTranscoded(c *gin.Context, result services.ReaderResult) {
 
 	job, err := services.StartTranscode(result.Reader, codecInfo)
 	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "transcoding error: "+err.Error())
 		log.Printf("transcoding error for %s: %v", result.FileName, err)
 		utils.RespondError(c, http.StatusInternalServerError, "transcoding failed")
 		return
