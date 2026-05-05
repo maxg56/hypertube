@@ -2,6 +2,7 @@ package conf
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"strconv"
@@ -49,14 +50,18 @@ func InitRedis() error {
 	return nil
 }
 
+func blacklistKey(tokenString string) string {
+	h := sha256.Sum256([]byte(tokenString))
+	return fmt.Sprintf("blacklist:%x", h)
+}
+
 // BlacklistToken adds a JWT token to the blacklist with TTL
 func BlacklistToken(tokenString string, ttl time.Duration) error {
 	if Client == nil {
 		return fmt.Errorf("Redis client not initialized")
 	}
 
-	key := "blacklist:" + tokenString
-	err := Client.Set(ctx, key, "blacklisted", ttl).Err()
+	err := Client.Set(ctx, blacklistKey(tokenString), "blacklisted", ttl).Err()
 	if err != nil {
 		return fmt.Errorf("failed to blacklist token: %w", err)
 	}
@@ -70,8 +75,7 @@ func IsTokenBlacklisted(tokenString string) (bool, error) {
 		return false, fmt.Errorf("Redis client not initialized")
 	}
 
-	key := "blacklist:" + tokenString
-	exists, err := Client.Exists(ctx, key).Result()
+	exists, err := Client.Exists(ctx, blacklistKey(tokenString)).Result()
 	if err != nil {
 		return false, fmt.Errorf("failed to check blacklist: %w", err)
 	}
