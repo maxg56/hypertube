@@ -14,12 +14,12 @@ func GetAuthenticatedUserID(c *gin.Context) (uint, error) {
 		return 0, ErrUnauthorized
 	}
 
-	userID, ok := authenticatedUserID.(int)
+	userID, ok := authenticatedUserID.(uint)
 	if !ok {
 		RespondError(c, http.StatusUnauthorized, "user not authenticated")
 		return 0, ErrUnauthorized
 	}
-	return uint(userID), nil
+	return userID, nil
 }
 
 // Custom errors

@@ -49,6 +49,7 @@ func main() {
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
 	r.Use(handlers.CORSMiddleware())
+	r.Use(middleware.SecurityHeadersMiddleware())
 	r.Use(middleware.RateLimitMiddleware())
 
 	r.GET("/health", handlers.HealthCheck)

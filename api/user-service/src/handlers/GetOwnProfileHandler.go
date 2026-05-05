@@ -11,14 +11,13 @@ import (
 )
 
 func GetOwnProfileHandler(c *gin.Context) {
-	userID := c.GetInt("user_id")
-	if userID == 0 {
-		utils.RespondError(c, http.StatusUnauthorized, "user not authenticated")
+	userID, err := utils.GetAuthenticatedUserID(c)
+	if err != nil {
 		return
 	}
 
 	var user models.User
-	if err := conf.DB.First(&user, uint(userID)).Error; err != nil {
+	if err := conf.DB.First(&user, userID).Error; err != nil {
 		utils.RespondError(c, http.StatusNotFound, "user not found")
 		return
 	}

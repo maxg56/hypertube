@@ -3,6 +3,7 @@ package handlers
 import (
 	"fmt"
 	"io"
+	"log"
 	"mime"
 	"net/http"
 	"time"
@@ -43,13 +44,15 @@ func StreamHandler(c *gin.Context) {
 		utils.RespondError(c, http.StatusAccepted, "torrent is pending, retry shortly")
 		return
 	case models.StatusError:
-		utils.RespondError(c, http.StatusServiceUnavailable, "torrent failed: "+record.ErrorMsg)
+		log.Printf("torrent %s failed: %s", hash, record.ErrorMsg)
+		utils.RespondError(c, http.StatusServiceUnavailable, "torrent processing failed")
 		return
 	}
 
 	result, err := services.GetTorrentReader(hash)
 	if err != nil {
-		utils.RespondError(c, http.StatusServiceUnavailable, "cannot open torrent: "+err.Error())
+		log.Printf("cannot open torrent %s: %v", hash, err)
+		utils.RespondError(c, http.StatusServiceUnavailable, "torrent not available")
 		return
 	}
 
@@ -73,7 +76,8 @@ func serveTranscoded(c *gin.Context, result services.ReaderResult) {
 
 	job, err := services.StartTranscode(result.Reader, codecInfo)
 	if err != nil {
-		utils.RespondError(c, http.StatusInternalServerError, "transcoding error: "+err.Error())
+		log.Printf("transcoding error for %s: %v", result.FileName, err)
+		utils.RespondError(c, http.StatusInternalServerError, "transcoding failed")
 		return
 	}
 	defer job.Cmd.Wait()

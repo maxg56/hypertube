@@ -18,17 +18,11 @@ func DeleteProfileHandler(c *gin.Context) {
 		return
 	}
 
-	authenticatedUserID, exists := c.Get("user_id")
-	if !exists {
-		utils.RespondError(c, http.StatusUnauthorized, "user not authenticated")
+	userID, err := utils.GetAuthenticatedUserID(c)
+	if err != nil {
 		return
 	}
-	userID, ok := authenticatedUserID.(int)
-	if !ok {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-	if uint(id) != uint(userID) {
+	if uint(id) != userID {
 		utils.RespondError(c, http.StatusForbidden, "cannot delete another user's profile")
 		return
 	}
