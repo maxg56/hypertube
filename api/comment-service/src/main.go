@@ -5,6 +5,11 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
+
+	"comment-service/src/conf"
+	"comment-service/src/handlers"
 )
 
 type standardResponse struct {
@@ -27,13 +32,32 @@ func notImplemented(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	if err := conf.InitDB(); err != nil {
+		log.Fatalf("Database initialization failed: %v", err)
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8005"
 	}
 
-	mux := http.NewServeMux()
+	r := gin.Default()
 
+<<<<<<< 14-library-détail-dun-film
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "comment-service"})
+	})
+
+	api := r.Group("/api/v1")
+	{
+		comments := api.Group("/comments")
+		{
+			comments.GET("/:movieId", handlers.ListComments)
+			comments.POST("/:movieId", handlers.CreateComment)
+			comments.DELETE("/:id", handlers.DeleteComment)
+		}
+	}
+=======
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, http.StatusOK, standardResponse{
 			Success: true,
@@ -42,7 +66,8 @@ func main() {
 	})
 
 	mux.HandleFunc("/api/v1/comments/", notImplemented)
+>>>>>>> main
 
 	log.Printf("comment-service starting on port %s", port)
-	log.Fatal(http.ListenAndServe(":"+port, mux))
+	log.Fatal(http.ListenAndServe(":"+port, r))
 }
