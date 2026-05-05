@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +11,25 @@ import (
 	"comment-service/src/conf"
 	"comment-service/src/handlers"
 )
+
+type standardResponse struct {
+	Success bool        `json:"success"`
+	Error   string      `json:"error,omitempty"`
+	Data    interface{} `json:"data,omitempty"`
+}
+
+func respondJSON(w http.ResponseWriter, status int, body standardResponse) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	json.NewEncoder(w).Encode(body) //nolint:errcheck
+}
+
+func notImplemented(w http.ResponseWriter, r *http.Request) {
+	respondJSON(w, http.StatusNotImplemented, standardResponse{
+		Success: false,
+		Error:   "comment service not yet implemented",
+	})
+}
 
 func main() {
 	if err := conf.InitDB(); err != nil {
@@ -23,6 +43,7 @@ func main() {
 
 	r := gin.Default()
 
+<<<<<<< 14-library-détail-dun-film
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "comment-service"})
 	})
@@ -36,6 +57,16 @@ func main() {
 			comments.DELETE("/:id", handlers.DeleteComment)
 		}
 	}
+=======
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		respondJSON(w, http.StatusOK, standardResponse{
+			Success: true,
+			Data:    map[string]string{"status": "ok", "service": "comment-service"},
+		})
+	})
+
+	mux.HandleFunc("/api/v1/comments/", notImplemented)
+>>>>>>> main
 
 	log.Printf("comment-service starting on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, r))

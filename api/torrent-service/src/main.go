@@ -10,6 +10,7 @@ import (
 	"torrent-service/src/conf"
 	"torrent-service/src/handlers"
 	"torrent-service/src/services"
+	"torrent-service/src/utils"
 )
 
 func main() {
@@ -22,7 +23,7 @@ func main() {
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "torrent-service"})
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"status": "ok", "service": "torrent-service"}})
 	})
 
 	api := r.Group("/api/v1")
@@ -34,7 +35,7 @@ func main() {
 		}
 		api.GET("/stream/:id", handlers.StreamHandler)
 		api.GET("/subtitle/:id", func(c *gin.Context) {
-			c.JSON(http.StatusNotImplemented, gin.H{"error": "subtitles not yet implemented"})
+			utils.RespondError(c, http.StatusNotImplemented, "subtitles not yet implemented")
 		})
 	}
 
