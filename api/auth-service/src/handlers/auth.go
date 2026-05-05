@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -106,7 +106,7 @@ func RegisterHandler(c *gin.Context) {
 	}
 
 	if err := sendVerificationCode(user.Email); err != nil {
-		fmt.Printf("Failed to queue verification email for %s: %v\n", user.Email, err)
+		log.Printf("failed to queue verification email for %s: %v", user.Email, err)
 	}
 
 	tokens, err := utils.GenerateTokenPair(user.ID)

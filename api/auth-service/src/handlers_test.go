@@ -152,7 +152,7 @@ func TestRegisterHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 			if tt.expectedStatus == http.StatusCreated {
 				assert.Equal(t, true, response["success"])
@@ -233,7 +233,7 @@ func TestLoginHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 			if tt.expectedStatus == http.StatusOK {
 				assert.Equal(t, true, response["success"])
@@ -306,7 +306,7 @@ func TestVerifyTokenHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 			if tt.expectedStatus == http.StatusOK {
 				assert.Equal(t, true, response["success"])
@@ -396,7 +396,7 @@ func TestRefreshTokenHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 			if tt.expectedStatus == http.StatusOK {
 				assert.Equal(t, true, response["success"])
@@ -455,7 +455,7 @@ func TestLogoutHandler(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, w.Code)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 			if tt.expectedStatus == http.StatusOK {
 				assert.Equal(t, true, response["success"])
@@ -480,7 +480,7 @@ func TestHealthCheck(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 
 	var response map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 	assert.Equal(t, true, response["success"])
 	data := response["data"].(map[string]interface{})
@@ -554,7 +554,7 @@ func TestForgotPasswordHandler(t *testing.T) {
 			assert.Equal(t, tt.statusCode, w.Code)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 			if tt.statusCode == http.StatusOK {
 				assert.Equal(t, true, response["success"])
@@ -689,7 +689,7 @@ func TestResetPasswordHandler(t *testing.T) {
 			assert.Equal(t, tt.statusCode, w.Code)
 
 			var response map[string]interface{}
-			json.Unmarshal(w.Body.Bytes(), &response)
+			require.NoError(t, json.Unmarshal(w.Body.Bytes(), &response))
 
 			if tt.statusCode == http.StatusOK {
 				assert.Equal(t, true, response["success"])

@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"time"
@@ -56,8 +57,8 @@ func sendVerificationCode(email string) error {
 
 	emailService := services.NewEmailService()
 	if err := emailService.SendVerificationEmail(email, code); err != nil {
-		fmt.Printf("Failed to send verification email to %s: %v\n", email, err)
-		fmt.Printf("Verification code for %s: %s (email failed to send)\n", email, code)
+		log.Printf("failed to send verification email to %s: %v", email, err)
+		log.Printf("verification code for %s: %s (email failed to send)", email, code)
 	}
 
 	return nil
