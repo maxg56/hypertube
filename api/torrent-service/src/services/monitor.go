@@ -12,12 +12,18 @@ import (
 	"torrent-service/src/models"
 )
 
+const (
+	infoTimeout      = 2 * time.Minute
+	progressInterval = 5 * time.Second
+	maxStallTicks    = 120 // 120 × 5s = 10 minutes stalled
+)
+
 func monitorTorrent(t *torrent.Torrent, record *models.TorrentRecord) {
 	infoHash := record.InfoHash
 
 	select {
 	case <-t.GotInfo():
-	case <-time.After(2 * time.Minute):
+	case <-time.After(infoTimeout):
 		setError(record, "no seeders or peers: info timeout")
 		activeTorrents.Delete(infoHash)
 		return
@@ -49,7 +55,7 @@ func monitorTorrent(t *torrent.Torrent, record *models.TorrentRecord) {
 }
 
 func runProgressLoop(t *torrent.Torrent, record *models.TorrentRecord, totalLength int64, infoHash string) error {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(progressInterval)
 	defer ticker.Stop()
 
 	var lastDownloaded int64
@@ -75,7 +81,7 @@ func runProgressLoop(t *torrent.Torrent, record *models.TorrentRecord, totalLeng
 			lastDownloaded = downloaded
 		}
 
-		if staleFor >= 120 { // 10 minutes stalled
+		if staleFor >= maxStallTicks {
 			setError(record, "download stalled: no progress for 10 minutes")
 			activeTorrents.Delete(infoHash)
 			return errStalled

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -18,12 +19,11 @@ func UpdateProfileHandler(c *gin.Context) {
 		return
 	}
 
-	authenticatedUserID, exists := c.Get("user_id")
-	if !exists {
-		utils.RespondError(c, http.StatusUnauthorized, "user not authenticated")
+	userID, err := utils.GetAuthenticatedUserID(c)
+	if err != nil {
 		return
 	}
-	if uint(id) != uint(authenticatedUserID.(int)) {
+	if uint(id) != userID {
 		utils.RespondError(c, http.StatusForbidden, "cannot update another user's profile")
 		return
 	}
@@ -47,6 +47,11 @@ func UpdateProfileHandler(c *gin.Context) {
 		user.LastName = *req.LastName
 	}
 	if req.AvatarURL != nil {
+		parsed, err := url.ParseRequestURI(*req.AvatarURL)
+		if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+			utils.RespondError(c, http.StatusBadRequest, "invalid avatar URL")
+			return
+		}
 		user.AvatarURL = *req.AvatarURL
 	}
 

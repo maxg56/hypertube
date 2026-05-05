@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"fmt"
+	"log"
 	"math/big"
 	"net/http"
 	"time"
@@ -19,6 +20,8 @@ import (
 
 type User = models.Users
 type EmailVerification = models.EmailVerification
+
+const emailWhereClause = "email = ?"
 
 func generateVerificationCode() (string, error) {
 	const digits = "0123456789"
@@ -41,7 +44,7 @@ func sendVerificationCode(email string) error {
 		return fmt.Errorf("failed to generate verification code: %w", err)
 	}
 
-	db.DB.Where("email = ?", email).Delete(&EmailVerification{})
+	db.DB.Where(emailWhereClause, email).Delete(&EmailVerification{})
 
 	verification := EmailVerification{
 		Email:            email,
@@ -54,22 +57,38 @@ func sendVerificationCode(email string) error {
 
 	emailService := services.NewEmailService()
 	if err := emailService.SendVerificationEmail(email, code); err != nil {
-		fmt.Printf("Failed to send verification email to %s: %v\n", email, err)
-		fmt.Printf("Verification code for %s: %s (email failed to send)\n", email, code)
+		log.Printf("failed to send verification email to %s: %v", email, err)
+		log.Printf("verification code for %s: %s (email failed to send)", email, code)
 	}
 
 	return nil
 }
 
 func SendEmailVerificationHandler(c *gin.Context) {
+	// Per-IP: 5 sends per hour.
+	ip := c.GetHeader("X-Real-Ip")
+	if ip == "" {
+		ip = c.RemoteIP()
+	}
+	if utils.RateLimitRequest("send-verification:ip", ip, 5, time.Hour) {
+		utils.RespondError(c, http.StatusTooManyRequests, "Too many requests. Please try again later.")
+		return
+	}
+
 	var req types.EmailVerificationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondError(c, http.StatusBadRequest, "Invalid request format")
 		return
 	}
 
+	// Per-email: 3 sends per 15 minutes to prevent mail spam.
+	if utils.RateLimitRequest("send-verification:email", req.Email, 3, 15*time.Minute) {
+		utils.RespondError(c, http.StatusTooManyRequests, "Too many verification emails sent. Please wait before requesting another.")
+		return
+	}
+
 	var user User
-	if err := db.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+	if err := db.DB.Where(emailWhereClause, req.Email).First(&user).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			utils.RespondError(c, http.StatusNotFound, "User not found")
 			return
@@ -100,9 +119,18 @@ func VerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
+	// Block after 5 failed attempts within 15 minutes to prevent brute-force
+	// of the 6-digit code (1 000 000 combinations).
+	const maxAttempts int64 = 5
+	if utils.IsRateLimited("verify-email", req.Email, maxAttempts) {
+		utils.RespondError(c, http.StatusTooManyRequests, "Too many failed attempts. Please request a new verification code.")
+		return
+	}
+
 	var verification EmailVerification
 	if err := db.DB.Where("email = ? AND verification_code = ?", req.Email, req.VerificationCode).First(&verification).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
+			utils.RecordFailure("verify-email", req.Email, 15*time.Minute)
 			utils.RespondError(c, http.StatusBadRequest, "Invalid verification code")
 			return
 		}
@@ -116,12 +144,13 @@ func VerifyEmailHandler(c *gin.Context) {
 		return
 	}
 
-	if err := db.DB.Model(&User{}).Where("email = ?", req.Email).Update("email_verified", true).Error; err != nil {
+	if err := db.DB.Model(&User{}).Where(emailWhereClause, req.Email).Update("email_verified", true).Error; err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "Failed to update user verification status")
 		return
 	}
 
 	db.DB.Delete(&verification)
+	utils.ClearFailures("verify-email", req.Email)
 
 	utils.RespondSuccess(c, http.StatusOK, gin.H{
 		"message": "Email verified successfully",

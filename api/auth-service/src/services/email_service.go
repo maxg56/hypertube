@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"html/template"
+	"log"
 	"net/smtp"
 	"os"
 	"path/filepath"
@@ -42,8 +43,7 @@ type VerificationEmailData struct {
 func (es *EmailService) SendVerificationEmail(toEmail, verificationCode string) error {
 	// Skip sending email if SMTP is not configured (development mode)
 	if es.SMTPUsername == "" || es.SMTPPassword == "" {
-		fmt.Printf("📧 Email verification code for %s: %s\n", toEmail, verificationCode)
-		fmt.Printf("   (SMTP not configured - email not sent)\n")
+		log.Printf("email verification code for %s: %s (SMTP not configured)", toEmail, verificationCode)
 		return nil
 	}
 
@@ -82,9 +82,7 @@ func (es *EmailService) SendPasswordResetEmail(toEmail, resetToken string) error
 	
 	// Skip sending email if SMTP is not configured (development mode)
 	if es.SMTPUsername == "" || es.SMTPPassword == "" {
-		fmt.Printf("🔑 Password reset for %s:\n", toEmail)
-		fmt.Printf("   Link: %s\n", resetURL)
-		fmt.Printf("   (SMTP not configured - email not sent)\n")
+		log.Printf("password reset link for %s: %s (SMTP not configured)", toEmail, resetURL)
 		return nil
 	}
 
