@@ -14,6 +14,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const forgotPasswordMsg = "If the email exists, a password reset link will be sent"
+
 // ForgotPasswordRequest represents password reset request payload
 type ForgotPasswordRequest struct {
 	Email string `json:"email" binding:"required,email"`
@@ -27,9 +29,27 @@ type ResetPasswordRequest struct {
 
 // ForgotPasswordHandler handles password reset requests
 func ForgotPasswordHandler(c *gin.Context) {
+	// Per-IP: 5 requests per hour to limit enumeration / spam from one source.
+	ip := c.GetHeader("X-Real-Ip")
+	if ip == "" {
+		ip = c.RemoteIP()
+	}
+	if utils.RateLimitRequest("forgot-password:ip", ip, 5, time.Hour) {
+		utils.RespondError(c, http.StatusTooManyRequests, "Too many requests. Please try again later.")
+		return
+	}
+
 	var req ForgotPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondError(c, http.StatusBadRequest, "invalid payload: "+err.Error())
+		return
+	}
+
+	// Per-email: 3 requests per hour. Respond identically to avoid leaking whether the email exists.
+	if utils.RateLimitRequest("forgot-password:email", req.Email, 3, time.Hour) {
+		utils.RespondSuccess(c, http.StatusOK, gin.H{
+			"message": forgotPasswordMsg,
+		})
 		return
 	}
 
@@ -38,7 +58,7 @@ func ForgotPasswordHandler(c *gin.Context) {
 	if err := db.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
 		// Don't reveal if email exists or not for security
 		utils.RespondSuccess(c, http.StatusOK, gin.H{
-			"message": "If the email exists, a password reset link will be sent",
+			"message": forgotPasswordMsg,
 		})
 		return
 	}
@@ -77,7 +97,7 @@ func ForgotPasswordHandler(c *gin.Context) {
 		// Log the error but don't expose it to the user
 		// In production, this should be logged to monitoring system
 		utils.RespondSuccess(c, http.StatusOK, gin.H{
-			"message": "If the email exists, a password reset link will be sent",
+			"message": forgotPasswordMsg,
 		})
 	} else {
 		utils.RespondSuccess(c, http.StatusOK, gin.H{
@@ -91,6 +111,11 @@ func ResetPasswordHandler(c *gin.Context) {
 	var req ResetPasswordRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondError(c, http.StatusBadRequest, "invalid payload: "+err.Error())
+		return
+	}
+
+	if err := utils.ValidatePasswordStrength(req.NewPassword); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
