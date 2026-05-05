@@ -102,6 +102,12 @@ func copyHeaders(c *gin.Context, req *http.Request) {
 		}
 	}
 
+	// Override any client-supplied IP headers with the validated TCP-level peer
+	// address so backend services can trust X-Real-Ip for rate limiting / audit.
+	req.Header.Del("X-Forwarded-For")
+	req.Header.Del("X-Real-Ip")
+	req.Header.Set("X-Real-Ip", c.RemoteIP())
+
 	if v, ok := c.Get(middleware.CtxUserIDKey); ok {
 		if s, ok := v.(string); ok && s != "" {
 			req.Header.Set("X-User-ID", s)

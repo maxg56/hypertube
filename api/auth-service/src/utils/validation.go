@@ -1,13 +1,45 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"time"
+	"unicode"
 
 	db "auth-service/src/conf"
 	models "auth-service/src/models"
 	"gorm.io/gorm"
 )
+
+// ValidatePasswordStrength enforces complexity rules beyond the minimum length.
+func ValidatePasswordStrength(password string) error {
+	var hasUpper, hasLower, hasDigit, hasSpecial bool
+	for _, ch := range password {
+		switch {
+		case unicode.IsUpper(ch):
+			hasUpper = true
+		case unicode.IsLower(ch):
+			hasLower = true
+		case unicode.IsDigit(ch):
+			hasDigit = true
+		case unicode.IsPunct(ch) || unicode.IsSymbol(ch):
+			hasSpecial = true
+		}
+	}
+	if !hasUpper {
+		return errors.New("password must contain at least one uppercase letter")
+	}
+	if !hasLower {
+		return errors.New("password must contain at least one lowercase letter")
+	}
+	if !hasDigit {
+		return errors.New("password must contain at least one digit")
+	}
+	if !hasSpecial {
+		return errors.New("password must contain at least one special character")
+	}
+	return nil
+}
 
 // CheckUsernameAvailability checks if a username is available
 func CheckUsernameAvailability(username string) (bool, error) {

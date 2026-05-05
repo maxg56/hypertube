@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import HomeClient from './home-client'
+// import HomeClient from './home-client'
 import Thumbnails from '@/components/page/Thumbnails'
 import Header from '@/components/page/Header'
 import Footer from '@/components/page/Footer'
@@ -9,13 +9,17 @@ export const metadata: Metadata = {
 }
 
 export default function MainPage() {
-  // return <HomeClient />
+  // const [showAuthModal, setShowAuthModal] = useState(false)
+
+  // const handlePageClick = () => {
+  //   setShowAuthModal(true)
+  // }
   return (
       <div className="flex flex-col min-h-screen">
-        {/* /*<div className={`fixed top-0 left-0 right-0 z-40`}>  */}
+        <div className={`fixed top-0 left-0 right-0 z-40`}> 
           {/* {/* {/* /*$showAuthModal ? 'blur-sm' /*:  ''}`}`}>*/ } 
-          {/* <Header /> */}
-        {/* </div>*/ }
+          <Header />
+        </div> 
   
         <main 
           className="flex-grow overflow-y-auto mt-16 mb-16 cursor-pointer flex items-center justify-center bg-gray-50" 
@@ -43,5 +47,5 @@ export default function MainPage() {
           </div>
         )} */}
       </div>
-    )
-  }
+  )
+}

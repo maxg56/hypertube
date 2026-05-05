@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"fmt"
+	"log"
 	"net/http"
 	"strings"
 
@@ -15,10 +15,12 @@ import (
 	"auth-service/src/utils"
 )
 
+const invalidPayloadPrefix = "invalid payload: "
+
 func CheckAvailabilityHandler(c *gin.Context) {
 	var req types.AvailabilityRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondError(c, http.StatusBadRequest, "invalid payload: "+err.Error())
+		utils.RespondError(c, http.StatusBadRequest, invalidPayloadPrefix+err.Error())
 		return
 	}
 
@@ -67,7 +69,12 @@ func CheckAvailabilityHandler(c *gin.Context) {
 func RegisterHandler(c *gin.Context) {
 	var req types.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondError(c, http.StatusBadRequest, "invalid payload: "+err.Error())
+		utils.RespondError(c, http.StatusBadRequest, invalidPayloadPrefix+err.Error())
+		return
+	}
+
+	if err := utils.ValidatePasswordStrength(req.Password); err != nil {
+		utils.RespondError(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -99,7 +106,7 @@ func RegisterHandler(c *gin.Context) {
 	}
 
 	if err := sendVerificationCode(user.Email); err != nil {
-		fmt.Printf("Failed to queue verification email for %s: %v\n", user.Email, err)
+		log.Printf("failed to queue verification email for %s: %v", user.Email, err)
 	}
 
 	tokens, err := utils.GenerateTokenPair(user.ID)
@@ -125,7 +132,7 @@ func RegisterHandler(c *gin.Context) {
 func LoginHandler(c *gin.Context) {
 	var req types.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		utils.RespondError(c, http.StatusBadRequest, "invalid payload: "+err.Error())
+		utils.RespondError(c, http.StatusBadRequest, invalidPayloadPrefix+err.Error())
 		return
 	}
 
