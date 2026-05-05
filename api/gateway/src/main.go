@@ -42,6 +42,9 @@ func main() {
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
+	// Trust no proxies: c.ClientIP() returns the raw TCP peer address,
+	// preventing clients from spoofing their IP via X-Forwarded-For.
+	r.SetTrustedProxies([]string{})
 
 	r.Use(gin.Recovery())
 	r.Use(gin.Logger())
