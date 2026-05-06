@@ -15,8 +15,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="fr" className={cn('h-full antialiased', geistSans.variable, geistMono.variable)}>
-      <body className="h-full bg-gray-100 text-gray-900">
+    <html lang="fr" className={cn('h-full antialiased dark', geistSans.variable, geistMono.variable)}>
+      <body className="h-full">
         <I18nProvider>
           <AuthProvider>
             {children}

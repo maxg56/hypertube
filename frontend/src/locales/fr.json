@@ -1,6 +1,18 @@
 {
   "app_tagline": "Regardez vos films en streaming",
 
+  "nav": {
+    "home": "Accueil"
+  },
+
+  "profile": {
+    "theme_dark": "Mode sombre",
+    "theme_light": "Mode clair",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "info": "Informations personnelles"
+  },
+
   "auth": {
     "login_title": "Connexion",
     "login_subtitle": "Bienvenue ! Entrez vos identifiants pour continuer.",
