@@ -88,6 +88,23 @@
     "sort_downloads": "Downloads"
   },
 
+  "movie": {
+    "watch": "Watch",
+    "select_quality": "Select a quality to start",
+    "loading": "Loading…",
+    "progress": "Downloading {{percent}}%",
+    "error_stream": "Failed to start the stream",
+    "no_torrents": "No torrents available",
+    "video_unsupported": "Your browser does not support video playback.",
+    "comments_title": "Comments",
+    "comment_placeholder": "Add a comment…",
+    "comment_submit": "Post",
+    "comment_submitting": "Posting…",
+    "comment_delete": "Delete",
+    "comment_error": "Failed to post comment.",
+    "no_comments": "No comments yet for this movie."
+  },
+
   "Log Out": "Log Out",
     "Email": "Email",
     "Name": "Name",

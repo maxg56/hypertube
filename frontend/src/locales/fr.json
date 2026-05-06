@@ -88,6 +88,23 @@
     "sort_downloads": "Téléchargements"
   },
 
+  "movie": {
+    "watch": "Regarder",
+    "select_quality": "Sélectionnez une qualité pour lancer",
+    "loading": "Chargement…",
+    "progress": "Téléchargement {{percent}}%",
+    "error_stream": "Erreur lors du lancement du stream",
+    "no_torrents": "Aucun torrent disponible",
+    "video_unsupported": "Votre navigateur ne supporte pas la lecture vidéo.",
+    "comments_title": "Commentaires",
+    "comment_placeholder": "Ajouter un commentaire…",
+    "comment_submit": "Publier",
+    "comment_submitting": "Publication…",
+    "comment_delete": "Supprimer",
+    "comment_error": "Impossible d'ajouter le commentaire.",
+    "no_comments": "Aucun commentaire pour ce film."
+  },
+
   "Log Out": "Déconnexion",
     "Email": "Email",
     "Name": "Nom",
