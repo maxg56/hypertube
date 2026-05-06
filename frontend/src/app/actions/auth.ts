@@ -29,7 +29,7 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten().fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
   }
 
   const res = await apiFetch('/api/v1/auth/login', {
@@ -39,12 +39,13 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.message ?? 'Identifiants invalides' }
+    return { message: body.error ?? 'Identifiants invalides' }
   }
 
   const { data } = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
-  redirect('/')
+  const callbackUrl = formData.get('callbackUrl') as string | null
+  redirect(callbackUrl?.startsWith('/') ? callbackUrl : '/')
 }
 
 export async function register(_state: ActionState, formData: FormData): Promise<ActionState> {
@@ -57,7 +58,7 @@ export async function register(_state: ActionState, formData: FormData): Promise
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten().fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
   }
 
   const res = await apiFetch('/api/v1/auth/register', {
@@ -67,7 +68,7 @@ export async function register(_state: ActionState, formData: FormData): Promise
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.message ?? "L'inscription a échoué" }
+    return { message: body.error ??"L'inscription a échoué" }
   }
 
   const { data } = await res.json()
@@ -100,7 +101,7 @@ export async function forgotPassword(
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten().fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
   }
 
   await apiFetch('/api/v1/auth/forgot-password', {
@@ -125,7 +126,7 @@ export async function resetPassword(
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten().fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
   }
 
   const res = await apiFetch('/api/v1/auth/reset-password', {
@@ -138,7 +139,7 @@ export async function resetPassword(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.message ?? 'Lien invalide ou expiré' }
+    return { message: body.error ??'Lien invalide ou expiré' }
   }
 
   redirect('/login')
@@ -153,7 +154,7 @@ export async function sendEmailVerification(
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten().fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
   }
 
   const res = await apiFetch('/api/v1/auth/send-email-verification', {
@@ -163,7 +164,7 @@ export async function sendEmailVerification(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.message ?? "Erreur lors de l'envoi" }
+    return { message: body.error ??"Erreur lors de l'envoi" }
   }
 
   return { success: 'Code envoyé. Vérifiez votre boîte mail.' }
@@ -179,7 +180,7 @@ export async function verifyEmail(
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten().fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
   }
 
   const res = await apiFetch('/api/v1/auth/verify-email', {
@@ -189,7 +190,7 @@ export async function verifyEmail(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.message ?? 'Code invalide ou expiré' }
+    return { message: body.error ??'Code invalide ou expiré' }
   }
 
   return { success: 'Email vérifié avec succès !' }

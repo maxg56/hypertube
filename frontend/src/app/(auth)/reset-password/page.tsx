@@ -8,24 +8,14 @@ export const metadata: Metadata = {
 
 export default async function ResetPasswordPage({
   searchParams,
-}: {
+}: Readonly<{
   searchParams: Promise<{ token?: string }>
-}) {
+}>) {
   const { token } = await searchParams
 
   if (!token) {
     notFound()
   }
 
-  return (
-    <>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">Nouveau mot de passe</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Choisissez un nouveau mot de passe sécurisé.
-        </p>
-      </div>
-      <ResetPasswordForm token={token} />
-    </>
-  )
+  return <ResetPasswordForm token={token} />
 }

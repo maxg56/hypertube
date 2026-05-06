@@ -5,16 +5,12 @@ export const metadata: Metadata = {
   title: 'Connexion — Hypertube',
 }
 
-export default function LoginPage() {
-  return (
-    <>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold">Connexion</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Bienvenue ! Entrez vos identifiants pour continuer.
-        </p>
-      </div>
-      <LoginForm />
-    </>
-  )
+export default async function LoginPage({
+  searchParams,
+}: Readonly<{
+  searchParams: Promise<{ callbackUrl?: string }>
+}>) {
+  const { callbackUrl } = await searchParams
+
+  return <LoginForm callbackUrl={callbackUrl} />
 }

@@ -1,18 +1,17 @@
-"use client"
-import React from "react";
-import { useTranslation } from "react-i18next";
+'use client'
 
-const LogoutButton: React.FC = () => {
-	const { t } = useTranslation();
-	
-	return (
-		<button
-			// onClick={logout}
-			className="bg-red-500 text-white text-xl w-40 px-4 py-2 rounded-2xl hover:bg-blue-600"
-		>
-			{t("Log Out")}
-		</button>
-	);
-};
+import { useTranslation } from 'react-i18next'
+import { logout } from '@/app/actions/auth'
+import { Button } from '@/components/ui/button'
 
-export default LogoutButton;
+export default function LogoutButton() {
+  const { t } = useTranslation()
+
+  return (
+    <form action={logout}>
+      <Button type="submit" variant="destructive">
+        {t('auth.logout')}
+      </Button>
+    </form>
+  )
+}
