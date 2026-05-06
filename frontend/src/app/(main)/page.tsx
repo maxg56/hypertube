@@ -20,10 +20,6 @@ export default function MainPage() {
           <Thumbnails />
         </main>
   
-        // <div className={`fixed bottom-0 left-0 right-0 z-40`}> 
-        //   {/* // $showAuthModal ?'blur-sm' /*:  ''}``}> */}
-        //   <Footer />
-        // </div>
         
         /*{/* {showAuthModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

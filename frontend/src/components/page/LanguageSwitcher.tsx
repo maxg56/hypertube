@@ -9,8 +9,8 @@ export default function LanguageSwitcher() {
   const [isOpen, setIsOpen] = useState(false);
 
   const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'fr', label: 'Français' },
+    { code: 'en', label: '🇬🇧​' },
+    { code: 'fr', label: '🇫🇷​' },
   ];
 
   const handleLanguageChange = (code: string) => {
