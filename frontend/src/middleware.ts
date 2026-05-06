@@ -8,7 +8,7 @@ const PUBLIC_ROUTES = [
   '/verify-email',
 ]
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
   const accessToken = req.cookies.get('access_token')?.value

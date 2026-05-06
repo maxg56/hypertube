@@ -97,7 +97,7 @@ func (c *ArchiveClient) get(u string) ([]byte, error) {
 func archiveDocToModel(doc archiveDoc) models.Movie {
 	title := archiveFirstString(doc.Title)
 	overview := archiveFirstString(doc.Description)
-	year := archiveFirstString(doc.Year)
+	year := archiveYearToString(doc.Year)
 
 	torrentURL := fmt.Sprintf("%s/download/%s/%s_archive.torrent",
 		archiveBaseURL, doc.Identifier, doc.Identifier)
