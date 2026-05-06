@@ -72,7 +72,7 @@ export default function Thumbnails() {
               className="group cursor-pointer flex flex-col"
               onClick={() => toggleRead(index)}
             >
-              <div className={`bg-card border rounded-lg overflow-hidden flex flex-col flex-1 transition-all ${isRead ? 'opacity-50' : 'hover:shadow-md'}`}>
+              <div className={`card-glow bg-card border rounded-lg overflow-hidden flex flex-col flex-1 ${isRead ? 'opacity-50' : ''}`}>
                 <div className="bg-muted w-full aspect-[2/3] overflow-hidden flex items-center justify-center">
                   {film.poster || film.thumbnail ? (
                     <img

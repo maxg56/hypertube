@@ -119,6 +119,24 @@
   --sidebar-ring: oklch(0.55 0.22 264);
 }
 
+@layer components {
+  .card-glow {
+    transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .dark .card-glow {
+    box-shadow:
+      0 0 14px oklch(0.68 0.21 40 / 0.14),
+      inset 0 1px 0 oklch(0.68 0.21 40 / 0.12);
+    border-color: oklch(0.68 0.21 40 / 0.22);
+  }
+  .dark .card-glow:hover {
+    box-shadow:
+      0 0 26px oklch(0.68 0.21 40 / 0.30),
+      inset 0 1px 0 oklch(0.68 0.21 40 / 0.22);
+    border-color: oklch(0.68 0.21 40 / 0.48);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

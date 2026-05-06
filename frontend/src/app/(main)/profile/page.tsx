@@ -35,7 +35,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="card-glow">
         <CardHeader>
           <CardTitle className="text-lg">{t('profile.info')}</CardTitle>
         </CardHeader>
