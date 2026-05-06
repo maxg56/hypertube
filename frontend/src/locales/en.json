@@ -62,5 +62,10 @@
     "verify_email_login_link": "Log in",
 
     "logout": "Log out"
-  }
+  },
+    "Log Out": "Log Out",
+    "Email": "Email",
+    "Name": "Name",
+    "First name": "First name",
+    "Password": "Password"
 }
