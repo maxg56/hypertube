@@ -194,6 +194,7 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-password}
       TMDB_API_KEY: ${TMDB_API_KEY}
+      REDIS_HOST: redis
       GIN_MODE: debug
     volumes:
       - ./api/library-service/src:/app/src
@@ -202,6 +203,7 @@ services:
       - ./api/library-service/.air.toml:/app/.air.toml
     depends_on:
       - postgres
+      - redis
     networks:
       - DB
       - backend
@@ -325,6 +327,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - DAC_OVERRIDE
     tmpfs:
       - /tmp
 
