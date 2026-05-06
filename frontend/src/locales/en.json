@@ -1,6 +1,18 @@
 {
   "app_tagline": "Watch your movies in streaming",
 
+  "nav": {
+    "home": "Home"
+  },
+
+  "profile": {
+    "theme_dark": "Dark mode",
+    "theme_light": "Light mode",
+    "edit": "Edit",
+    "save": "Save",
+    "info": "Personal information"
+  },
+
   "auth": {
     "login_title": "Log in",
     "login_subtitle": "Welcome! Enter your credentials to continue.",

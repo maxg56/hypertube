@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Check } from 'lucide-react'
 
 interface Film {
   year: string
@@ -54,55 +55,52 @@ export default function Thumbnails() {
   const [readFilms, setReadFilms] = useState<Set<number>>(new Set())
 
   const toggleRead = (index: number) => {
-    const newReadFilms = new Set(readFilms)
-    if (newReadFilms.has(index)) {
-      newReadFilms.delete(index)
-    } else {
-      newReadFilms.add(index)
-    }
-    setReadFilms(newReadFilms)
+    const next = new Set(readFilms)
+    if (next.has(index)) next.delete(index)
+    else next.add(index)
+    setReadFilms(next)
   }
 
   return (
-    <div className="w-full bg-gradient-to-t from-orange-400 to-blue-400 p-6 shadow-lg min-h-screen">
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 w-full">
+    <div className="p-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {films.map((film, index) => {
           const isRead = readFilms.has(index)
           return (
-          <div key={index} className="group cursor-pointer flex flex-col h-full" onClick={() => toggleRead(index)}>
-            <div className={`bg-gray-800 rounded-lg overflow-hidden hover:shadow-blue transition-all flex flex-col flex-1 ${isRead ? 'opacity-50' : ''}`}>
-              <div className="bg-gray-300 w-full flex-1 min-h-0 overflow-hidden flex items-center justify-center">
-                {film.poster || film.thumbnail ? (
-                  <img
-                    src={film.poster || film.thumbnail}
-                    alt={film.title}
-                    className={`w-full h-full object-contain group-hover:scale-105 transition-transform ${isRead ? 'grayscale' : ''}`}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-800">
-                    <span className="text-gray-500 text-center px-2">{film.title}</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-3 bg-gray-900 text-white flex flex-col gap-2 flex-shrink-0">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-bold truncate">{film.title}</p>
-                  {isRead && <div className="text-white text-lg">✓</div>}
-                </div>
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-gray-300"><span className="font-semibold">{film.year}</span></p>
-                  {film.imdbRating && (
-                    <div className="text-sm font-semibold text-yellow-400 flex items-center">
-                      <span className="mr-1">⭐</span>
-                      {film.imdbRating.toFixed(1)}
-                    </div>
+            <div
+              key={index}
+              className="group cursor-pointer flex flex-col"
+              onClick={() => toggleRead(index)}
+            >
+              <div className={`card-glow bg-card border rounded-lg overflow-hidden flex flex-col flex-1 ${isRead ? 'opacity-50' : ''}`}>
+                <div className="bg-muted w-full aspect-[2/3] overflow-hidden flex items-center justify-center">
+                  {film.poster || film.thumbnail ? (
+                    <img
+                      src={film.poster ?? film.thumbnail}
+                      alt={film.title}
+                      className={`w-full h-full object-contain group-hover:scale-105 transition-transform ${isRead ? 'grayscale' : ''}`}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground text-center text-sm px-2">{film.title}</span>
                   )}
+                </div>
+                <div className="p-3 flex flex-col gap-1 flex-shrink-0">
+                  <div className="flex justify-between items-center gap-2">
+                    <p className="text-sm font-semibold truncate">{film.title}</p>
+                    {isRead && <Check className="size-4 text-sidebar-primary shrink-0" />}
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs text-muted-foreground">{film.year}</span>
+                    {film.imdbRating && (
+                      <span className="text-xs font-semibold text-destructive">
+                        ⭐ {film.imdbRating.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )
+          )
         })}
       </div>
     </div>
