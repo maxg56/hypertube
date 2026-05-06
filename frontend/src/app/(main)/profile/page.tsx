@@ -3,7 +3,6 @@ import React from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ThemeToggle } from '@/components/page/ThemeToggle'
 import { useTranslation } from 'react-i18next'
 
 export default function ProfilePage() {
@@ -28,7 +27,6 @@ export default function ProfilePage() {
       <div className="flex mb-6 items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">{t('Profile')}</h1>
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           <Button variant="default" onClick={() => setIsEditing(!isEditing)}>
             {isEditing ? t('profile.save') : t('profile.edit')}
           </Button>
