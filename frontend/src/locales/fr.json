@@ -75,7 +75,20 @@
 
     "logout": "Déconnexion"
   },
-    "Log Out": "Déconnexion",
+    "library": {
+    "search_placeholder": "Rechercher un film…",
+    "filter_all_genres": "Tous les genres",
+    "filter_all_ratings": "Toutes les notes",
+    "filter_rating_min": "Note ≥ {{rating}}",
+    "filter_year_placeholder": "Année",
+    "sort_seeds": "Popularité",
+    "sort_rating": "Note",
+    "sort_year": "Année",
+    "sort_title": "Titre",
+    "sort_downloads": "Téléchargements"
+  },
+
+  "Log Out": "Déconnexion",
     "Email": "Email",
     "Name": "Nom",
     "First name": "Prénom",

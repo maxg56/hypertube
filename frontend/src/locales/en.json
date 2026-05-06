@@ -75,7 +75,20 @@
 
     "logout": "Log out"
   },
-    "Log Out": "Log Out",
+  "library": {
+    "search_placeholder": "Search a movie…",
+    "filter_all_genres": "All genres",
+    "filter_all_ratings": "All ratings",
+    "filter_rating_min": "Rating ≥ {{rating}}",
+    "filter_year_placeholder": "Year",
+    "sort_seeds": "Popularity",
+    "sort_rating": "Rating",
+    "sort_year": "Year",
+    "sort_title": "Title",
+    "sort_downloads": "Downloads"
+  },
+
+  "Log Out": "Log Out",
     "Email": "Email",
     "Name": "Name",
     "First name": "First name",
