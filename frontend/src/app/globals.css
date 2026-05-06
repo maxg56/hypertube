@@ -125,15 +125,15 @@
   }
   .dark .card-glow {
     box-shadow:
-      0 0 14px oklch(0.68 0.21 40 / 0.14),
-      inset 0 1px 0 oklch(0.68 0.21 40 / 0.12);
-    border-color: oklch(0.68 0.21 40 / 0.22);
+      0 0 18px oklch(0.68 0.21 40 / 0.25),
+      inset 0 1px 0 oklch(0.68 0.21 40 / 0.20);
+    border-color: oklch(0.68 0.21 40 / 0.55);
   }
   .dark .card-glow:hover {
     box-shadow:
-      0 0 26px oklch(0.68 0.21 40 / 0.30),
-      inset 0 1px 0 oklch(0.68 0.21 40 / 0.22);
-    border-color: oklch(0.68 0.21 40 / 0.48);
+      0 0 30px oklch(0.68 0.21 40 / 0.45),
+      inset 0 1px 0 oklch(0.68 0.21 40 / 0.35);
+    border-color: oklch(0.68 0.21 40 / 0.85);
   }
 }
 
