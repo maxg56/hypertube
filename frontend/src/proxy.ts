@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 const PUBLIC_ROUTES = [
-  '/',
   '/login',
   '/register',
   '/forgot-password',
@@ -9,7 +8,7 @@ const PUBLIC_ROUTES = [
   '/verify-email',
 ]
 
-export default function proxy(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
   const accessToken = req.cookies.get('access_token')?.value
@@ -28,5 +27,5 @@ export default function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|.*\\.ico$|.*\\.png$|.*\\.svg$).*)'],
+  matcher: ['/((?!api|_next|.*\\.ico$|.*\\.png$|.*\\.svg$).*)'],
 }

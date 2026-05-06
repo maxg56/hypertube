@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuthContext } from '@/context/auth-context'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'https://localhost:8443'
+const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'https://localhost:8443/api/v1').replace(/\/api\/v1\/?$/, '')
 
 function Icon42() {
   return (

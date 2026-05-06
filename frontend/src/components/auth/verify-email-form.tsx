@@ -16,7 +16,7 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
   if (verifyState?.success) {
     return (
       <div className="space-y-4 text-center">
-        <p className="text-sm text-green-600 dark:text-green-400">{verifyState.success}</p>
+        <p className="text-sm text-sidebar-primary">{verifyState.success}</p>
         <Link href="/login" className="text-sm text-primary hover:underline">
           {t('auth.verify_email_login_link')}
         </Link>
@@ -79,7 +79,7 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
             {t('auth.verify_email_no_code')}
           </p>
           {sendState?.success && (
-            <p className="text-xs text-green-600 dark:text-green-400 text-center mb-2">
+            <p className="text-xs text-sidebar-primary text-center mb-2">
               {sendState.success}
             </p>
           )}

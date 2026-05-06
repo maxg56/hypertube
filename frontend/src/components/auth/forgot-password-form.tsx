@@ -15,7 +15,7 @@ export default function ForgotPasswordForm() {
   if (state?.success) {
     return (
       <div className="space-y-4 text-center">
-        <p className="text-sm text-green-600 dark:text-green-400">{state.success}</p>
+        <p className="text-sm text-sidebar-primary">{state.success}</p>
         <Link href="/login" className="text-sm text-primary hover:underline">
           {t('auth.forgot_password_back')}
         </Link>
