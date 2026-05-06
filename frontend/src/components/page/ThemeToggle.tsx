@@ -26,7 +26,6 @@ export function ThemeToggle() {
   return (
     <Button variant="outline" size="sm" onClick={toggle} className="gap-2">
       {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
-      {dark ? t('profile.theme_light') : t('profile.theme_dark')}
     </Button>
   )
 }

@@ -7,6 +7,7 @@ import LanguageSwitcher from '@/components/page/LanguageSwitcher'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
+import { ThemeToggle } from '@/components/page/ThemeToggle'
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -15,15 +16,16 @@ export default function MainLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
+      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+        <div className="px-8 h-16 flex items-center justify-between gap-4">
+          <ThemeToggle />
           {isProfilePage ? (
             <Link href="/">
               <Button variant="outline" size="sm">{t('nav.home')}</Button>
             </Link>
           ) : (
             <Link href="/profile">
-              <Avatar className="size-9 cursor-pointer hover:opacity-80 transition-opacity">
+              <Avatar className="size-10 cursor-pointer hover:opacity-80 transition-opacity">
                 <AvatarImage src="https://robohash.org/1.png?set=set1" alt="Avatar" />
                 <AvatarFallback>HT</AvatarFallback>
               </Avatar>
