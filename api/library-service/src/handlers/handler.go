@@ -34,6 +34,7 @@ type searchClient interface {
 type ytsClient interface {
 	Search(query string, page int) (*models.SearchResult, error)
 	List(p client.ListParams) (*models.SearchResult, error)
+	GetMovieByID(id int) (*models.Movie, error)
 	GetMovieByIMDbID(imdbID string) (*models.Movie, error)
 }
 

@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Check } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Movie } from '@/hooks/useMovies'
@@ -7,12 +8,11 @@ import type { Movie } from '@/hooks/useMovies'
 interface MovieCardProps {
   movie: Movie
   watched: boolean
-  onToggle: () => void
 }
 
-export function MovieCard({ movie, watched, onToggle }: MovieCardProps) {
+export function MovieCard({ movie, watched }: MovieCardProps) {
   return (
-    <div className="group cursor-pointer flex flex-col" onClick={onToggle}>
+    <Link href={`/movies/${movie.id}`} className="group cursor-pointer flex flex-col">
       <div className={cn('card-glow bg-card border rounded-lg overflow-hidden flex flex-col flex-1', watched && 'opacity-50')}>
         <div className="bg-muted w-full aspect-[2/3] overflow-hidden flex items-center justify-center">
           {movie.poster_url ? (
@@ -40,7 +40,7 @@ export function MovieCard({ movie, watched, onToggle }: MovieCardProps) {
           </div>
         </div>
       </div>
-    </div>
+    </Link>
   )
 }
 

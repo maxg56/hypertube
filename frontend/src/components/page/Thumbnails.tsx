@@ -18,7 +18,7 @@ const DEFAULT_FILTERS: MovieFilters = {
 export default function Thumbnails() {
   const [filters, setFilters] = useState<MovieFilters>(DEFAULT_FILTERS)
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [watchedMovies, setWatchedMovies] = useState<Set<number>>(new Set())
+  const [watchedMovies] = useState<Set<number>>(new Set())
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -33,15 +33,6 @@ export default function Thumbnails() {
 
   const handleFilterChange = useCallback((key: keyof Omit<MovieFilters, 'query'>, value: string) => {
     setFilters(prev => ({ ...prev, [key]: value }))
-  }, [])
-
-  const toggleWatched = useCallback((id: number) => {
-    setWatchedMovies(prev => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
   }, [])
 
   useEffect(() => {
@@ -74,7 +65,6 @@ export default function Thumbnails() {
                   key={movie.id}
                   movie={movie}
                   watched={watchedMovies.has(movie.id)}
-                  onToggle={() => toggleWatched(movie.id)}
                 />
               ))
           }
