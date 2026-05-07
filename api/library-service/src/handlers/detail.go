@@ -43,26 +43,25 @@ func (h *MovieHandler) GetMovie(c *gin.Context) {
 	if !fromCache {
 		var result *models.Movie
 
+		// Try TMDB first with fallback to YTS for torrents
 		if h.tmdb.Available() {
 			var err error
 			result, err = h.tmdb.GetMovie(id)
-			if err != nil {
-				utils.RespondError(c, http.StatusBadGateway, "failed to fetch movie details")
-				return
-			}
-			if result != nil && result.IMDbID != "" {
+			if err == nil && result != nil && result.IMDbID != "" {
+				// Got TMDB result, try to enrich with YTS torrents
 				if ytsMovie, ytsErr := h.yts.GetMovieByIMDbID(result.IMDbID); ytsErr == nil && ytsMovie != nil {
 					result.Torrents = ytsMovie.Torrents
 				}
 			}
 		}
 
+		// Fall back to YTS if TMDB didn't find anything
 		if result == nil {
 			var ytsErr error
 			result, ytsErr = h.yts.GetMovieByID(id)
 			if ytsErr != nil {
-				utils.RespondError(c, http.StatusBadGateway, "failed to fetch movie details")
-				return
+				// Log error but continue to check if result was found
+				log.Printf("YTS GetMovieByID error: %v", ytsErr)
 			}
 		}
 
