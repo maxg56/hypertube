@@ -35,6 +35,8 @@ func main() {
 		}
 		api.GET("/stream/:id", handlers.StreamHandler)
 		api.GET("/movies/:id/watched", handlers.WatchedHandler)
+		api.GET("/movies/:id/progress", handlers.GetProgressHandler)
+		api.PUT("/movies/:id/progress", handlers.SaveProgressHandler)
 		api.GET("/subtitle/:id", func(c *gin.Context) {
 			utils.RespondError(c, http.StatusNotImplemented, "subtitles not yet implemented")
 		})

@@ -22,6 +22,8 @@ interface MoviePlayerProps {
   movieId: number
 }
 
+const SAVE_INTERVAL_MS = 5000
+
 export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
   const { t } = useTranslation()
   const [selected, setSelected] = useState<Torrent | null>(torrents[0] ?? null)
@@ -30,6 +32,7 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
   const [infoHash, setInfoHash] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const saveRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
   const stopPolling = useCallback(() => {
@@ -39,9 +42,51 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
     }
   }, [])
 
-  useEffect(() => () => stopPolling(), [stopPolling])
+  const stopSaving = useCallback(() => {
+    if (saveRef.current) {
+      clearInterval(saveRef.current)
+      saveRef.current = null
+    }
+  }, [])
 
-  // On mount and when the selected torrent changes, check if it is already ready on the server.
+  useEffect(() => () => { stopPolling(); stopSaving() }, [stopPolling, stopSaving])
+
+  // Restore saved position once the video element is ready.
+  const restorePosition = useCallback(async () => {
+    const video = videoRef.current
+    if (!video) return
+    try {
+      const res = await fetch(`/api/v1/movies/${movieId}/progress`, { credentials: 'include' })
+      if (!res.ok) return
+      const json = await res.json()
+      const sec: number = (json.data ?? json).progress_sec ?? 0
+      if (sec > 0) video.currentTime = sec
+    } catch {
+      // ignore — just start from the beginning
+    }
+  }, [movieId])
+
+  // Periodically save the current playback position.
+  const startSaving = useCallback(() => {
+    saveRef.current = setInterval(async () => {
+      const video = videoRef.current
+      if (!video || video.paused || video.ended) return
+      const sec = Math.floor(video.currentTime)
+      if (sec <= 0) return
+      try {
+        await fetch(`/api/v1/movies/${movieId}/progress`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ progress_sec: sec }),
+        })
+      } catch {
+        // ignore transient save errors
+      }
+    }, SAVE_INTERVAL_MS)
+  }, [movieId])
+
+  // Check if the selected torrent is already ready on the server.
   useEffect(() => {
     if (!selected) {
       setState('idle')
@@ -49,9 +94,9 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
     }
     let cancelled = false
     setState('checking')
-    const hash = selected.hash.toLowerCase()
     void (async () => {
       try {
+        const hash = selected.hash.toLowerCase()
         const res = await fetch(`/api/v1/torrent/status/${hash}`, { credentials: 'include' })
         if (cancelled) return
         if (res.ok) {
@@ -64,13 +109,25 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
           }
         }
       } catch {
-        // status check failed — fall through to idle
+        // fall through to idle
       }
       if (!cancelled) setState('idle')
     })()
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected])
+
+  // When streaming starts, restore position and begin saving.
+  useEffect(() => {
+    if (state !== 'streaming') return
+    stopSaving()
+    // Delay slightly so the video element has time to mount.
+    const t = setTimeout(() => {
+      void restorePosition()
+      startSaving()
+    }, 300)
+    return () => clearTimeout(t)
+  }, [state, restorePosition, startSaving, stopSaving])
 
   const pollStatus = useCallback((hash: string) => {
     pollRef.current = setInterval(async () => {
