@@ -87,6 +87,7 @@ func replacePlaceholders(path string, c *gin.Context) string {
 	result := path
 	for _, param := range c.Params {
 		result = strings.ReplaceAll(result, ":"+param.Key, param.Value)
+		result = strings.ReplaceAll(result, "*"+param.Key, param.Value)
 	}
 	return result
 }

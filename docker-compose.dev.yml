@@ -164,11 +164,13 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-password}
       REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
       GIN_MODE: debug
+      AVATAR_DIR: /data/avatars
     volumes:
       - ./api/user-service/src:/app/src
       - ./api/user-service/go.mod:/app/go.mod
       - ./api/user-service/go.sum:/app/go.sum
       - ./api/user-service/.air.toml:/app/.air.toml
+      - avatar_data:/data/avatars
     depends_on:
       - postgres
       - redis
@@ -180,6 +182,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - DAC_OVERRIDE
 
   library-service:
     build:
@@ -333,6 +337,7 @@ services:
       - /tmp
 
 volumes:
+  avatar_data:
   postgres_data_dev:
     driver: local
     driver_opts:

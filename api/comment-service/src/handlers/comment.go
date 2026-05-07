@@ -11,6 +11,60 @@ import (
 	"comment-service/src/utils"
 )
 
+func ListCommentsByUser(c *gin.Context) {
+	userID, err := strconv.Atoi(c.Param("userId"))
+	if err != nil {
+		utils.RespondError(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	type row struct {
+		ID        uint   `gorm:"column:id"`
+		UserID    int    `gorm:"column:user_id"`
+		Username  string `gorm:"column:username"`
+		AvatarURL string `gorm:"column:avatar_url"`
+		Content   string `gorm:"column:content"`
+		CreatedAt string `gorm:"column:created_at"`
+		MovieID   int    `gorm:"column:movie_id"`
+		TMDbID    int    `gorm:"column:tmdb_id"`
+		Title     string `gorm:"column:title"`
+	}
+
+	var rows []row
+	conf.DB.Raw(`
+		SELECT c.id, c.user_id, u.username, u.avatar_url, c.content, c.created_at,
+		       c.movie_id, m.tmdb_id, m.title
+		FROM comments c
+		INNER JOIN users u ON u.id = c.user_id
+		INNER JOIN movies m ON m.id = c.movie_id
+		WHERE c.user_id = ?
+		ORDER BY c.created_at DESC
+	`, userID).Scan(&rows)
+
+	type UserComment struct {
+		ID        uint   `json:"id"`
+		Content   string `json:"content"`
+		CreatedAt string `json:"created_at"`
+		MovieID   int    `json:"movie_id"`
+		TMDbID    int    `json:"tmdb_id"`
+		Title     string `json:"title"`
+	}
+
+	result := make([]UserComment, 0, len(rows))
+	for _, r := range rows {
+		result = append(result, UserComment{
+			ID:        r.ID,
+			Content:   r.Content,
+			CreatedAt: r.CreatedAt,
+			MovieID:   r.MovieID,
+			TMDbID:    r.TMDbID,
+			Title:     r.Title,
+		})
+	}
+
+	utils.RespondSuccess(c, http.StatusOK, result)
+}
+
 type createCommentRequest struct {
 	Content string `json:"content" binding:"required,min=1,max=2000"`
 	Title   string `json:"title"`

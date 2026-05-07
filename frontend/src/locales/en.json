@@ -6,9 +6,20 @@
   },
 
   "profile": {
+    "title": "Profile",
+    "public_title": "User profile",
     "edit": "Edit",
     "save": "Save",
-    "info": "Personal information"
+    "cancel": "Cancel",
+    "info": "Personal information",
+    "username": "Username",
+    "full_name": "Full name",
+    "language": "Preferred language",
+    "save_success": "Profile updated successfully.",
+    "save_error": "Failed to update profile.",
+    "avatar_alt": "Avatar",
+    "loading": "Loading…",
+    "user_not_found": "User not found."
   },
 
   "auth": {

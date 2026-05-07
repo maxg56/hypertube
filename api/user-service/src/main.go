@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 
@@ -26,6 +27,12 @@ func main() {
 		c.JSON(http.StatusOK, gin.H{"status": "ok", "service": "user-service"})
 	})
 
+	avatarDir := os.Getenv("AVATAR_DIR")
+	if avatarDir == "" {
+		avatarDir = "/data/avatars"
+	}
+	r.Static("/api/v1/users/avatars", avatarDir)
+
 	const profileByID = "/profile/:id"
 
 	users := r.Group("/api/v1/users")
@@ -39,6 +46,7 @@ func main() {
 			protected.GET("/profile", handlers.GetOwnProfileHandler)
 			protected.PUT(profileByID, handlers.UpdateProfileHandler)
 			protected.DELETE(profileByID, handlers.DeleteProfileHandler)
+			protected.POST("/avatar", handlers.UploadAvatarHandler)
 		}
 	}
 
