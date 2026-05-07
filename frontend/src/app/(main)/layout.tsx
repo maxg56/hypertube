@@ -1,5 +1,6 @@
 'use client'
 import type { ReactNode } from 'react'
+import React from 'react'
 import LogoutButton from '@/app/(auth)/logout/logout'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
@@ -13,6 +14,21 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const { t } = useTranslation()
   const isProfilePage = pathname.includes('/profile')
+  const [avatarUrl, setAvatarUrl] = React.useState('')
+  const [initials, setInitials] = React.useState('HT')
+
+  React.useEffect(() => {
+    fetch('/api/v1/users/profile', { credentials: 'include' })
+      .then((r) => r.json())
+      .then(({ data }) => {
+        const p = data?.profile
+        if (!p) return
+        setAvatarUrl(p.avatar_url || `https://robohash.org/${p.id}.png?set=set1`)
+        const i = ((p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')).toUpperCase() || p.username?.[0]?.toUpperCase() || 'HT'
+        setInitials(i)
+      })
+      .catch(() => {})
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -26,8 +42,8 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           ) : (
             <Link href="/profile">
               <Avatar className="size-10 cursor-pointer hover:opacity-80 transition-opacity">
-                <AvatarImage src="https://robohash.org/1.png?set=set1" alt="Avatar" />
-                <AvatarFallback>HT</AvatarFallback>
+                <AvatarImage src={avatarUrl} alt="Avatar" />
+                <AvatarFallback>{initials}</AvatarFallback>
               </Avatar>
             </Link>
           )}

@@ -18,8 +18,11 @@
     "save_success": "Profil mis à jour avec succès.",
     "save_error": "Impossible de mettre à jour le profil.",
     "avatar_alt": "Avatar",
+    "change_avatar": "Changer",
     "loading": "Chargement…",
-    "user_not_found": "Utilisateur introuvable."
+    "user_not_found": "Utilisateur introuvable.",
+    "comments_title": "Commentaires",
+    "no_comments": "Cet utilisateur n'a pas encore commenté de film."
   },
 
   "auth": {

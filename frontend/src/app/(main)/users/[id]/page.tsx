@@ -1,6 +1,7 @@
 'use client'
 import React from 'react'
 import { useParams } from 'next/navigation'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useTranslation } from 'react-i18next'
@@ -13,10 +14,28 @@ interface PublicProfile {
   avatar_url: string
 }
 
+interface UserComment {
+  id: number
+  content: string
+  created_at: string
+  movie_id: number
+  tmdb_id: number
+  title: string
+}
+
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch {
+    return iso
+  }
+}
+
 export default function PublicProfilePage() {
   const { id } = useParams<{ id: string }>()
   const { t } = useTranslation()
   const [profile, setProfile] = React.useState<PublicProfile | null>(null)
+  const [comments, setComments] = React.useState<UserComment[]>([])
   const [notFound, setNotFound] = React.useState(false)
 
   React.useEffect(() => {
@@ -29,6 +48,11 @@ export default function PublicProfilePage() {
         if (body) setProfile(body.data.profile)
       })
       .catch(() => setNotFound(true))
+
+    fetch(`/api/v1/comments/user/${id}`, { credentials: 'include' })
+      .then((r) => r.json())
+      .then(({ data }) => setComments(data ?? []))
+      .catch(() => {})
   }, [id])
 
   if (notFound) {
@@ -51,8 +75,9 @@ export default function PublicProfilePage() {
   const initials = (profile.first_name?.[0] ?? '') + (profile.last_name?.[0] ?? '') || profile.username?.[0]?.toUpperCase()
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
-      <h1 className="text-3xl font-bold mb-6">{t('profile.public_title')}</h1>
+    <div className="container mx-auto p-6 max-w-2xl flex flex-col gap-6">
+      <h1 className="text-3xl font-bold">{t('profile.public_title')}</h1>
+
       <Card className="card-glow">
         <CardHeader>
           <CardTitle className="text-lg">{t('profile.info')}</CardTitle>
@@ -76,6 +101,34 @@ export default function PublicProfilePage() {
               )}
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="card-glow">
+        <CardHeader>
+          <CardTitle className="text-lg">{t('profile.comments_title')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {comments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">{t('profile.no_comments')}</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-border">
+              {comments.map((c) => (
+                <div key={c.id} className="py-3 first:pt-0 last:pb-0 flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <Link
+                      href={`/movies/${c.tmdb_id}`}
+                      className="text-sm font-medium text-sidebar-primary hover:underline truncate"
+                    >
+                      {c.title}
+                    </Link>
+                    <span className="text-xs text-muted-foreground shrink-0">{formatDate(c.created_at)}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground break-words">{c.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

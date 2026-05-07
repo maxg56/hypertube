@@ -18,8 +18,11 @@
     "save_success": "Profile updated successfully.",
     "save_error": "Failed to update profile.",
     "avatar_alt": "Avatar",
+    "change_avatar": "Change",
     "loading": "Loading…",
-    "user_not_found": "User not found."
+    "user_not_found": "User not found.",
+    "comments_title": "Comments",
+    "no_comments": "This user hasn't commented on any movie yet."
   },
 
   "auth": {

@@ -22,6 +22,13 @@ interface UserProfile {
 
 type SaveStatus = 'idle' | 'loading' | 'success' | 'error'
 
+function avatarSrc(profile: UserProfile | null, localPreview: string): string {
+  if (localPreview) return localPreview
+  if (profile?.avatar_url) return profile.avatar_url
+  if (profile?.id) return `https://robohash.org/${profile.id}.png?set=set1`
+  return ''
+}
+
 export default function ProfilePage() {
   const { t, i18n } = useTranslation()
   const [isEditing, setIsEditing] = React.useState(false)
@@ -29,7 +36,8 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = React.useState('')
   const [lastName, setLastName] = React.useState('')
   const [selectedLang, setSelectedLang] = React.useState(i18n.language)
-  const [profileImage, setProfileImage] = React.useState('')
+  const [pendingFile, setPendingFile] = React.useState<File | null>(null)
+  const [localPreview, setLocalPreview] = React.useState('')
   const [saveStatus, setSaveStatus] = React.useState<SaveStatus>('idle')
   const [errorMsg, setErrorMsg] = React.useState('')
   const fileInputRef = React.useRef<HTMLInputElement>(null)
@@ -42,18 +50,17 @@ export default function ProfilePage() {
         setProfile(p)
         setFirstName(p.first_name)
         setLastName(p.last_name)
-        setProfileImage(p.avatar_url || `https://robohash.org/${p.id}.png?set=set1`)
       })
       .catch(() => {})
   }, [])
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImagePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => setProfileImage(event.target?.result as string)
-      reader.readAsDataURL(file)
-    }
+    if (!file) return
+    setPendingFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setLocalPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {
@@ -61,6 +68,26 @@ export default function ProfilePage() {
     setSaveStatus('loading')
     setErrorMsg('')
     try {
+      if (pendingFile) {
+        const form = new FormData()
+        form.append('avatar', pendingFile)
+        const res = await fetch('/api/v1/users/avatar', {
+          method: 'POST',
+          credentials: 'include',
+          body: form,
+        })
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}))
+          setErrorMsg(body.error ?? t('profile.save_error'))
+          setSaveStatus('error')
+          return
+        }
+        const { data } = await res.json()
+        setProfile((prev) => prev ? { ...prev, avatar_url: data.avatar_url } : prev)
+        setLocalPreview('')
+        setPendingFile(null)
+      }
+
       const res = await fetch(`/api/v1/users/profile/${profile.id}`, {
         method: 'PUT',
         credentials: 'include',
@@ -89,12 +116,15 @@ export default function ProfilePage() {
     if (profile) {
       setFirstName(profile.first_name)
       setLastName(profile.last_name)
-      setProfileImage(profile.avatar_url || `https://robohash.org/${profile.id}.png?set=set1`)
     }
+    setLocalPreview('')
+    setPendingFile(null)
     setSelectedLang(i18n.language)
     setSaveStatus('idle')
     setIsEditing(false)
   }
+
+  const imgSrc = avatarSrc(profile, localPreview)
 
   return (
     <div className="container mx-auto p-6 max-w-2xl">
@@ -107,9 +137,7 @@ export default function ProfilePage() {
                 {t('profile.cancel')}
               </Button>
               <Button variant="default" onClick={handleSave} disabled={saveStatus === 'loading'}>
-                {saveStatus === 'loading' ? (
-                  <Loader2 className="size-4 animate-spin mr-1" />
-                ) : null}
+                {saveStatus === 'loading' && <Loader2 className="size-4 animate-spin mr-1" />}
                 {t('profile.save')}
               </Button>
             </>
@@ -156,20 +184,12 @@ export default function ProfilePage() {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">{t('Name')}</label>
-                <Input
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  disabled={!isEditing}
-                />
+                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} disabled={!isEditing} />
               </div>
 
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-foreground">{t('First name')}</label>
-                <Input
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  disabled={!isEditing}
-                />
+                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} disabled={!isEditing} />
               </div>
 
               <div className="space-y-1.5">
@@ -199,22 +219,16 @@ export default function ProfilePage() {
                 className={`relative w-40 h-40 rounded-lg overflow-hidden border-2 border-border transition-colors ${isEditing ? 'cursor-pointer hover:border-primary' : ''}`}
                 onClick={() => isEditing && fileInputRef.current?.click()}
               >
-                {profileImage && (
-                  <img src={profileImage} alt={t('profile.avatar_alt')} className="w-full h-full object-cover" />
+                {imgSrc && (
+                  <img src={imgSrc} alt={t('profile.avatar_alt')} className="w-full h-full object-cover" />
                 )}
                 {isEditing && (
                   <div className="absolute inset-0 bg-background/60 flex items-center justify-center">
-                    <span className="text-foreground text-sm font-medium">{t('profile.edit')}</span>
+                    <span className="text-foreground text-sm font-medium">{t('profile.change_avatar')}</span>
                   </div>
                 )}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImagePick} className="hidden" />
             </div>
           </div>
         </CardContent>
