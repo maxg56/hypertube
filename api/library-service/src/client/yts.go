@@ -156,6 +156,30 @@ func (c *YTSClient) List(p ListParams) (*models.SearchResult, error) {
 	return result, nil
 }
 
+func (c *YTSClient) GetMovieByID(id int) (*models.Movie, error) {
+	params := url.Values{}
+	params.Set("movie_id", strconv.Itoa(id))
+	params.Set("with_images", "true")
+
+	body, err := c.get(fmt.Sprintf("%s/movie_details.json?%s", ytsBaseURL, params.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	var raw detailResponse
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return nil, err
+	}
+	if raw.Status != "ok" {
+		return nil, fmt.Errorf("YTS error: %s", raw.Status)
+	}
+	if raw.Data.Movie.ID == 0 {
+		return nil, nil
+	}
+	m := detailMovieToModel(raw.Data.Movie)
+	return &m, nil
+}
+
 func (c *YTSClient) GetMovieByIMDbID(imdbID string) (*models.Movie, error) {
 	params := url.Values{}
 	params.Set("imdb_id", imdbID)

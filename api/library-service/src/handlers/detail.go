@@ -41,25 +41,34 @@ func (h *MovieHandler) GetMovie(c *gin.Context) {
 	fromCache := cacheGet(cacheKey, &movie)
 
 	if !fromCache {
-		if !h.tmdb.Available() {
-			utils.RespondError(c, http.StatusServiceUnavailable, "no metadata provider available")
-			return
+		var result *models.Movie
+
+		if h.tmdb.Available() {
+			var err error
+			result, err = h.tmdb.GetMovie(id)
+			if err != nil {
+				utils.RespondError(c, http.StatusBadGateway, "failed to fetch movie details")
+				return
+			}
+			if result != nil && result.IMDbID != "" {
+				if ytsMovie, ytsErr := h.yts.GetMovieByIMDbID(result.IMDbID); ytsErr == nil && ytsMovie != nil {
+					result.Torrents = ytsMovie.Torrents
+				}
+			}
 		}
 
-		result, err := h.tmdb.GetMovie(id)
-		if err != nil {
-			utils.RespondError(c, http.StatusBadGateway, "failed to fetch movie details")
-			return
+		if result == nil {
+			var ytsErr error
+			result, ytsErr = h.yts.GetMovieByID(id)
+			if ytsErr != nil {
+				utils.RespondError(c, http.StatusBadGateway, "failed to fetch movie details")
+				return
+			}
 		}
+
 		if result == nil {
 			utils.RespondError(c, http.StatusNotFound, "movie not found")
 			return
-		}
-
-		if result.IMDbID != "" {
-			if ytsMovie, ytsErr := h.yts.GetMovieByIMDbID(result.IMDbID); ytsErr == nil && ytsMovie != nil {
-				result.Torrents = ytsMovie.Torrents
-			}
 		}
 
 		for i, t := range result.Torrents {
