@@ -49,15 +49,16 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
     }
     let cancelled = false
     setState('checking')
+    const hash = selected.hash.toLowerCase()
     void (async () => {
       try {
-        const res = await fetch(`/api/v1/torrent/status/${selected.hash}`, { credentials: 'include' })
+        const res = await fetch(`/api/v1/torrent/status/${hash}`, { credentials: 'include' })
         if (cancelled) return
         if (res.ok) {
           const json = await res.json()
           const { status } = (json.data ?? json) as { status: string }
           if (!cancelled && status === 'ready') {
-            setInfoHash(selected.hash)
+            setInfoHash(hash)
             setState('streaming')
             return
           }
@@ -112,7 +113,7 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
       })
       if (!res.ok) throw new Error(`${res.status}`)
       const json = await res.json()
-      const hash = json.data?.info_hash ?? json.info_hash
+      const hash = (json.data?.info_hash ?? json.info_hash as string).toLowerCase()
       setInfoHash(hash)
       setState('downloading')
       pollStatus(hash)

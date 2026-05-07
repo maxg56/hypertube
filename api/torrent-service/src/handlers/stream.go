@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,7 @@ func init() {
 }
 
 func StreamHandler(c *gin.Context) {
-	hash := c.Param("id")
+	hash := strings.ToLower(c.Param("id"))
 	if hash == "" {
 		utils.RespondError(c, http.StatusBadRequest, "missing info hash")
 		return
