@@ -15,6 +15,7 @@ Manages user profiles, avatar uploads, language preferences, and online presence
 | Method   | Path                              | Auth | Description                        |
 |----------|-----------------------------------|------|------------------------------------|
 | `GET`    | `/health`                         | —    | Health check                       |
+| `GET`    | `/api/v1/users`                   | JWT  | List all users (id + username, paginated) |
 | `GET`    | `/api/v1/users/profile/:id`       | —    | Get a user's public profile        |
 | `GET`    | `/api/v1/users/:id/online-status` | —    | Get online status                  |
 | `GET`    | `/api/v1/users/avatars/*filename` | —    | Serve an uploaded avatar file      |
@@ -36,6 +37,26 @@ Auth is enforced by the API Gateway, which validates the JWT and forwards `X-Use
 ```
 
 All fields are optional. `language` accepts `fr` or `en`.
+
+### `GET /api/v1/users` — query parameters
+
+| Parameter | Default | Description          |
+|-----------|---------|----------------------|
+| `limit`   | `20`    | Number of results    |
+| `offset`  | `0`     | Number to skip       |
+
+Response:
+
+```json
+{
+  "data": {
+    "users": [
+      { "id": 1, "username": "maxence" }
+    ],
+    "pagination": { "total": 42, "limit": 20, "offset": 0 }
+  }
+}
+```
 
 ### `POST /api/v1/users/avatar` — response
 

@@ -43,7 +43,8 @@ func main() {
 		protected := users.Group("")
 		protected.Use(middleware.AuthMiddleware())
 		{
-			protected.GET("/profile", handlers.GetOwnProfileHandler)
+			protected.GET("", handlers.ListUsersHandler)
+		protected.GET("/profile", handlers.GetOwnProfileHandler)
 			protected.PUT(profileByID, handlers.UpdateProfileHandler)
 			protected.DELETE(profileByID, handlers.DeleteProfileHandler)
 			protected.POST("/avatar", handlers.UploadAvatarHandler)
