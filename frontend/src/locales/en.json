@@ -6,8 +6,6 @@
   },
 
   "profile": {
-    "theme_dark": "Dark mode",
-    "theme_light": "Light mode",
     "edit": "Edit",
     "save": "Save",
     "info": "Personal information"

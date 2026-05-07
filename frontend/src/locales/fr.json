@@ -6,8 +6,6 @@
   },
 
   "profile": {
-    "theme_dark": "Mode sombre",
-    "theme_light": "Mode clair",
     "edit": "Modifier",
     "save": "Enregistrer",
     "info": "Informations personnelles"
