@@ -11,6 +11,7 @@ func SetupCommentRoutes(r *gin.Engine) {
 	comment := r.Group("/api/v1/comments")
 	comment.Use(middleware.JWTMiddleware())
 	{
+		comment.GET("/user/:userId", proxy.ProxyRequest("comment", "/api/v1/comments/user/:userId"))
 		comment.GET("/:movieId", proxy.ProxyRequest("comment", "/api/v1/comments/:movieId"))
 		comment.POST("/:movieId", proxy.ProxyRequest("comment", "/api/v1/comments/:movieId"))
 		comment.DELETE("/:id", proxy.ProxyRequest("comment", "/api/v1/comments/:id"))
