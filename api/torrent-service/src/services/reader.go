@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -58,9 +59,19 @@ func readerFromActiveTorrent(t *torrent.Torrent) (ReaderResult, error) {
 	}
 
 	r := f.NewReader()
-	r.SetReadahead(5 << 20) // 5 MiB readahead for smooth streaming
+	r.SetReadahead(readaheadBytes())
 	filePath := downloadDir() + "/" + strings.ToLower(t.InfoHash().HexString()) + "/" + f.DisplayPath()
 	return ReaderResult{Reader: r, Size: f.Length(), FileName: f.DisplayPath(), FilePath: filePath}, nil
+}
+
+// readaheadBytes reads STREAM_BUFFER_SIZE (MiB) from the environment, defaulting to 5 MiB.
+func readaheadBytes() int64 {
+	if s := os.Getenv("STREAM_BUFFER_SIZE"); s != "" {
+		if n, err := strconv.ParseInt(s, 10, 64); err == nil && n > 0 {
+			return n << 20
+		}
+	}
+	return 5 << 20
 }
 
 func readerFromDisk(infoHash string) (ReaderResult, error) {

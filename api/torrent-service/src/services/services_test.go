@@ -36,6 +36,11 @@ func setupTestDB(t *testing.T) {
 		created_at DATETIME,
 		updated_at DATETIME
 	)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE movies (
+		id      INTEGER PRIMARY KEY AUTOINCREMENT,
+		tmdb_id INTEGER UNIQUE NOT NULL,
+		title   TEXT    NOT NULL
+	)`).Error)
 	conf.DB = db
 }
 
