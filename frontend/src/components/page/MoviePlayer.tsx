@@ -58,7 +58,7 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
 
         setProgress(Math.round((prog ?? 0) * 100))
 
-        if (status === 'downloading' || status === 'completed') {
+        if (status === 'downloading' || status === 'ready') {
           stopPolling()
           setState('streaming')
         }

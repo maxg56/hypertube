@@ -41,6 +41,11 @@ func StartDownload(magnetURI string, movieID int) (string, error) {
 		return "", err
 	}
 
+	// File is already on disk — stream directly, no need to re-seed.
+	if record.Status == models.StatusReady {
+		return infoHash, nil
+	}
+
 	t, err := addToClient(magnetURI)
 	if err != nil {
 		conf.DB.Model(record).Updates(map[string]any{
