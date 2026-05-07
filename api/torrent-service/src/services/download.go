@@ -60,6 +60,12 @@ func StartDownload(magnetURI string, movieID int) (string, error) {
 	return infoHash, nil
 }
 
+// ResolveLocalMovieID returns the local movies.id for a TMDB movie ID,
+// inserting a placeholder row if the movie has not been cached yet.
+func ResolveLocalMovieID(tmdbID int) (int, error) {
+	return resolveLocalMovieID(tmdbID)
+}
+
 func resolveLocalMovieID(tmdbID int) (int, error) {
 	var localID int
 	conf.DB.Raw("SELECT id FROM movies WHERE tmdb_id = ?", tmdbID).Scan(&localID)

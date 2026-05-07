@@ -11,6 +11,7 @@ import (
 )
 
 // GetProgressHandler handles GET /api/v1/movies/:id/progress
+// :id is the TMDB movie ID.
 func GetProgressHandler(c *gin.Context) {
 	userID, ok := userIDFromHeader(c)
 	if !ok {
@@ -18,13 +19,19 @@ func GetProgressHandler(c *gin.Context) {
 		return
 	}
 
-	movieID, err := strconv.Atoi(c.Param("id"))
-	if err != nil || movieID <= 0 {
+	tmdbID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || tmdbID <= 0 {
 		utils.RespondError(c, http.StatusBadRequest, "invalid movie id")
 		return
 	}
 
-	sec, err := services.GetProgress(userID, movieID)
+	localID, err := services.ResolveLocalMovieID(tmdbID)
+	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "could not resolve movie")
+		return
+	}
+
+	sec, err := services.GetProgress(userID, localID)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "database error")
 		return
@@ -34,6 +41,7 @@ func GetProgressHandler(c *gin.Context) {
 }
 
 // SaveProgressHandler handles PUT /api/v1/movies/:id/progress
+// :id is the TMDB movie ID.
 func SaveProgressHandler(c *gin.Context) {
 	userID, ok := userIDFromHeader(c)
 	if !ok {
@@ -41,8 +49,8 @@ func SaveProgressHandler(c *gin.Context) {
 		return
 	}
 
-	movieID, err := strconv.Atoi(c.Param("id"))
-	if err != nil || movieID <= 0 {
+	tmdbID, err := strconv.Atoi(c.Param("id"))
+	if err != nil || tmdbID <= 0 {
 		utils.RespondError(c, http.StatusBadRequest, "invalid movie id")
 		return
 	}
@@ -55,7 +63,13 @@ func SaveProgressHandler(c *gin.Context) {
 		return
 	}
 
-	if err := services.SaveProgress(userID, movieID, body.ProgressSec); err != nil {
+	localID, err := services.ResolveLocalMovieID(tmdbID)
+	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "could not resolve movie")
+		return
+	}
+
+	if err := services.SaveProgress(userID, localID, body.ProgressSec); err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "database error")
 		return
 	}
