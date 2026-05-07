@@ -1,6 +1,6 @@
 FROM golang:1.26-alpine AS development
 WORKDIR /app
-RUN apk --no-cache add gcc musl-dev
+RUN apk --no-cache add gcc g++ musl-dev
 RUN go install github.com/air-verse/air@latest
 COPY go.mod go.sum ./
 RUN go mod download

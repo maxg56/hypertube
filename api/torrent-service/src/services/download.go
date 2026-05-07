@@ -55,7 +55,24 @@ func StartDownload(magnetURI string, movieID int) (string, error) {
 	return infoHash, nil
 }
 
-func findOrCreateRecord(magnetURI, infoHash string, movieID int) (*models.TorrentRecord, error) {
+func resolveLocalMovieID(tmdbID int) (int, error) {
+	var localID int
+	conf.DB.Raw("SELECT id FROM movies WHERE tmdb_id = ?", tmdbID).Scan(&localID)
+	if localID > 0 {
+		return localID, nil
+	}
+	// Movie not yet cached by library-service — insert a minimal placeholder.
+	if err := conf.DB.Exec(
+		"INSERT INTO movies (tmdb_id, title) VALUES (?, ?) ON CONFLICT (tmdb_id) DO NOTHING",
+		tmdbID, fmt.Sprintf("movie:%d", tmdbID),
+	).Error; err != nil {
+		return 0, fmt.Errorf("placeholder movie insert: %w", err)
+	}
+	conf.DB.Raw("SELECT id FROM movies WHERE tmdb_id = ?", tmdbID).Scan(&localID)
+	return localID, nil
+}
+
+func findOrCreateRecord(magnetURI, infoHash string, tmdbID int) (*models.TorrentRecord, error) {
 	var record models.TorrentRecord
 	dbErr := conf.DB.Where("info_hash = ?", infoHash).First(&record).Error
 
@@ -76,8 +93,13 @@ func findOrCreateRecord(magnetURI, infoHash string, movieID int) (*models.Torren
 		return nil, fmt.Errorf("db lookup: %w", dbErr)
 	}
 
+	localMovieID, err := resolveLocalMovieID(tmdbID)
+	if err != nil {
+		return nil, fmt.Errorf("resolve movie id: %w", err)
+	}
+
 	record = models.TorrentRecord{
-		MovieID:   movieID,
+		MovieID:   localMovieID,
 		MagnetURI: magnetURI,
 		InfoHash:  infoHash,
 		Status:    models.StatusPending,
