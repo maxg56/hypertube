@@ -18,6 +18,7 @@ interface UserProfile {
   first_name: string
   last_name: string
   avatar_url: string
+  language: string
 }
 
 type SaveStatus = 'idle' | 'loading' | 'success' | 'error'
@@ -50,6 +51,10 @@ export default function ProfilePage() {
         setProfile(p)
         setFirstName(p.first_name)
         setLastName(p.last_name)
+        if (p.language) {
+          setSelectedLang(p.language)
+          i18n.changeLanguage(p.language)
+        }
       })
       .catch(() => {})
   }, [])
@@ -92,7 +97,7 @@ export default function ProfilePage() {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName }),
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, language: selectedLang }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))

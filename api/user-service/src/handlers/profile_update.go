@@ -54,6 +54,14 @@ func UpdateProfileHandler(c *gin.Context) {
 		}
 		user.AvatarURL = *req.AvatarURL
 	}
+	if req.Language != nil {
+		allowed := map[string]bool{"fr": true, "en": true}
+		if !allowed[*req.Language] {
+			utils.RespondError(c, http.StatusBadRequest, "unsupported language")
+			return
+		}
+		user.Language = *req.Language
+	}
 
 	if err := conf.DB.Save(&user).Error; err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to update profile")
