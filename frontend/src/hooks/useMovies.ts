@@ -60,7 +60,12 @@ export function useMovies(filters: MovieFilters) {
       const json: MoviesResponse = await res.json()
       const { results, next_cursor } = json.data
 
-      setMovies(prev => reset ? (results ?? []) : [...prev, ...(results ?? [])])
+      setMovies(prev => {
+        if (reset) return results ?? []
+        const map = new Map(prev.map(m => [m.id, m]))
+        for (const m of results ?? []) map.set(m.id, m)
+        return Array.from(map.values())
+      })
       setNextCursor(next_cursor ?? null)
       setHasMore(!!next_cursor)
     } catch (err: unknown) {
