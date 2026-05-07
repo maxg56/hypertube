@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,22 +16,46 @@ import (
 	"user-service/src/utils"
 )
 
+const maxAvatarSize = 5 << 20 // 5 MB
+
+var allowedMIMETypes = map[string]string{
+	"image/jpeg": ".jpg",
+	"image/png":  ".png",
+	"image/gif":  ".gif",
+	"image/webp": ".webp",
+}
+
 func UploadAvatarHandler(c *gin.Context) {
 	userID, err := utils.GetAuthenticatedUserID(c)
 	if err != nil {
 		return
 	}
 
-	file, header, err := c.Request.FormFile("avatar")
+	file, _, err := c.Request.FormFile("avatar")
 	if err != nil {
 		utils.RespondError(c, http.StatusBadRequest, "avatar file is required")
 		return
 	}
 	defer file.Close()
 
-	ext := strings.ToLower(filepath.Ext(header.Filename))
-	allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".gif": true, ".webp": true}
-	if !allowed[ext] {
+	// Read up to maxAvatarSize+1 to detect oversized files
+	limited := io.LimitReader(file, maxAvatarSize+1)
+	buf, err := io.ReadAll(limited)
+	if err != nil {
+		utils.RespondError(c, http.StatusInternalServerError, "failed to read file")
+		return
+	}
+	if len(buf) > maxAvatarSize {
+		utils.RespondError(c, http.StatusBadRequest, "avatar file exceeds 5 MB limit")
+		return
+	}
+
+	// Validate MIME type from actual file content (magic bytes)
+	mime := http.DetectContentType(buf)
+	// DetectContentType may return "image/jpeg" or "image/jpeg; charset=..." style
+	mime = strings.SplitN(mime, ";", 2)[0]
+	ext, ok := allowedMIMETypes[mime]
+	if !ok {
 		utils.RespondError(c, http.StatusBadRequest, "unsupported image format")
 		return
 	}
@@ -47,9 +72,7 @@ func UploadAvatarHandler(c *gin.Context) {
 	filename := fmt.Sprintf("%d_%d%s", userID, time.Now().UnixNano(), ext)
 	dst := filepath.Join(avatarDir, filename)
 
-	buf := make([]byte, 5<<20)
-	n, _ := file.Read(buf)
-	if err := os.WriteFile(dst, buf[:n], 0644); err != nil {
+	if err := os.WriteFile(dst, buf, 0644); err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to save avatar")
 		return
 	}

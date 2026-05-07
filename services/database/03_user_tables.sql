@@ -10,6 +10,7 @@ CREATE TABLE users (
     first_name  VARCHAR(100),
     last_name   VARCHAR(100),
     avatar_url  TEXT,
+    language    VARCHAR(10)  DEFAULT 'fr',
     email_verified BOOLEAN   DEFAULT FALSE,
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP

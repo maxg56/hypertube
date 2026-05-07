@@ -132,6 +132,7 @@ services:
       FROM_EMAIL: ${FROM_EMAIL}
       FROM_NAME: ${FROM_NAME:-Hypertube}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
     volumes:
       - ./api/auth-service/src:/app/src
       - ./api/auth-service/templates:/app/templates
@@ -164,6 +165,7 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-password}
       REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
       GIN_MODE: debug
+      AUTO_MIGRATE: true
       AVATAR_DIR: /data/avatars
     volumes:
       - ./api/user-service/src:/app/src
@@ -232,6 +234,7 @@ services:
       TORRENT_DOWNLOAD_PATH: /data/torrents
       STREAM_BUFFER_SIZE: ${STREAM_BUFFER_SIZE:-10}
       GIN_MODE: debug
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
     volumes:
       - ./api/torrent-service/src:/app/src
       - ./api/torrent-service/go.mod:/app/go.mod
@@ -262,6 +265,7 @@ services:
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-password}
       GIN_MODE: debug
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
     volumes:
       - ./api/comment-service/src:/app/src
       - ./api/comment-service/go.mod:/app/go.mod
@@ -292,6 +296,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-password}
       REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
       TORRENT_DOWNLOAD_PATH: /data/torrents
+      GIN_MODE: debug
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
     volumes:
       - ./api/worker-service/src:/app/src
       - ./api/worker-service/go.mod:/app/go.mod
@@ -338,6 +344,11 @@ services:
 
 volumes:
   avatar_data:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/avatars
+      o: bind 
   postgres_data_dev:
     driver: local
     driver_opts:
