@@ -22,6 +22,7 @@ func SetupUserRoutes(r *gin.Engine) {
 		protected := users.Group("")
 		protected.Use(middleware.JWTMiddleware())
 		{
+			protected.GET("", proxy.ProxyRequest("user", "/api/v1/users"))
 			protected.GET("/profile", proxy.ProxyRequest("user", "/api/v1/users/profile"))
 			protected.PUT(profileByID, proxy.ProxyRequest("user", upstreamProfileByID))
 			protected.DELETE(profileByID, proxy.ProxyRequest("user", upstreamProfileByID))
