@@ -3,6 +3,7 @@ package services
 import (
 	"bufio"
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,16 +14,26 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"torrent-service/src/conf"
 )
 
 const openSubsBaseURL = "https://api.opensubtitles.com/api/v1"
+
+// osClient forces HTTP/1.1 — OpenSubtitles /download returns 503 for HTTP/2 requests.
+var osClient = &http.Client{
+	Timeout: 10 * time.Second,
+	Transport: &http.Transport{
+		TLSNextProto: make(map[string]func(string, *tls.Conn) http.RoundTripper),
+	},
+}
 
 var (
 	osAPIKey   string
 	osUsername string
 	osPassword string
 
-	osTokenMu  sync.Mutex
+	osTokenMu  sync.RWMutex
 	osToken    string
 	osTokenExp time.Time
 )
@@ -42,6 +53,16 @@ func subtitleCacheDir() string {
 
 func subtitleCachePath(movieID int, lang string) string {
 	return filepath.Join(subtitleCacheDir(), fmt.Sprintf("%d", movieID), lang+".vtt")
+}
+
+// imdbIDForTmdb looks up the IMDb ID for a TMDB movie ID from the local DB.
+func imdbIDForTmdb(tmdbID int) string {
+	type row struct {
+		ImdbID string `gorm:"column:imdb_id"`
+	}
+	var r row
+	conf.DB.Raw("SELECT imdb_id FROM movies WHERE tmdb_id = ?", tmdbID).Scan(&r)
+	return r.ImdbID
 }
 
 // FetchSubtitle returns the path to a cached VTT subtitle file. It downloads and
@@ -64,7 +85,13 @@ func FetchSubtitle(movieID int, lang string) (string, error) {
 
 	fileID, err := osSearch(movieID, lang)
 	if err != nil {
-		return "", fmt.Errorf("subtitle search: %w", err)
+		// Fallback: search by IMDb ID when TMDB search returns no results.
+		if imdbID := imdbIDForTmdb(movieID); imdbID != "" {
+			fileID, err = osSearchByIMDb(imdbID, lang)
+		}
+		if err != nil {
+			return "", fmt.Errorf("subtitle search: %w", err)
+		}
 	}
 
 	link, err := osDownloadLink(fileID)
@@ -90,9 +117,10 @@ func FetchSubtitle(movieID int, lang string) (string, error) {
 }
 
 func osEnsureToken() error {
-	osTokenMu.Lock()
-	defer osTokenMu.Unlock()
-	if osToken != "" && time.Now().Before(osTokenExp) {
+	osTokenMu.RLock()
+	valid := osToken != "" && time.Now().Before(osTokenExp)
+	osTokenMu.RUnlock()
+	if valid {
 		return nil
 	}
 
@@ -101,10 +129,12 @@ func osEnsureToken() error {
 		"password": osPassword,
 	})
 	req, _ := http.NewRequest(http.MethodPost, openSubsBaseURL+"/login", bytes.NewReader(body))
-	osSetHeaders(req)
+	req.Header.Set("Api-Key", osAPIKey)
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; hypertube/1.0)")
+	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	resp, err := osClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -119,8 +149,11 @@ func osEnsureToken() error {
 	if result.Token == "" {
 		return fmt.Errorf("empty token from opensubtitles login")
 	}
+
+	osTokenMu.Lock()
 	osToken = result.Token
 	osTokenExp = time.Now().Add(23 * time.Hour)
+	osTokenMu.Unlock()
 	return nil
 }
 
@@ -134,12 +167,12 @@ type osSubtitleSearchResponse struct {
 	} `json:"data"`
 }
 
-func osSearch(movieID int, lang string) (int, error) {
-	url := fmt.Sprintf("%s/subtitles?tmdb_id=%d&languages=%s&type=movie", openSubsBaseURL, movieID, lang)
-	req, _ := http.NewRequest(http.MethodGet, url, nil)
+func osSearchURL(query, lang string) (int, error) {
+	req, _ := http.NewRequest(http.MethodGet,
+		fmt.Sprintf("%s/subtitles?%s&languages=%s&type=movie", openSubsBaseURL, query, lang), nil)
 	osSetHeaders(req)
 
-	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	resp, err := osClient.Do(req)
 	if err != nil {
 		return 0, err
 	}
@@ -155,13 +188,21 @@ func osSearch(movieID int, lang string) (int, error) {
 	return result.Data[0].Attributes.Files[0].FileID, nil
 }
 
+func osSearch(movieID int, lang string) (int, error) {
+	return osSearchURL(fmt.Sprintf("tmdb_id=%d", movieID), lang)
+}
+
+func osSearchByIMDb(imdbID, lang string) (int, error) {
+	return osSearchURL(fmt.Sprintf("imdb_id=%s", imdbID), lang)
+}
+
 func osDownloadLink(fileID int) (string, error) {
 	body, _ := json.Marshal(map[string]int{"file_id": fileID})
 	req, _ := http.NewRequest(http.MethodPost, openSubsBaseURL+"/download", bytes.NewReader(body))
 	osSetHeaders(req)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := (&http.Client{Timeout: 10 * time.Second}).Do(req)
+	resp, err := osClient.Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -174,17 +215,18 @@ func osDownloadLink(fileID int) (string, error) {
 		return "", err
 	}
 	if result.Link == "" {
-		return "", fmt.Errorf("empty download link from opensubtitles")
+		return "", fmt.Errorf("empty download link from opensubtitles (status %d)", resp.StatusCode)
 	}
 	return result.Link, nil
 }
 
 func osSetHeaders(req *http.Request) {
 	req.Header.Set("Api-Key", osAPIKey)
-	req.Header.Set("User-Agent", "hypertube v1.0")
-	osTokenMu.Lock()
+	req.Header.Set("User-Agent", "Mozilla/5.0 (compatible; hypertube/1.0)")
+	req.Header.Set("Accept", "application/json")
+	osTokenMu.RLock()
 	tok := osToken
-	osTokenMu.Unlock()
+	osTokenMu.RUnlock()
 	if tok != "" {
 		req.Header.Set("Authorization", "Bearer "+tok)
 	}
