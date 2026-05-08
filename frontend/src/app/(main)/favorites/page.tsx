@@ -8,7 +8,7 @@ import type { Movie } from '@/hooks/useMovies'
 interface FavoriteMovie {
   tmdb_id: number
   title: string
-  poster_path: string
+  poster_url: string
   rating: number
   language: string
   release_date: string
@@ -21,7 +21,7 @@ function toMovie(f: FavoriteMovie): Movie {
     title: f.title,
     year: f.release_date?.slice(0, 4) ?? '',
     rating: f.rating,
-    poster_url: f.poster_path ? `https://image.tmdb.org/t/p/w500${f.poster_path}` : '',
+    poster_url: f.poster_url,
     genres: [],
   }
 }

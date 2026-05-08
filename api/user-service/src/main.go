@@ -39,6 +39,7 @@ func main() {
 	{
 		users.GET(profileByID, handlers.GetProfileHandler)
 		users.GET("/:id/online-status", handlers.GetUserOnlineStatusHandler)
+		users.GET("/:id/favorites", handlers.ListUserFavoritesHandler)
 
 		protected := users.Group("")
 		protected.Use(middleware.AuthMiddleware())

@@ -14,21 +14,15 @@ import (
 )
 
 type favoriteMovieRow struct {
-	TmdbID      int     `json:"tmdb_id"      gorm:"column:tmdb_id"`
-	Title       string  `json:"title"        gorm:"column:title"`
-	PosterPath  string  `json:"poster_path"  gorm:"column:poster_path"`
-	Rating      float64 `json:"rating"       gorm:"column:rating"`
-	Language    string  `json:"language"     gorm:"column:language"`
+	TmdbID      int     `json:"tmdb_id"     gorm:"column:tmdb_id"`
+	Title       string  `json:"title"       gorm:"column:title"`
+	PosterURL   string  `json:"poster_url"  gorm:"column:poster_url"`
+	Rating      float64 `json:"rating"      gorm:"column:rating"`
+	Language    string  `json:"language"    gorm:"column:language"`
 	ReleaseDate string  `json:"release_date" gorm:"column:release_date"`
 }
 
-// ListFavoritesHandler handles GET /api/v1/users/favorites
-func ListFavoritesHandler(c *gin.Context) {
-	userID, err := utils.GetAuthenticatedUserID(c)
-	if err != nil {
-		return
-	}
-
+func listFavoritesForUser(c *gin.Context, userID uint) {
 	pagination := utils.ParsePaginationParams(c)
 
 	var total int64
@@ -38,13 +32,13 @@ func ListFavoritesHandler(c *gin.Context) {
 	}
 
 	var rows []favoriteMovieRow
-	err = conf.DB.Raw(`
+	err := conf.DB.Raw(`
 		SELECT
 			f.tmdb_id,
-			COALESCE(m.title, '')                        AS title,
-			COALESCE(m.poster_path, '')                  AS poster_path,
-			COALESCE(m.rating, 0)                        AS rating,
-			COALESCE(m.language, '')                     AS language,
+			COALESCE(m.title, '')                               AS title,
+			COALESCE(m.poster_path, '')                         AS poster_url,
+			COALESCE(m.rating, 0)                               AS rating,
+			COALESCE(m.language, '')                            AS language,
 			COALESCE(to_char(m.release_date, 'YYYY-MM-DD'), '') AS release_date
 		FROM favorites f
 		LEFT JOIN movies m ON m.tmdb_id = f.tmdb_id
@@ -65,6 +59,25 @@ func ListFavoritesHandler(c *gin.Context) {
 		"favorites":  rows,
 		"pagination": utils.NewPagination(total, pagination.Limit, pagination.Offset),
 	})
+}
+
+// ListFavoritesHandler handles GET /api/v1/users/favorites (own favorites)
+func ListFavoritesHandler(c *gin.Context) {
+	userID, err := utils.GetAuthenticatedUserID(c)
+	if err != nil {
+		return
+	}
+	listFavoritesForUser(c, userID)
+}
+
+// ListUserFavoritesHandler handles GET /api/v1/users/:id/favorites (any user's favorites)
+func ListUserFavoritesHandler(c *gin.Context) {
+	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil || id == 0 {
+		utils.RespondError(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+	listFavoritesForUser(c, uint(id))
 }
 
 // AddFavoriteHandler handles POST /api/v1/users/favorites

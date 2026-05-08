@@ -18,6 +18,7 @@ func SetupUserRoutes(r *gin.Engine) {
 		users.GET("/avatars/*filename", proxy.ProxyRequest("user", "/api/v1/users/avatars*filename"))
 		users.GET(profileByID, proxy.ProxyRequest("user", upstreamProfileByID))
 		users.GET("/:id/online-status", proxy.ProxyRequest("user", "/api/v1/users/:id/online-status"))
+		users.GET("/:id/favorites", proxy.ProxyRequest("user", "/api/v1/users/:id/favorites"))
 
 		protected := users.Group("")
 		protected.Use(middleware.JWTMiddleware())
