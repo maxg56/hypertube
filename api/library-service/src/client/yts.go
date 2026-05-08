@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
 	"library-service/src/models"
@@ -154,43 +155,61 @@ func (c *YTSClient) List(p ListParams) (*models.SearchResult, error) {
 		return result, nil
 	}
 
-	// Year filter: scan up to maxYearScanPages consecutive YTS pages starting
-	// from p.Page and accumulate all matching movies. The cursor in movies.go
-	// advances by maxYearScanPages each time so pages don't overlap.
+	// Year filter: fire maxYearScanPages YTS requests in parallel, filter by
+	// year, and return all matches. The cursor advances by maxYearScanPages so
+	// successive "load more" calls don't re-fetch the same pages.
 	const maxYearScanPages = 10
-	collected := make([]models.Movie, 0, 40)
-	totalYTSPages := 0
 
+	type pageResult struct {
+		movies     []ytsMovie
+		totalPages int
+		empty      bool
+	}
+
+	results := make([]pageResult, maxYearScanPages)
+	var wg sync.WaitGroup
 	for i := 0; i < maxYearScanPages; i++ {
-		ytsPg := p.Page + i
-		params := url.Values{}
-		for k, v := range baseParams {
-			params[k] = v
-		}
-		params.Set("page", strconv.Itoa(ytsPg))
+		wg.Add(1)
+		go func(idx int) {
+			defer wg.Done()
+			params := url.Values{}
+			for k, v := range baseParams {
+				params[k] = v
+			}
+			params.Set("page", strconv.Itoa(p.Page+idx))
 
-		body, err := c.get(fmt.Sprintf("%s/list_movies.json?%s", ytsBaseURL, params.Encode()))
-		if err != nil {
-			break
+			body, err := c.get(fmt.Sprintf("%s/list_movies.json?%s", ytsBaseURL, params.Encode()))
+			if err != nil {
+				results[idx].empty = true
+				return
+			}
+			var raw listResponse
+			if err := json.Unmarshal(body, &raw); err != nil || raw.Status != "ok" || len(raw.Data.Movies) == 0 {
+				results[idx].empty = true
+				return
+			}
+			tp := 0
+			if raw.Data.Limit > 0 {
+				tp = (raw.Data.MovieCount + raw.Data.Limit - 1) / raw.Data.Limit
+			}
+			results[idx] = pageResult{movies: raw.Data.Movies, totalPages: tp}
+		}(i)
+	}
+	wg.Wait()
+
+	totalYTSPages := 0
+	collected := make([]models.Movie, 0, 40)
+	for _, r := range results {
+		if r.empty {
+			continue
 		}
-		var raw listResponse
-		if err := json.Unmarshal(body, &raw); err != nil {
-			break
+		if r.totalPages > totalYTSPages {
+			totalYTSPages = r.totalPages
 		}
-		if raw.Status != "ok" || len(raw.Data.Movies) == 0 {
-			break
-		}
-		if totalYTSPages == 0 && raw.Data.Limit > 0 {
-			totalYTSPages = (raw.Data.MovieCount + raw.Data.Limit - 1) / raw.Data.Limit
-		}
-		for _, m := range raw.Data.Movies {
+		for _, m := range r.movies {
 			if m.Year == p.Year {
 				collected = append(collected, listMovieToModel(m))
 			}
-		}
-		if ytsPg >= totalYTSPages {
-			totalYTSPages = ytsPg // signal no more pages
-			break
 		}
 	}
 
