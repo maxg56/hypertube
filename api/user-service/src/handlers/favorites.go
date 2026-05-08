@@ -70,13 +70,24 @@ func ListFavoritesHandler(c *gin.Context) {
 	listFavoritesForUser(c, userID)
 }
 
-// ListUserFavoritesHandler handles GET /api/v1/users/:id/favorites (any user's favorites)
+// ListUserFavoritesHandler handles GET /api/v1/users/:id/favorites (any user's public favorites)
 func ListUserFavoritesHandler(c *gin.Context) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	if err != nil || id == 0 {
 		utils.RespondError(c, http.StatusBadRequest, "invalid user id")
 		return
 	}
+
+	var user models.User
+	if err := conf.DB.Select("is_public, favorites_public").First(&user, id).Error; err != nil {
+		utils.RespondError(c, http.StatusNotFound, "user not found")
+		return
+	}
+	if !user.IsPublic || !user.FavoritesPublic {
+		utils.RespondError(c, http.StatusForbidden, "favorites are private")
+		return
+	}
+
 	listFavoritesForUser(c, uint(id))
 }
 

@@ -2,7 +2,7 @@
 import React from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
+import { Heart, Lock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useTranslation } from 'react-i18next'
@@ -61,11 +61,13 @@ export default function PublicProfilePage() {
   const [comments, setComments] = React.useState<UserComment[]>([])
   const [favorites, setFavorites] = React.useState<FavoriteMovie[]>([])
   const [notFound, setNotFound] = React.useState(false)
+  const [privateAccount, setPrivateAccount] = React.useState(false)
 
   React.useEffect(() => {
     fetch(`/api/v1/users/profile/${id}`, { credentials: 'include' })
       .then((r) => {
         if (r.status === 404) { setNotFound(true); return null }
+        if (r.status === 403) { setPrivateAccount(true); return null }
         return r.json()
       })
       .then((body) => { if (body) setProfile(body.data.profile) })
@@ -77,8 +79,8 @@ export default function PublicProfilePage() {
       .catch(() => {})
 
     fetch(`/api/v1/users/${id}/favorites?limit=50`, { credentials: 'include' })
-      .then((r) => r.json())
-      .then(({ data }) => setFavorites(data?.favorites ?? []))
+      .then((r) => r.ok ? r.json() : null)
+      .then((body) => { if (body) setFavorites(body.data?.favorites ?? []) })
       .catch(() => {})
   }, [id])
 
@@ -86,6 +88,15 @@ export default function PublicProfilePage() {
     return (
       <div className="container mx-auto p-6 max-w-2xl text-center text-muted-foreground">
         {t('profile.user_not_found')}
+      </div>
+    )
+  }
+
+  if (privateAccount) {
+    return (
+      <div className="container mx-auto p-6 max-w-2xl text-center text-muted-foreground flex flex-col items-center gap-3 pt-24">
+        <Lock className="size-10 text-muted-foreground/50" />
+        <p className="text-lg font-medium">{t('profile.private_account')}</p>
       </div>
     )
   }

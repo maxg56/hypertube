@@ -99,7 +99,13 @@
     "loading": "Chargement…",
     "user_not_found": "Utilisateur introuvable.",
     "comments_title": "Commentaires",
-    "no_comments": "Cet utilisateur n'a pas encore commenté de film."
+    "no_comments": "Cet utilisateur n'a pas encore commenté de film.",
+    "privacy_title": "Confidentialité",
+    "privacy_account_public": "Profil public",
+    "privacy_account_public_hint": "Les autres utilisateurs peuvent consulter votre profil.",
+    "privacy_favorites_public": "Favoris publics",
+    "privacy_favorites_public_hint": "Les autres utilisateurs peuvent voir vos films favoris.",
+    "private_account": "Ce compte est privé."
   },
 
   "auth": {
