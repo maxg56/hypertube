@@ -8,8 +8,21 @@
 
   "admin": {
     "title": "Administration panel",
+    "tab_overview": "Overview",
     "tab_users": "Users",
     "tab_films": "Films",
+
+    "stat_users": "Users",
+    "stat_films": "Downloaded films",
+    "stat_ready": "Ready to watch",
+    "stat_watches": "Watch events",
+
+    "chart_activity": "Activity (last 30 days)",
+    "chart_status": "Films by status",
+    "chart_top_films": "Most watched films",
+    "chart_registrations": "Registrations (last 6 months)",
+
+    "stats_error": "Could not load statistics.",
     "access_denied": "Access denied.",
     "loading": "Loading…",
 

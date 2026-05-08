@@ -8,8 +8,21 @@
 
   "admin": {
     "title": "Panneau d'administration",
+    "tab_overview": "Vue générale",
     "tab_users": "Utilisateurs",
     "tab_films": "Films",
+
+    "stat_users": "Utilisateurs",
+    "stat_films": "Films téléchargés",
+    "stat_ready": "Prêts à lire",
+    "stat_watches": "Visionnages",
+
+    "chart_activity": "Activité (30 derniers jours)",
+    "chart_status": "Films par statut",
+    "chart_top_films": "Films les plus regardés",
+    "chart_registrations": "Inscriptions (6 derniers mois)",
+
+    "stats_error": "Impossible de charger les statistiques.",
     "access_denied": "Accès refusé.",
     "loading": "Chargement…",
 
