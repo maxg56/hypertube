@@ -16,6 +16,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
   const isProfilePage = pathname.includes('/profile')
   const [avatarUrl, setAvatarUrl] = React.useState('')
   const [initials, setInitials] = React.useState('HT')
+  const [isAdmin, setIsAdmin] = React.useState(false)
 
   React.useEffect(() => {
     fetch('/api/v1/users/profile', { credentials: 'include' })
@@ -26,6 +27,7 @@ export default function MainLayout({ children }: { children: ReactNode }) {
         setAvatarUrl(p.avatar_url || `https://robohash.org/${p.id}.png?set=set1`)
         const i = ((p.first_name?.[0] ?? '') + (p.last_name?.[0] ?? '')).toUpperCase() || p.username?.[0]?.toUpperCase() || 'HT'
         setInitials(i)
+        setIsAdmin(p.role === 'admin')
       })
       .catch(() => {})
   }, [])
@@ -49,6 +51,11 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           )}
           <span className="font-bold text-lg tracking-tight flex-1 text-center">Hypertube</span>
           <div className="flex items-center gap-3">
+            {isAdmin && (
+              <Link href="/admin">
+                <Button variant="outline" size="sm">{t('nav.admin')}</Button>
+              </Link>
+            )}
             <LanguageSwitcher />
             <LogoutButton />
           </div>

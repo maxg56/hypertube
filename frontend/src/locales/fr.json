@@ -2,7 +2,51 @@
   "app_tagline": "Regardez vos films en streaming",
 
   "nav": {
-    "home": "Accueil"
+    "home": "Accueil",
+    "admin": "Admin"
+  },
+
+  "admin": {
+    "title": "Panneau d'administration",
+    "tab_users": "Utilisateurs",
+    "tab_films": "Films",
+    "access_denied": "Accès refusé.",
+    "loading": "Chargement…",
+
+    "users_title": "Gestion des utilisateurs",
+    "col_username": "Nom d'utilisateur",
+    "col_email": "Email",
+    "col_role": "Rôle",
+    "col_registered": "Inscription",
+    "col_watched": "Films vus",
+    "col_downloaded": "Films téléchargés",
+    "no_users": "Aucun utilisateur trouvé.",
+
+    "films_title": "Films téléchargés",
+    "col_title": "Titre",
+    "col_status": "Statut",
+    "col_size": "Taille",
+    "col_progress": "Progression",
+    "col_watchers": "Spectateurs",
+    "col_actions": "Actions",
+    "no_films": "Aucun film téléchargé.",
+    "action_delete": "Supprimer",
+    "action_redownload": "Re-télécharger",
+    "action_deleting": "Suppression…",
+    "action_redownloading": "Lancement…",
+
+    "confirm_delete_title": "Supprimer ce film ?",
+    "confirm_delete_body": "Le fichier sera supprimé du disque et l'historique de visionnage effacé. Cette action est irréversible.",
+    "confirm_delete_cancel": "Annuler",
+    "confirm_delete_confirm": "Supprimer",
+
+    "status_ready": "Prêt",
+    "status_downloading": "Téléchargement",
+    "status_pending": "En attente",
+    "status_error": "Erreur",
+
+    "pagination_prev": "Précédent",
+    "pagination_next": "Suivant"
   },
 
   "profile": {
