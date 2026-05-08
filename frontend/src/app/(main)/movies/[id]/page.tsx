@@ -89,17 +89,7 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="min-h-screen">
-      <div className="max-w-5xl mx-auto px-4 pt-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="size-4" />
-          Retour
-        </Link>
-      </div>
-
-      {movie.backdrop_url && (
+      {movie.backdrop_url ? (
         <div className="relative w-full h-56 sm:h-72 md:h-96 overflow-hidden">
           <img
             src={movie.backdrop_url}
@@ -107,6 +97,23 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+          <Link
+            href="/"
+            className="absolute top-4 left-4 inline-flex items-center gap-1.5 text-sm font-medium text-white/90 hover:text-white bg-black/30 hover:bg-black/50 backdrop-blur-sm rounded-full px-3 py-1.5 transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Retour
+          </Link>
+        </div>
+      ) : (
+        <div className="max-w-5xl mx-auto px-4 pt-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="size-4" />
+            Retour
+          </Link>
         </div>
       )}
 
