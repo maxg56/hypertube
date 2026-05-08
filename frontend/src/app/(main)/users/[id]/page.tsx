@@ -76,7 +76,7 @@ export default function PublicProfilePage() {
       .then(({ data }) => setComments(data ?? []))
       .catch(() => {})
 
-    fetch(`/api/v1/users/${id}/favorites?limit=12`, { credentials: 'include' })
+    fetch(`/api/v1/users/${id}/favorites?limit=50`, { credentials: 'include' })
       .then((r) => r.json())
       .then(({ data }) => setFavorites(data?.favorites ?? []))
       .catch(() => {})
@@ -139,10 +139,12 @@ export default function PublicProfilePage() {
               {t('favorites.title')}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+          <CardContent className="px-0 pb-4">
+            <div className="flex gap-3 overflow-x-auto px-6 pb-2 scroll-smooth snap-x snap-mandatory [scrollbar-width:thin]">
               {favorites.map((f) => (
-                <MovieCard key={f.tmdb_id} movie={toMovie(f)} watched={false} />
+                <div key={f.tmdb_id} className="shrink-0 w-32 snap-start">
+                  <MovieCard movie={toMovie(f)} watched={false} />
+                </div>
               ))}
             </div>
           </CardContent>
