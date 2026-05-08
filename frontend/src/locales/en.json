@@ -3,7 +3,15 @@
 
   "nav": {
     "home": "Home",
-    "admin": "Admin"
+    "admin": "Admin",
+    "favorites": "My favorites"
+  },
+
+  "favorites": {
+    "title": "My favorites",
+    "empty": "You have no favorites yet.",
+    "add": "Add to favorites",
+    "remove": "Remove from favorites"
   },
 
   "admin": {

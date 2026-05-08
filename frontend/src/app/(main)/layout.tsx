@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { ThemeToggle } from '@/components/page/ThemeToggle'
+import { Heart } from 'lucide-react'
 
 export default function MainLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -51,6 +52,11 @@ export default function MainLayout({ children }: { children: ReactNode }) {
           )}
           <span className="font-bold text-lg tracking-tight flex-1 text-center">Hypertube</span>
           <div className="flex items-center gap-3">
+            <Link href="/favorites" title={t('nav.favorites')}>
+              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                <Heart className="size-5" />
+              </Button>
+            </Link>
             {isAdmin && (
               <Link href="/admin">
                 <Button variant="outline" size="sm">{t('nav.admin')}</Button>

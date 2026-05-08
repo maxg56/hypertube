@@ -27,6 +27,11 @@ func SetupUserRoutes(r *gin.Engine) {
 			protected.PUT(profileByID, proxy.ProxyRequest("user", upstreamProfileByID))
 			protected.DELETE(profileByID, proxy.ProxyRequest("user", upstreamProfileByID))
 			protected.POST("/avatar", proxy.ProxyRequest("user", "/api/v1/users/avatar"))
+
+			protected.GET("/favorites", proxy.ProxyRequest("user", "/api/v1/users/favorites"))
+			protected.POST("/favorites", proxy.ProxyRequest("user", "/api/v1/users/favorites"))
+			protected.DELETE("/favorites/:tmdbId", proxy.ProxyRequest("user", "/api/v1/users/favorites/:tmdbId"))
+			protected.GET("/favorites/:tmdbId", proxy.ProxyRequest("user", "/api/v1/users/favorites/:tmdbId"))
 		}
 	}
 }

@@ -48,6 +48,11 @@ func main() {
 			protected.PUT(profileByID, handlers.UpdateProfileHandler)
 			protected.DELETE(profileByID, handlers.DeleteProfileHandler)
 			protected.POST("/avatar", handlers.UploadAvatarHandler)
+
+			protected.GET("/favorites", handlers.ListFavoritesHandler)
+			protected.POST("/favorites", handlers.AddFavoriteHandler)
+			protected.DELETE("/favorites/:tmdbId", handlers.RemoveFavoriteHandler)
+			protected.GET("/favorites/:tmdbId", handlers.CheckFavoriteHandler)
 		}
 	}
 
