@@ -10,7 +10,6 @@ import (
 	"torrent-service/src/conf"
 	"torrent-service/src/handlers"
 	"torrent-service/src/services"
-	"torrent-service/src/utils"
 )
 
 func main() {
@@ -37,9 +36,7 @@ func main() {
 		api.GET("/movies/:id/watched", handlers.WatchedHandler)
 		api.GET("/movies/:id/progress", handlers.GetProgressHandler)
 		api.PUT("/movies/:id/progress", handlers.SaveProgressHandler)
-		api.GET("/subtitle/:id", func(c *gin.Context) {
-			utils.RespondError(c, http.StatusNotImplemented, "subtitles not yet implemented")
-		})
+		api.GET("/movies/:id/subtitles/:lang", handlers.SubtitleHandler)
 	}
 
 	port := os.Getenv("PORT")

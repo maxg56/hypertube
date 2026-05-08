@@ -73,10 +73,13 @@ func buildRequest(c *gin.Context, targetURL string) (*http.Request, error) {
 	return http.NewRequest(c.Request.Method, targetURL, body)
 }
 
-// clientForPath returns the streaming (no-timeout) client for stream routes,
-// and the default client for everything else.
+// clientForPath returns the no-timeout client for routes that make long-lived
+// or slow upstream calls (streaming, subtitle fetch), and the default 30s
+// client for everything else. The torrent-service enforces its own per-call
+// timeouts on external requests, so we don't need a gateway-level cap here.
 func clientForPath(path string) *http.Client {
-	if strings.HasPrefix(path, "/api/v1/stream/") {
+	if strings.HasPrefix(path, "/api/v1/stream/") ||
+		strings.Contains(path, "/subtitles/") {
 		return streamingClient
 	}
 	return defaultClient
