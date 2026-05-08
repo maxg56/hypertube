@@ -25,7 +25,7 @@ interface MoviePlayerProps {
 const SAVE_INTERVAL_MS = 5000
 
 export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [selected, setSelected] = useState<Torrent | null>(torrents[0] ?? null)
   const [state, setState] = useState<PlayerState>('checking')
   const [progress, setProgress] = useState(0)
@@ -197,6 +197,21 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
           crossOrigin="use-credentials"
           className="w-full rounded-lg bg-black aspect-video"
         >
+          <track
+            kind="subtitles"
+            src={`/api/v1/movies/${movieId}/subtitles/en`}
+            srcLang="en"
+            label={t('movie.subtitle_en')}
+          />
+          {i18n.language !== 'en' && (
+            <track
+              kind="subtitles"
+              src={`/api/v1/movies/${movieId}/subtitles/${i18n.language}`}
+              srcLang={i18n.language}
+              label={t('movie.subtitle_' + i18n.language)}
+              default
+            />
+          )}
           {t('movie.video_unsupported')}
         </video>
       ) : (

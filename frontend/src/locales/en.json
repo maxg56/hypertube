@@ -108,6 +108,8 @@
     "error_stream": "Failed to start the stream",
     "no_torrents": "No torrents available",
     "video_unsupported": "Your browser does not support video playback.",
+    "subtitle_en": "English",
+    "subtitle_fr": "French",
     "comments_title": "Comments",
     "comment_placeholder": "Add a comment…",
     "comment_submit": "Post",
