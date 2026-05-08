@@ -235,12 +235,17 @@ services:
       STREAM_BUFFER_SIZE: ${STREAM_BUFFER_SIZE:-10}
       GIN_MODE: debug
       AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+      OPENSUBTITLES_API_KEY: ${OPENSUBTITLES_API_KEY:-}
+      OPENSUBTITLES_USERNAME: ${OPENSUBTITLES_USERNAME:-}
+      OPENSUBTITLES_PASSWORD: ${OPENSUBTITLES_PASSWORD:-}
+      SUBTITLE_CACHE_PATH: /data/subtitles
     volumes:
       - ./api/torrent-service/src:/app/src
       - ./api/torrent-service/go.mod:/app/go.mod
       - ./api/torrent-service/go.sum:/app/go.sum
       - ./api/torrent-service/.air.toml:/app/.air.toml
       - torrent_data_dev:/data/torrents
+      - subtitle_data_dev:/data/subtitles
     depends_on:
       - postgres
     networks:
@@ -360,6 +365,12 @@ volumes:
     driver_opts:
       type: none
       device: ./volumes/torrents
+      o: bind
+  subtitle_data_dev:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/subtitles
       o: bind
   caddy_data:
 

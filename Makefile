@@ -19,7 +19,7 @@ DOCKER_COMPOSE_PATH_PROD	=	docker-compose.prode.yml
 all:
 	@if [ -f ".env" ]; then \
 		echo "Creating volumes..."; \
-		mkdir -p volumes/ volumes/redis volumes/data volumes/torrents volumes/avatars; \
+		mkdir -p volumes/ volumes/redis volumes/data volumes/torrents volumes/avatars volumes/subtitles ; \
 		echo "Launching containers..."; \
 		$(DOCKER_COMPOSE_CMD) --env-file .env -p $(NAME) -f $(DOCKER_COMPOSE_PATH) up --build -d; \
 	else \
