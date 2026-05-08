@@ -15,22 +15,23 @@ import (
 
 // AdminFilmRow is the result of the admin films list query.
 type AdminFilmRow struct {
-	ID           uint   `json:"id"`
-	MovieID      int    `json:"movie_id"`
-	TmdbID       int    `json:"tmdb_id"`
-	InfoHash     string `json:"info_hash"`
-	Status       string `json:"status"`
-	FilePath     string `json:"file_path"`
-	FileSize     int64  `json:"file_size"`
-	Downloaded   int64  `json:"downloaded"`
-	Progress     float64 `json:"progress"`
-	Title        string `json:"title"`
-	PosterPath   string `json:"poster_path"`
-	CreatedAt    string `json:"created_at"`
-	WatchersCount int64  `json:"watchers_count"`
+	ID            uint    `json:"id"`
+	MovieID       int     `json:"movie_id"`
+	TmdbID        int     `json:"tmdb_id"`
+	InfoHash      string  `json:"info_hash"`
+	Status        string  `json:"status"`
+	FilePath      string  `json:"file_path"`
+	FileSize      int64   `json:"file_size"`
+	Downloaded    int64   `json:"downloaded"`
+	Progress      float64 `json:"progress"`
+	Title         string  `json:"title"`
+	PosterPath    string  `json:"poster_path"`
+	Language      string  `json:"language"`
+	CreatedAt     string  `json:"created_at"`
+	WatchersCount int64   `json:"watchers_count"`
 	// comma-separated user IDs — parsed by the handler
 	watcherIDsRaw string
-	WatcherIDs    []int  `json:"watcher_ids"`
+	WatcherIDs    []int `json:"watcher_ids"`
 }
 
 // ListAdminFilms returns all torrent records with movie metadata and watcher info.
@@ -52,6 +53,7 @@ func ListAdminFilms(limit, offset int) ([]AdminFilmRow, int64, error) {
 		Progress      float64 `gorm:"column:progress"`
 		Title         string  `gorm:"column:title"`
 		PosterPath    string  `gorm:"column:poster_path"`
+		Language      string  `gorm:"column:language"`
 		CreatedAt     string  `gorm:"column:created_at"`
 		WatchersCount int64   `gorm:"column:watchers_count"`
 		WatcherIDsRaw string  `gorm:"column:watcher_ids"`
@@ -71,13 +73,14 @@ func ListAdminFilms(limit, offset int) ([]AdminFilmRow, int64, error) {
 			t.progress,
 			COALESCE(m.title, '')           AS title,
 			COALESCE(m.poster_path, '')     AS poster_path,
+			COALESCE(m.language, '')        AS language,
 			to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
 			COUNT(DISTINCT wh.user_id)      AS watchers_count,
 			COALESCE(string_agg(DISTINCT wh.user_id::text, ','), '') AS watcher_ids
 		FROM torrents t
 		LEFT JOIN movies m  ON m.id = t.movie_id
 		LEFT JOIN watch_history wh ON wh.movie_id = t.movie_id
-		GROUP BY t.id, m.tmdb_id, m.title, m.poster_path
+		GROUP BY t.id, m.tmdb_id, m.title, m.poster_path, m.language
 		ORDER BY t.created_at DESC
 		LIMIT ? OFFSET ?
 	`, limit, offset).Scan(&rows).Error
@@ -99,6 +102,7 @@ func ListAdminFilms(limit, offset int) ([]AdminFilmRow, int64, error) {
 			Progress:      r.Progress,
 			Title:         r.Title,
 			PosterPath:    r.PosterPath,
+			Language:      r.Language,
 			CreatedAt:     r.CreatedAt,
 			WatchersCount: r.WatchersCount,
 			WatcherIDs:    parseIntCSV(r.WatcherIDsRaw),
