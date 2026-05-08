@@ -98,6 +98,9 @@ func (c *YTSClient) Search(query string, page int) (*models.SearchResult, error)
 }
 
 // List fetches movies from YTS with optional filters and sorting.
+// When a year filter is active, it scans up to maxYearScanPages YTS pages
+// starting from p.Page to collect matching results, because YTS has no
+// native year parameter.
 func (c *YTSClient) List(p ListParams) (*models.SearchResult, error) {
 	if p.Page < 1 {
 		p.Page = 1
@@ -109,50 +112,99 @@ func (c *YTSClient) List(p ListParams) (*models.SearchResult, error) {
 		sortBy = p.SortBy
 	}
 
-	params := url.Values{}
+	baseParams := url.Values{}
 	if p.Query != "" {
-		params.Set("query_term", p.Query)
+		baseParams.Set("query_term", p.Query)
 	}
 	if p.Genre != "" {
-		params.Set("genre", p.Genre)
+		baseParams.Set("genre", p.Genre)
 	}
 	if p.MinRating > 0 {
-		params.Set("minimum_rating", strconv.FormatFloat(p.MinRating, 'f', 0, 64))
+		baseParams.Set("minimum_rating", strconv.FormatFloat(p.MinRating, 'f', 0, 64))
 	}
-	params.Set("sort_by", sortBy)
-	params.Set("page", strconv.Itoa(p.Page))
-	params.Set("limit", "20")
+	baseParams.Set("sort_by", sortBy)
+	baseParams.Set("limit", "20")
 
-	body, err := c.get(fmt.Sprintf("%s/list_movies.json?%s", ytsBaseURL, params.Encode()))
-	if err != nil {
-		return nil, err
+	// Fast path: no year filter — single YTS request.
+	if p.Year == 0 {
+		baseParams.Set("page", strconv.Itoa(p.Page))
+		body, err := c.get(fmt.Sprintf("%s/list_movies.json?%s", ytsBaseURL, baseParams.Encode()))
+		if err != nil {
+			return nil, err
+		}
+		var raw listResponse
+		if err := json.Unmarshal(body, &raw); err != nil {
+			return nil, err
+		}
+		if raw.Status != "ok" {
+			return nil, fmt.Errorf("YTS error: %s", raw.Status)
+		}
+		totalPages := 0
+		if raw.Data.Limit > 0 {
+			totalPages = (raw.Data.MovieCount + raw.Data.Limit - 1) / raw.Data.Limit
+		}
+		result := &models.SearchResult{
+			Page:       p.Page,
+			TotalPages: totalPages,
+			TotalCount: raw.Data.MovieCount,
+		}
+		for _, m := range raw.Data.Movies {
+			result.Results = append(result.Results, listMovieToModel(m))
+		}
+		return result, nil
 	}
 
-	var raw listResponse
-	if err := json.Unmarshal(body, &raw); err != nil {
-		return nil, err
-	}
-	if raw.Status != "ok" {
-		return nil, fmt.Errorf("YTS error: %s", raw.Status)
+	// Year filter: scan up to maxYearScanPages consecutive YTS pages starting
+	// from p.Page and accumulate all matching movies. The cursor in movies.go
+	// advances by maxYearScanPages each time so pages don't overlap.
+	const maxYearScanPages = 10
+	collected := make([]models.Movie, 0, 40)
+	totalYTSPages := 0
+
+	for i := 0; i < maxYearScanPages; i++ {
+		ytsPg := p.Page + i
+		params := url.Values{}
+		for k, v := range baseParams {
+			params[k] = v
+		}
+		params.Set("page", strconv.Itoa(ytsPg))
+
+		body, err := c.get(fmt.Sprintf("%s/list_movies.json?%s", ytsBaseURL, params.Encode()))
+		if err != nil {
+			break
+		}
+		var raw listResponse
+		if err := json.Unmarshal(body, &raw); err != nil {
+			break
+		}
+		if raw.Status != "ok" || len(raw.Data.Movies) == 0 {
+			break
+		}
+		if totalYTSPages == 0 && raw.Data.Limit > 0 {
+			totalYTSPages = (raw.Data.MovieCount + raw.Data.Limit - 1) / raw.Data.Limit
+		}
+		for _, m := range raw.Data.Movies {
+			if m.Year == p.Year {
+				collected = append(collected, listMovieToModel(m))
+			}
+		}
+		if ytsPg >= totalYTSPages {
+			totalYTSPages = ytsPg // signal no more pages
+			break
+		}
 	}
 
-	totalPages := 0
-	if raw.Data.Limit > 0 {
-		totalPages = (raw.Data.MovieCount + raw.Data.Limit - 1) / raw.Data.Limit
-	}
-
+	nextYTSPage := p.Page + maxYearScanPages
+	hasMore := totalYTSPages == 0 || nextYTSPage <= totalYTSPages
 	result := &models.SearchResult{
 		Page:       p.Page,
-		TotalPages: totalPages,
-		TotalCount: raw.Data.MovieCount,
+		TotalPages: p.Page + 1,
+		TotalCount: len(collected),
 	}
-	for _, m := range raw.Data.Movies {
-		movie := listMovieToModel(m)
-		if p.Year > 0 && m.Year != p.Year {
-			continue
-		}
-		result.Results = append(result.Results, movie)
+	if !hasMore {
+		result.TotalPages = p.Page
 	}
+	result.Results = collected
 	return result, nil
 }
 
