@@ -19,9 +19,11 @@ type User struct {
 	AvatarURL     string    `gorm:"column:avatar_url" json:"avatar_url,omitempty"`
 	Language      string    `gorm:"column:language;type:varchar(10);default:'fr'" json:"language"`
 	Role          UserRole  `gorm:"column:role;type:user_role_enum;default:'user';not null" json:"role"`
-	EmailVerified bool      `gorm:"column:email_verified;default:false" json:"email_verified"`
-	CreatedAt     time.Time `gorm:"column:created_at;autoCreateTime" json:"created_at"`
-	UpdatedAt     time.Time `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
+	EmailVerified   bool      `gorm:"column:email_verified;default:false" json:"email_verified"`
+	IsPublic        bool      `gorm:"column:is_public;default:true" json:"is_public"`
+	FavoritesPublic bool      `gorm:"column:favorites_public;default:true" json:"favorites_public"`
+	CreatedAt       time.Time `gorm:"column:created_at;autoCreateTime" json:"created_at"`
+	UpdatedAt       time.Time `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
 }
 
 func (User) TableName() string { return "users" }

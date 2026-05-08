@@ -24,5 +24,10 @@ func GetProfileHandler(c *gin.Context) {
 		return
 	}
 
+	if !user.IsPublic {
+		utils.RespondError(c, http.StatusForbidden, "private account")
+		return
+	}
+
 	utils.RespondSuccess(c, http.StatusOK, gin.H{"profile": user})
 }

@@ -3,7 +3,25 @@
 
   "nav": {
     "home": "Home",
-    "admin": "Admin"
+    "admin": "Admin",
+    "favorites": "My favorites",
+    "watch_later": "Watch later"
+  },
+
+  "favorites": {
+    "title": "My favorites",
+    "filter": "Favorites",
+    "empty": "You have no favorites yet.",
+    "add": "Add to favorites",
+    "remove": "Remove from favorites"
+  },
+
+  "watch_later": {
+    "title": "Watch later",
+    "add": "Watch later",
+    "remove": "Remove from list",
+    "filter": "Watch later",
+    "empty": "Your \"Watch later\" list is empty."
   },
 
   "admin": {
@@ -81,7 +99,13 @@
     "loading": "Loading…",
     "user_not_found": "User not found.",
     "comments_title": "Comments",
-    "no_comments": "This user hasn't commented on any movie yet."
+    "no_comments": "This user hasn't commented on any movie yet.",
+    "privacy_title": "Privacy",
+    "privacy_account_public": "Public profile",
+    "privacy_account_public_hint": "Other users can view your profile.",
+    "privacy_favorites_public": "Public favorites",
+    "privacy_favorites_public_hint": "Other users can see your favorite movies.",
+    "private_account": "This account is private."
   },
 
   "auth": {

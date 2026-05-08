@@ -28,6 +28,12 @@ export interface MovieFilters {
   sort_by: string
 }
 
+function isValidYear(year: string): boolean {
+  if (!/^\d{4}$/.test(year)) return false
+  const y = parseInt(year, 10)
+  return y >= 1888 && y <= new Date().getFullYear()
+}
+
 export function useMovies(filters: MovieFilters) {
   const [movies, setMovies] = useState<Movie[]>([])
   const [nextCursor, setNextCursor] = useState<string | null>(null)
@@ -47,7 +53,7 @@ export function useMovies(filters: MovieFilters) {
     if (filters.query) params.set('q', filters.query)
     if (filters.genre) params.set('genre', filters.genre)
     if (filters.rating) params.set('rating', filters.rating)
-    if (filters.year) params.set('year', filters.year)
+    if (isValidYear(filters.year)) params.set('year', filters.year)
     if (filters.sort_by) params.set('sort_by', filters.sort_by)
     if (cursor) params.set('cursor', cursor)
 
@@ -74,7 +80,7 @@ export function useMovies(filters: MovieFilters) {
       setLoading(false)
       setInitialLoading(false)
     }
-  }, [filters.query, filters.genre, filters.rating, filters.year, filters.sort_by])
+  }, [filters.query, filters.genre, filters.rating, isValidYear(filters.year) ? filters.year : '', filters.sort_by])
 
   useEffect(() => {
     setInitialLoading(true)
