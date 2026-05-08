@@ -60,6 +60,7 @@ func main() {
 	routes.SetupLibraryRoutes(r)
 	routes.SetupTorrentRoutes(r)
 	routes.SetupCommentRoutes(r)
+	routes.SetupAdminRoutes(r)
 
 	log.Printf("Gateway starting on port %s", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
