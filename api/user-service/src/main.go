@@ -37,6 +37,7 @@ func main() {
 
 	users := r.Group("/api/v1/users")
 	{
+		users.GET("/search", handlers.SearchUsersHandler)
 		users.GET(profileByID, handlers.GetProfileHandler)
 		users.GET("/:id/online-status", handlers.GetUserOnlineStatusHandler)
 		users.GET("/:id/favorites", handlers.ListUserFavoritesHandler)

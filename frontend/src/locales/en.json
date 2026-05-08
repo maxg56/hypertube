@@ -170,6 +170,12 @@
 
     "logout": "Log out"
   },
+  "user_search": {
+    "mode_hint": "User search",
+    "empty": "No users found.",
+    "placeholder_hint": "e.g. user:johndoe"
+  },
+
   "library": {
     "search_placeholder": "Search a movie…",
     "filter_all_genres": "All genres",

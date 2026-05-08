@@ -170,7 +170,13 @@
 
     "logout": "Déconnexion"
   },
-    "library": {
+    "user_search": {
+    "mode_hint": "Recherche d'utilisateurs",
+    "empty": "Aucun utilisateur trouvé.",
+    "placeholder_hint": "ex : user:johndoe"
+  },
+
+  "library": {
     "search_placeholder": "Rechercher un film…",
     "filter_all_genres": "Tous les genres",
     "filter_all_ratings": "Toutes les notes",
