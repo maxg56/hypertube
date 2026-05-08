@@ -10,6 +10,7 @@ type Users struct {
 	FirstName     string    `gorm:"column:first_name" json:"first_name"`
 	LastName      string    `gorm:"column:last_name" json:"last_name"`
 	AvatarURL     string    `gorm:"column:avatar_url" json:"avatar_url,omitempty"`
+	Role          string    `gorm:"column:role;type:varchar(20);default:'user';not null" json:"role"`
 	EmailVerified bool      `gorm:"column:email_verified;default:false" json:"email_verified"`
 	CreatedAt     time.Time `gorm:"column:created_at;autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time `gorm:"column:updated_at;autoUpdateTime" json:"updated_at"`
