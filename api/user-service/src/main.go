@@ -44,11 +44,18 @@ func main() {
 		protected.Use(middleware.AuthMiddleware())
 		{
 			protected.GET("", handlers.ListUsersHandler)
-		protected.GET("/profile", handlers.GetOwnProfileHandler)
+			protected.GET("/profile", handlers.GetOwnProfileHandler)
 			protected.PUT(profileByID, handlers.UpdateProfileHandler)
 			protected.DELETE(profileByID, handlers.DeleteProfileHandler)
 			protected.POST("/avatar", handlers.UploadAvatarHandler)
 		}
+	}
+
+	admin := r.Group("/api/v1/admin")
+	admin.Use(middleware.AuthMiddleware())
+	admin.Use(middleware.AdminMiddleware())
+	{
+		admin.GET("/users", handlers.AdminListUsersHandler)
 	}
 
 	log.Println("User service starting on port 8002")

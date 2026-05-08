@@ -9,6 +9,7 @@ import (
 
 	"torrent-service/src/conf"
 	"torrent-service/src/handlers"
+	"torrent-service/src/middleware"
 	"torrent-service/src/services"
 	"torrent-service/src/utils"
 )
@@ -40,6 +41,14 @@ func main() {
 		api.GET("/subtitle/:id", func(c *gin.Context) {
 			utils.RespondError(c, http.StatusNotImplemented, "subtitles not yet implemented")
 		})
+
+		admin := api.Group("/admin")
+		admin.Use(middleware.AdminMiddleware())
+		{
+			admin.GET("/films", handlers.AdminListFilmsHandler)
+			admin.DELETE("/films/:id", handlers.AdminDeleteFilmHandler)
+			admin.POST("/films/:id/download", handlers.AdminReDownloadFilmHandler)
+		}
 	}
 
 	port := os.Getenv("PORT")
