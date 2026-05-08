@@ -122,12 +122,64 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
     if (state !== 'streaming') return
     stopSaving()
     // Delay slightly so the video element has time to mount.
-    const t = setTimeout(() => {
+    const timer = setTimeout(() => {
       void restorePosition()
       startSaving()
     }, 300)
-    return () => clearTimeout(t)
+    return () => clearTimeout(timer)
   }, [state, restorePosition, startSaving, stopSaving])
+
+  // Fetch subtitle files with credentials and inject them as blob-URL tracks.
+  // This bypasses browser inconsistencies with the declarative <track> + default
+  // attribute, and ensures the JWT cookie is sent with each subtitle request.
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || state !== 'streaming') return
+
+    const userLang = i18n.language.slice(0, 2)
+    const langs = userLang === 'en' ? ['en'] : [userLang, 'en']
+    const blobUrls: string[] = []
+    let cancelled = false
+
+    langs.forEach(async (lang) => {
+      try {
+        const res = await fetch(`/api/v1/movies/${movieId}/subtitles/${lang}`, {
+          credentials: 'include',
+        })
+        if (!res.ok || cancelled) return
+        const blob = await res.blob()
+        if (cancelled) return
+
+        const url = URL.createObjectURL(blob)
+        blobUrls.push(url)
+
+        const el = document.createElement('track')
+        el.kind = 'subtitles'
+        el.src = url
+        el.srclang = lang
+        el.label = t(`movie.subtitle_${lang}`)
+        video.appendChild(el)
+
+        if (lang === userLang) {
+          const tracks = video.textTracks
+          for (let i = 0; i < tracks.length; i++) {
+            if (tracks[i].language === lang) {
+              tracks[i].mode = 'showing'
+              break
+            }
+          }
+        }
+      } catch {
+        // subtitle not available for this language — silently ignore
+      }
+    })
+
+    return () => {
+      cancelled = true
+      Array.from(video.querySelectorAll('track')).forEach(el => el.remove())
+      blobUrls.forEach(url => URL.revokeObjectURL(url))
+    }
+  }, [state, movieId, i18n.language, t])
 
   const pollStatus = useCallback((hash: string) => {
     pollRef.current = setInterval(async () => {
@@ -197,21 +249,6 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
           crossOrigin="use-credentials"
           className="w-full rounded-lg bg-black aspect-video"
         >
-          <track
-            kind="subtitles"
-            src={`/api/v1/movies/${movieId}/subtitles/en`}
-            srcLang="en"
-            label={t('movie.subtitle_en')}
-          />
-          {i18n.language !== 'en' && (
-            <track
-              kind="subtitles"
-              src={`/api/v1/movies/${movieId}/subtitles/${i18n.language}`}
-              srcLang={i18n.language}
-              label={t('movie.subtitle_' + i18n.language)}
-              default
-            />
-          )}
           {t('movie.video_unsupported')}
         </video>
       ) : (
