@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslation } from 'react-i18next'
-import { Search, Bookmark } from 'lucide-react'
+import { Search, Bookmark, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MovieFilters } from '@/hooks/useMovies'
 
@@ -25,10 +25,12 @@ interface MovieFiltersProps {
   onFilterChange: (key: keyof Omit<MovieFilters, 'query'>, value: string) => void
   watchLater: boolean
   onWatchLaterChange: (v: boolean) => void
+  favorites: boolean
+  onFavoritesChange: (v: boolean) => void
 }
 
 export function MovieFiltersBar({
-  filters, onSearchChange, onFilterChange, watchLater, onWatchLaterChange,
+  filters, onSearchChange, onFilterChange, watchLater, onWatchLaterChange, favorites, onFavoritesChange,
 }: MovieFiltersProps) {
   const { t } = useTranslation()
 
@@ -46,7 +48,7 @@ export function MovieFiltersBar({
         />
       </div>
       <div className="flex flex-wrap gap-2 items-center">
-        <div className={cn('contents', watchLater && 'opacity-40 pointer-events-none')}>
+        <div className={cn('contents', (watchLater || favorites) && 'opacity-40 pointer-events-none')}>
           <select
             value={filters.genre}
             onChange={e => onFilterChange('genre', e.target.value)}
@@ -91,7 +93,19 @@ export function MovieFiltersBar({
         </div>
 
         <button
-          onClick={() => onWatchLaterChange(!watchLater)}
+          onClick={() => { onFavoritesChange(!favorites); if (!favorites) onWatchLaterChange(false) }}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors',
+            favorites
+              ? 'bg-destructive/10 border-destructive text-destructive'
+              : 'bg-card border-border text-muted-foreground hover:text-destructive hover:border-destructive',
+          )}
+        >
+          <Heart className={cn('size-4', favorites && 'fill-current')} />
+          {t('favorites.filter')}
+        </button>
+        <button
+          onClick={() => { onWatchLaterChange(!watchLater); if (!watchLater) onFavoritesChange(false) }}
           className={cn(
             'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors',
             watchLater

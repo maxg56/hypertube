@@ -1,16 +1,27 @@
 'use client'
 import React from 'react'
 
+export interface FavoriteMovie {
+  tmdb_id: number
+  title: string
+  poster_url: string
+  rating: number
+  language: string
+  release_date: string
+}
+
 export function useFavorites() {
   const [favorites, setFavorites] = React.useState<Set<number>>(new Set())
+  const [list, setList] = React.useState<FavoriteMovie[]>([])
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
     fetch('/api/v1/users/favorites?limit=500', { credentials: 'include' })
       .then((r) => r.json())
       .then((json) => {
-        const ids = (json.data?.favorites ?? []).map((f: { tmdb_id: number }) => f.tmdb_id)
-        setFavorites(new Set(ids))
+        const movies: FavoriteMovie[] = json.data?.favorites ?? []
+        setList(movies)
+        setFavorites(new Set(movies.map((f) => f.tmdb_id)))
       })
       .catch(() => {})
       .finally(() => setLoading(false))
@@ -26,6 +37,7 @@ export function useFavorites() {
       was ? next.delete(tmdbId) : next.add(tmdbId)
       return next
     })
+    setList((prev) => was ? prev.filter((m) => m.tmdb_id !== tmdbId) : prev)
 
     try {
       if (was) {
@@ -47,5 +59,5 @@ export function useFavorites() {
     }
   }, [favorites])
 
-  return { favorites, loading, isFavorite, toggle }
+  return { favorites, list, loading, isFavorite, toggle }
 }

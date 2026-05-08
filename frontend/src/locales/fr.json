@@ -4,17 +4,20 @@
   "nav": {
     "home": "Accueil",
     "admin": "Admin",
-    "favorites": "Mes favoris"
+    "favorites": "Mes favoris",
+    "watch_later": "À regarder plus tard"
   },
 
   "favorites": {
     "title": "Mes favoris",
+    "filter": "Favoris",
     "empty": "Vous n'avez pas encore de favoris.",
     "add": "Ajouter aux favoris",
     "remove": "Retirer des favoris"
   },
 
   "watch_later": {
+    "title": "À regarder plus tard",
     "add": "Voir plus tard",
     "remove": "Retirer de la liste",
     "filter": "Voir plus tard",

@@ -6,8 +6,10 @@ import { MovieCard, MovieCardSkeleton } from '@/components/page/MovieCard'
 import { MovieFiltersBar } from '@/components/page/MovieFilters'
 import { useMovies, type MovieFilters } from '@/hooks/useMovies'
 import { useWatchLater } from '@/hooks/useWatchLater'
+import { useFavorites } from '@/hooks/useFavorites'
 import type { Movie } from '@/hooks/useMovies'
 import type { WatchLaterMovie } from '@/hooks/useWatchLater'
+import type { FavoriteMovie } from '@/hooks/useFavorites'
 
 const SKELETON_COUNT = 20
 
@@ -31,18 +33,32 @@ function watchLaterToMovie(m: WatchLaterMovie): Movie {
   }
 }
 
+function favoriteToMovie(m: FavoriteMovie): Movie {
+  return {
+    id: m.tmdb_id,
+    imdb_id: '',
+    title: m.title,
+    year: m.release_date?.slice(0, 4) ?? '',
+    rating: m.rating,
+    poster_url: m.poster_url,
+    genres: [],
+  }
+}
+
 export default function Thumbnails() {
   const { t } = useTranslation()
   const [filters, setFilters] = useState<MovieFilters>(DEFAULT_FILTERS)
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [watchedMovies] = useState<Set<number>>(new Set())
   const [watchLater, setWatchLater] = useState(false)
+  const [showFavorites, setShowFavorites] = useState(false)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const activeFilters: MovieFilters = { ...filters, query: debouncedQuery }
   const { movies, loading, initialLoading, hasMore, loadMore } = useMovies(activeFilters)
   const { list: watchLaterList, loading: watchLaterLoading } = useWatchLater()
+  const { list: favoritesList, loading: favoritesLoading } = useFavorites()
 
   const handleSearchChange = useCallback((value: string) => {
     setFilters(prev => ({ ...prev, query: value }))
@@ -55,7 +71,7 @@ export default function Thumbnails() {
   }, [])
 
   useEffect(() => {
-    if (watchLater) return
+    if (watchLater || showFavorites) return
     const sentinel = sentinelRef.current
     if (!sentinel) return
     const observer = new IntersectionObserver(
@@ -64,9 +80,28 @@ export default function Thumbnails() {
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [loadMore, watchLater])
+  }, [loadMore, watchLater, showFavorites])
 
   const watchLaterMovies = watchLaterList.map(watchLaterToMovie)
+  const favoritesMovies = favoritesList.map(favoriteToMovie)
+
+  function renderList(movieList: Movie[], loading: boolean, emptyKey: string) {
+    if (loading) return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {Array.from({ length: 10 }).map((_, i) => <MovieCardSkeleton key={i} />)}
+      </div>
+    )
+    if (movieList.length === 0) return (
+      <p className="text-center text-sm text-muted-foreground py-16">{t(emptyKey)}</p>
+    )
+    return (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {movieList.map(movie => (
+          <MovieCard key={movie.id} movie={movie} watched={watchedMovies.has(movie.id)} />
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -76,22 +111,14 @@ export default function Thumbnails() {
         onFilterChange={handleFilterChange}
         watchLater={watchLater}
         onWatchLaterChange={setWatchLater}
+        favorites={showFavorites}
+        onFavoritesChange={setShowFavorites}
       />
       <div className="px-4 pb-6">
-        {watchLater ? (
-          watchLaterLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {Array.from({ length: 10 }).map((_, i) => <MovieCardSkeleton key={i} />)}
-            </div>
-          ) : watchLaterMovies.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-16">{t('watch_later.empty')}</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {watchLaterMovies.map(movie => (
-                <MovieCard key={movie.id} movie={movie} watched={watchedMovies.has(movie.id)} />
-              ))}
-            </div>
-          )
+        {showFavorites ? (
+          renderList(favoritesMovies, favoritesLoading, 'favorites.empty')
+        ) : watchLater ? (
+          renderList(watchLaterMovies, watchLaterLoading, 'watch_later.empty')
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
