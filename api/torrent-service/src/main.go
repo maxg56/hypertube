@@ -9,6 +9,7 @@ import (
 
 	"torrent-service/src/conf"
 	"torrent-service/src/handlers"
+	"torrent-service/src/middleware"
 	"torrent-service/src/services"
 )
 
@@ -37,6 +38,16 @@ func main() {
 		api.GET("/movies/:id/progress", handlers.GetProgressHandler)
 		api.PUT("/movies/:id/progress", handlers.SaveProgressHandler)
 		api.GET("/movies/:id/subtitles/:lang", handlers.SubtitleHandler)
+		api.GET("/subtitle/:id", handlers.SubtitleByIDHandler)
+
+		admin := api.Group("/admin")
+		admin.Use(middleware.AdminMiddleware())
+		{
+			admin.GET("/stats", handlers.AdminStatsHandler)
+			admin.GET("/films", handlers.AdminListFilmsHandler)
+			admin.DELETE("/films/:id", handlers.AdminDeleteFilmHandler)
+			admin.POST("/films/:id/download", handlers.AdminReDownloadFilmHandler)
+		}
 	}
 
 	port := os.Getenv("PORT")

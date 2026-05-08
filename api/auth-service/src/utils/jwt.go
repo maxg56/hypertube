@@ -67,46 +67,47 @@ func getJWTSecret() (string, error) {
 }
 
 // GenerateTokenPair generates access and refresh token pair for a user
-func GenerateTokenPair(userID uint) (*TokenPair, error) {
-	// Get JWT secret from environment
+func GenerateTokenPair(userID uint, role string) (*TokenPair, error) {
 	secret, err := getJWTSecret()
 	if err != nil {
 		return nil, err
 	}
 
-	// Get refresh secret (fallback to main secret if not set)
 	refreshSecret := os.Getenv("JWT_REFRESH_SECRET")
 	if refreshSecret == "" {
 		refreshSecret = secret
 	}
 
+	if role == "" {
+		role = "user"
+	}
+
 	now := time.Now()
 	userIDStr := fmt.Sprintf("%d", userID)
 
-	// Get TTL from environment
 	accessTTL := GetDurationFromEnv("JWT_ACCESS_TTL", 15*time.Minute)
 	refreshTTL := GetDurationFromEnv("JWT_REFRESH_TTL", 7*24*time.Hour)
 
-	// Generate access token (short-lived)
 	accessClaims := jwt.MapClaims{
 		"sub":   userIDStr,
 		"iat":   now.Unix(),
 		"nbf":   now.Unix(),
 		"exp":   now.Add(accessTTL).Unix(),
 		"scope": "access",
+		"role":  role,
 	}
 	accessToken, err := SignToken(accessClaims, secret)
 	if err != nil {
 		return nil, fmt.Errorf("failed to sign access token: %w", err)
 	}
 
-	// Generate refresh token (long-lived)
 	refreshClaims := jwt.MapClaims{
 		"sub":   userIDStr,
 		"iat":   now.Unix(),
 		"nbf":   now.Unix(),
 		"exp":   now.Add(refreshTTL).Unix(),
 		"scope": "refresh",
+		"role":  role,
 	}
 	refreshToken, err := SignToken(refreshClaims, refreshSecret)
 	if err != nil {

@@ -109,7 +109,7 @@ func RegisterHandler(c *gin.Context) {
 		log.Printf("failed to queue verification email for %s: %v", user.Email, err)
 	}
 
-	tokens, err := utils.GenerateTokenPair(user.ID)
+	tokens, err := utils.GenerateTokenPair(user.ID, string(user.Role))
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
@@ -147,7 +147,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	tokens, err := utils.GenerateTokenPair(user.ID)
+	tokens, err := utils.GenerateTokenPair(user.ID, string(user.Role))
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
 		return

@@ -14,7 +14,8 @@ import (
 )
 
 const (
-	CtxUserIDKey = "userID"
+	CtxUserIDKey   = "userID"
+	CtxUserRoleKey = "userRole"
 )
 
 // JWTMiddleware validates JWT tokens and sets user context
@@ -54,11 +55,16 @@ func JWTMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		// Extract common identifiers
 		if sub, ok := claims["sub"].(string); ok && sub != "" {
 			c.Set(CtxUserIDKey, sub)
 		} else {
 			log.Printf("[JWT] no valid 'sub' claim found in token")
+		}
+
+		if role, ok := claims["role"].(string); ok && role != "" {
+			c.Set(CtxUserRoleKey, role)
+		} else {
+			c.Set(CtxUserRoleKey, "user")
 		}
 
 		c.Next()

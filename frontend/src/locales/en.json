@@ -2,7 +2,66 @@
   "app_tagline": "Watch your movies in streaming",
 
   "nav": {
-    "home": "Home"
+    "home": "Home",
+    "admin": "Admin"
+  },
+
+  "admin": {
+    "title": "Administration panel",
+    "tab_overview": "Overview",
+    "tab_users": "Users",
+    "tab_films": "Films",
+
+    "stat_users": "Users",
+    "stat_films": "Downloaded films",
+    "stat_ready": "Ready to watch",
+    "stat_watches": "Watch events",
+
+    "chart_activity": "Activity (last 30 days)",
+    "chart_status": "Films by status",
+    "chart_top_films": "Most watched films",
+    "chart_registrations": "Registrations (last 6 months)",
+
+    "stats_error": "Could not load statistics.",
+    "access_denied": "Access denied.",
+    "loading": "Loading…",
+
+    "users_title": "User management",
+    "col_username": "Username",
+    "col_email": "Email",
+    "col_role": "Role",
+    "col_registered": "Registered",
+    "col_watched": "Films watched",
+    "col_downloaded": "Films downloaded",
+    "no_users": "No users found.",
+
+    "films_title": "Downloaded films",
+    "col_title": "Title",
+    "col_info_hash": "Torrent key",
+    "col_language": "Language",
+    "col_status": "Status",
+    "col_size": "Size",
+    "col_progress": "Progress",
+    "col_watchers": "Watchers",
+    "col_actions": "Actions",
+    "no_films": "No downloaded films.",
+    "action_delete": "Delete",
+    "action_redownload": "Re-download",
+    "action_deleting": "Deleting…",
+    "action_redownloading": "Starting…",
+
+    "confirm_delete_title": "Delete this film?",
+    "confirm_delete_body": "The file will be removed from disk and the watch history cleared. This action is irreversible.",
+    "confirm_delete_cancel": "Cancel",
+    "confirm_delete_confirm": "Delete",
+
+    "status_ready": "Ready",
+    "status_downloading": "Downloading",
+    "status_pending": "Pending",
+    "status_error": "Error",
+
+    "pagination_prev": "Previous",
+    "pagination_next": "Next"
   },
 
   "profile": {

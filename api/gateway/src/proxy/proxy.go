@@ -119,6 +119,12 @@ func copyHeaders(c *gin.Context, req *http.Request) {
 		}
 	}
 
+	if v, ok := c.Get(middleware.CtxUserRoleKey); ok {
+		if s, ok := v.(string); ok && s != "" {
+			req.Header.Set("X-User-Role", s)
+		}
+	}
+
 	if token := utils.ExtractToken(c); token != "" {
 		req.Header.Set("X-JWT-Token", token)
 	}
