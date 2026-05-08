@@ -14,6 +14,13 @@
     "remove": "Remove from favorites"
   },
 
+  "watch_later": {
+    "add": "Watch later",
+    "remove": "Remove from list",
+    "filter": "Watch later",
+    "empty": "Your \"Watch later\" list is empty."
+  },
+
   "admin": {
     "title": "Administration panel",
     "tab_overview": "Overview",

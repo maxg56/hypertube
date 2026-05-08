@@ -14,6 +14,13 @@
     "remove": "Retirer des favoris"
   },
 
+  "watch_later": {
+    "add": "Voir plus tard",
+    "remove": "Retirer de la liste",
+    "filter": "Voir plus tard",
+    "empty": "Votre liste \"Voir plus tard\" est vide."
+  },
+
   "admin": {
     "title": "Panneau d'administration",
     "tab_overview": "Vue générale",

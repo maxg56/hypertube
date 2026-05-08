@@ -54,6 +54,11 @@ func main() {
 			protected.POST("/favorites", handlers.AddFavoriteHandler)
 			protected.DELETE("/favorites/:tmdbId", handlers.RemoveFavoriteHandler)
 			protected.GET("/favorites/:tmdbId", handlers.CheckFavoriteHandler)
+
+			protected.GET("/watch-later", handlers.ListWatchLaterHandler)
+			protected.POST("/watch-later", handlers.AddWatchLaterHandler)
+			protected.DELETE("/watch-later/:tmdbId", handlers.RemoveWatchLaterHandler)
+			protected.GET("/watch-later/:tmdbId", handlers.CheckWatchLaterHandler)
 		}
 	}
 

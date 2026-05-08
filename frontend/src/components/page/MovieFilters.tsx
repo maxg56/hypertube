@@ -1,7 +1,8 @@
 'use client'
 
 import { useTranslation } from 'react-i18next'
-import { Search } from 'lucide-react'
+import { Search, Bookmark } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import type { MovieFilters } from '@/hooks/useMovies'
 
 const GENRES = [
@@ -22,9 +23,13 @@ interface MovieFiltersProps {
   filters: MovieFilters
   onSearchChange: (value: string) => void
   onFilterChange: (key: keyof Omit<MovieFilters, 'query'>, value: string) => void
+  watchLater: boolean
+  onWatchLaterChange: (v: boolean) => void
 }
 
-export function MovieFiltersBar({ filters, onSearchChange, onFilterChange }: MovieFiltersProps) {
+export function MovieFiltersBar({
+  filters, onSearchChange, onFilterChange, watchLater, onWatchLaterChange,
+}: MovieFiltersProps) {
   const { t } = useTranslation()
 
   return (
@@ -36,51 +41,67 @@ export function MovieFiltersBar({ filters, onSearchChange, onFilterChange }: Mov
           value={filters.query}
           onChange={e => onSearchChange(e.target.value)}
           placeholder={t('library.search_placeholder')}
-          className="w-full pl-9 pr-4 py-2 bg-card border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
+          disabled={watchLater}
+          className="w-full pl-9 pr-4 py-2 bg-card border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50 disabled:opacity-40"
         />
       </div>
-      <div className="flex flex-wrap gap-2">
-        <select
-          value={filters.genre}
-          onChange={e => onFilterChange('genre', e.target.value)}
-          className="bg-card border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
-        >
-          <option value="">{t('library.filter_all_genres')}</option>
-          {GENRES.map(g => (
-            <option key={g} value={g}>{g}</option>
-          ))}
-        </select>
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className={cn('contents', watchLater && 'opacity-40 pointer-events-none')}>
+          <select
+            value={filters.genre}
+            onChange={e => onFilterChange('genre', e.target.value)}
+            className="bg-card border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
+          >
+            <option value="">{t('library.filter_all_genres')}</option>
+            {GENRES.map(g => (
+              <option key={g} value={g}>{g}</option>
+            ))}
+          </select>
 
-        <select
-          value={filters.rating}
-          onChange={e => onFilterChange('rating', e.target.value)}
-          className="bg-card border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
-        >
-          <option value="">{t('library.filter_all_ratings')}</option>
-          {[9, 8, 7, 6, 5].map(r => (
-            <option key={r} value={String(r)}>{t('library.filter_rating_min', { rating: r })}</option>
-          ))}
-        </select>
+          <select
+            value={filters.rating}
+            onChange={e => onFilterChange('rating', e.target.value)}
+            className="bg-card border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
+          >
+            <option value="">{t('library.filter_all_ratings')}</option>
+            {[9, 8, 7, 6, 5].map(r => (
+              <option key={r} value={String(r)}>{t('library.filter_rating_min', { rating: r })}</option>
+            ))}
+          </select>
 
-        <input
-          type="number"
-          value={filters.year}
-          onChange={e => onFilterChange('year', e.target.value)}
-          placeholder={t('library.filter_year_placeholder')}
-          min={1900}
-          max={new Date().getFullYear()}
-          className="bg-card border rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
-        />
+          <input
+            type="number"
+            value={filters.year}
+            onChange={e => onFilterChange('year', e.target.value)}
+            placeholder={t('library.filter_year_placeholder')}
+            min={1900}
+            max={new Date().getFullYear()}
+            className="bg-card border rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
+          />
 
-        <select
-          value={filters.sort_by}
-          onChange={e => onFilterChange('sort_by', e.target.value)}
-          className="bg-card border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
+          <select
+            value={filters.sort_by}
+            onChange={e => onFilterChange('sort_by', e.target.value)}
+            className="bg-card border rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50"
+          >
+            {SORT_OPTIONS.map(o => (
+              <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
+            ))}
+          </select>
+        </div>
+
+        <button
+          onClick={() => onWatchLaterChange(!watchLater)}
+          className={cn(
+            'inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium border transition-colors',
+            watchLater
+              ? 'bg-sidebar-primary/10 border-sidebar-primary text-sidebar-primary'
+              : 'bg-card border-border text-muted-foreground hover:text-sidebar-primary hover:border-sidebar-primary',
+          )}
         >
-          {SORT_OPTIONS.map(o => (
-            <option key={o.value} value={o.value}>{t(o.labelKey)}</option>
-          ))}
-        </select>
+          <Bookmark className={cn('size-4', watchLater && 'fill-current')} />
+          {t('watch_later.filter')}
+        </button>
       </div>
     </div>
   )

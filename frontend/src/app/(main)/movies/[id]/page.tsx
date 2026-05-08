@@ -5,6 +5,7 @@ import { getAccessToken } from '@/lib/session'
 import { MoviePlayer } from '@/components/page/MoviePlayer'
 import { CommentSection } from '@/components/page/CommentSection'
 import { FavoriteButton } from '@/components/page/FavoriteButton'
+import { WatchLaterButton } from '@/components/page/WatchLaterButton'
 import type { Metadata } from 'next'
 
 interface CastMember {
@@ -149,8 +150,9 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
               <p className="text-sm text-muted-foreground leading-relaxed max-w-2xl">{movie.overview}</p>
             )}
 
-            <div>
+            <div className="flex items-center gap-2 flex-wrap">
               <FavoriteButton tmdbId={movie.id} />
+              <WatchLaterButton tmdbId={movie.id} />
             </div>
           </div>
         </div>

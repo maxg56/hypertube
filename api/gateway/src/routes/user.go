@@ -33,6 +33,11 @@ func SetupUserRoutes(r *gin.Engine) {
 			protected.POST("/favorites", proxy.ProxyRequest("user", "/api/v1/users/favorites"))
 			protected.DELETE("/favorites/:tmdbId", proxy.ProxyRequest("user", "/api/v1/users/favorites/:tmdbId"))
 			protected.GET("/favorites/:tmdbId", proxy.ProxyRequest("user", "/api/v1/users/favorites/:tmdbId"))
+
+			protected.GET("/watch-later", proxy.ProxyRequest("user", "/api/v1/users/watch-later"))
+			protected.POST("/watch-later", proxy.ProxyRequest("user", "/api/v1/users/watch-later"))
+			protected.DELETE("/watch-later/:tmdbId", proxy.ProxyRequest("user", "/api/v1/users/watch-later/:tmdbId"))
+			protected.GET("/watch-later/:tmdbId", proxy.ProxyRequest("user", "/api/v1/users/watch-later/:tmdbId"))
 		}
 	}
 }
