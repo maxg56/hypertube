@@ -11,6 +11,7 @@ CREATE TABLE users (
     last_name   VARCHAR(100),
     avatar_url  TEXT,
     language    VARCHAR(10)  DEFAULT 'fr',
+    role        user_role_enum DEFAULT 'user',
     email_verified BOOLEAN   DEFAULT FALSE,
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
