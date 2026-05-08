@@ -13,8 +13,8 @@ CREATE TABLE users (
     language    VARCHAR(10)  DEFAULT 'fr',
     role        user_role_enum DEFAULT 'user',
     email_verified BOOLEAN   DEFAULT FALSE,
-    is_public        BOOLEAN DEFAULT TRUE;
-    favorites_public BOOLEAN DEFAULT TRUE;
+    is_public        BOOLEAN DEFAULT TRUE,
+    favorites_public BOOLEAN DEFAULT TRUE,
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
