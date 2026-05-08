@@ -45,6 +45,7 @@ func main() {
 		admin := api.Group("/admin")
 		admin.Use(middleware.AdminMiddleware())
 		{
+			admin.GET("/stats", handlers.AdminStatsHandler)
 			admin.GET("/films", handlers.AdminListFilmsHandler)
 			admin.DELETE("/films/:id", handlers.AdminDeleteFilmHandler)
 			admin.POST("/films/:id/download", handlers.AdminReDownloadFilmHandler)

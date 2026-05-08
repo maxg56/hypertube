@@ -12,6 +12,7 @@ func SetupAdminRoutes(r *gin.Engine) {
 	admin.Use(middleware.JWTMiddleware())
 	admin.Use(middleware.AdminMiddleware())
 	{
+		admin.GET("/stats", proxy.ProxyRequest("torrent", "/api/v1/admin/stats"))
 		admin.GET("/users", proxy.ProxyRequest("user", "/api/v1/admin/users"))
 		admin.GET("/films", proxy.ProxyRequest("torrent", "/api/v1/admin/films"))
 		admin.DELETE("/films/:id", proxy.ProxyRequest("torrent", "/api/v1/admin/films/:id"))
