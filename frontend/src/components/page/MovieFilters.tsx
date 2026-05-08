@@ -33,7 +33,7 @@ export function MovieFiltersBar({
   filters, onSearchChange, onFilterChange, watchLater, onWatchLaterChange, favorites, onFavoritesChange,
 }: MovieFiltersProps) {
   const { t } = useTranslation()
-  const isUserSearch = filters.query.startsWith('user:')
+  const isUserSearch = filters.query.startsWith('@')
 
   return (
     <div className="flex flex-col gap-3 p-4 pb-0" suppressHydrationWarning>

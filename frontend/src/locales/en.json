@@ -173,11 +173,11 @@
   "user_search": {
     "mode_hint": "User search",
     "empty": "No users found.",
-    "placeholder_hint": "e.g. user:johndoe"
+    "placeholder_hint": "e.g. @johndoe"
   },
 
   "library": {
-    "search_placeholder": "Search a movie…",
+    "search_placeholder": "Search a movie… or @username",
     "filter_all_genres": "All genres",
     "filter_all_ratings": "All ratings",
     "filter_rating_min": "Rating ≥ {{rating}}",

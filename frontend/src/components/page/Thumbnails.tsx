@@ -57,8 +57,8 @@ export default function Thumbnails() {
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isUserSearch = debouncedQuery.startsWith('user:')
-  const userQuery = isUserSearch ? debouncedQuery.slice(5).trim() : ''
+  const isUserSearch = debouncedQuery.startsWith('@')
+  const userQuery = isUserSearch ? debouncedQuery.slice(1).trim() : ''
 
   const activeFilters: MovieFilters = { ...filters, query: isUserSearch ? '' : debouncedQuery }
   const { movies, loading, initialLoading, hasMore, loadMore } = useMovies(activeFilters)
