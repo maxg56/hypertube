@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -21,7 +22,7 @@ func StatusHandler(c *gin.Context) {
 
 	record, err := services.GetRecord(hash)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.RespondError(c, http.StatusNotFound, "torrent not found")
 		} else {
 			utils.RespondError(c, http.StatusInternalServerError, err.Error())

@@ -127,6 +127,12 @@ func RefreshTokenHandler(c *gin.Context) {
 		return
 	}
 
+	// Fetch user role from DB to embed in the refreshed token
+	role := "user"
+	if r, ok := claims["role"].(string); ok && r != "" {
+		role = r
+	}
+
 	// Issue new tokens
 	accessTTL := utils.GetDurationFromEnv("JWT_ACCESS_TTL", 15*time.Minute)
 	refreshTTL := utils.GetDurationFromEnv("JWT_REFRESH_TTL", 7*24*time.Hour)
@@ -138,6 +144,7 @@ func RefreshTokenHandler(c *gin.Context) {
 		"nbf":   now.Unix(),
 		"exp":   now.Add(accessTTL).Unix(),
 		"scope": "access",
+		"role":  role,
 	}, secret)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to issue token")
@@ -150,6 +157,7 @@ func RefreshTokenHandler(c *gin.Context) {
 		"nbf":   now.Unix(),
 		"exp":   now.Add(refreshTTL).Unix(),
 		"scope": "refresh",
+		"role":  role,
 	}, refreshSecret)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to issue token")
