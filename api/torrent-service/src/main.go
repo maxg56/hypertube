@@ -38,7 +38,6 @@ func main() {
 		api.GET("/movies/:id/progress", handlers.GetProgressHandler)
 		api.PUT("/movies/:id/progress", handlers.SaveProgressHandler)
 		api.GET("/movies/:id/subtitles/:lang", handlers.SubtitleHandler)
-		api.GET("/subtitle/:id", handlers.SubtitleByIDHandler)
 
 		admin := api.Group("/admin")
 		admin.Use(middleware.AdminMiddleware())

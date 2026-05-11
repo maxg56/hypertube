@@ -155,20 +155,14 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
 
         const el = document.createElement('track')
         el.kind = 'subtitles'
-        el.src = url
         el.srclang = lang
         el.label = t(`movie.subtitle_${lang}`)
-        video.appendChild(el)
-
         if (lang === userLang) {
-          const tracks = video.textTracks
-          for (let i = 0; i < tracks.length; i++) {
-            if (tracks[i].language === lang) {
-              tracks[i].mode = 'showing'
-              break
-            }
-          }
+          el.track.mode = 'showing'
+          el.addEventListener('load', () => { el.track.mode = 'showing' })
         }
+        el.src = url
+        video.appendChild(el)
       } catch {
         // subtitle not available for this language — silently ignore
       }
