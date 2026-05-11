@@ -72,7 +72,8 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    read_only: true
+    volumes:
+      - redis_data_dev:/data
     tmpfs:
       - /tmp
 
@@ -199,7 +200,7 @@ services:
       DB_NAME: ${DB_NAME:-hypertube}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-password}
-      TMDB_API_KEY: ${TMDB_API_KEY}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
       REDIS_HOST: redis
       GIN_MODE: debug
     volumes:
@@ -350,6 +351,12 @@ services:
       - /tmp
 
 volumes:
+  redis_data_dev:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/redis
+      o: bind
   avatar_data:
     driver: local
     driver_opts:
