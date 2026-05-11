@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +27,7 @@ func init() {
 }
 
 func StreamHandler(c *gin.Context) {
-	hash := c.Param("id")
+	hash := strings.ToLower(c.Param("id"))
 	if hash == "" {
 		utils.RespondError(c, http.StatusBadRequest, "missing info hash")
 		return
@@ -45,11 +46,12 @@ func StreamHandler(c *gin.Context) {
 		return
 	case models.StatusError:
 		log.Printf("torrent %s failed: %s", hash, record.ErrorMsg)
-		utils.RespondError(c, http.StatusServiceUnavailable, "torrent processing failed")
+		utils.RespondError(c, http.StatusServiceUnavailable, record.ErrorMsg)
 		return
 	}
 
-	if userID, ok := userIDFromHeader(c); ok && record.MovieID > 0 {
+	userID, _ := userIDFromHeader(c)
+	if userID > 0 && record.MovieID > 0 {
 		services.RecordWatch(userID, record.MovieID) //nolint:errcheck
 	}
 
@@ -60,13 +62,9 @@ func StreamHandler(c *gin.Context) {
 		return
 	}
 
+	// Bug 1 fix: single NeedsTranscoding check (duplicate block removed).
 	if services.NeedsTranscoding(result.FileName) {
-		serveTranscoded(c, result)
-		return
-	}
-
-	if services.NeedsTranscoding(result.FileName) {
-		serveTranscoded(c, result)
+		serveTranscoded(c, result, userID, hash)
 		return
 	}
 
@@ -77,7 +75,7 @@ func StreamHandler(c *gin.Context) {
 	http.ServeContent(c.Writer, c.Request, result.FileName, time.Time{}, result.Reader)
 }
 
-func serveTranscoded(c *gin.Context, result services.ReaderResult) {
+func serveTranscoded(c *gin.Context, result services.ReaderResult, userID int, infoHash string) {
 	var codecInfo *services.CodecInfo
 	if result.FilePath != "" {
 		codecInfo, _ = services.ProbeCodecs(result.FilePath)
@@ -85,13 +83,16 @@ func serveTranscoded(c *gin.Context, result services.ReaderResult) {
 
 	job, err := services.StartTranscode(result.Reader, codecInfo)
 	if err != nil {
-		utils.RespondError(c, http.StatusInternalServerError, "transcoding error: "+err.Error())
+		// Bug 2 fix: single RespondError call (log first, then respond once).
 		log.Printf("transcoding error for %s: %v", result.FileName, err)
-		utils.RespondError(c, http.StatusInternalServerError, "transcoding failed")
+		utils.RespondError(c, http.StatusInternalServerError, "transcoding error: "+err.Error())
 		return
 	}
-	defer job.Cmd.Wait()
-	defer job.Reader.Close()
+	// Bug 3 fix: session ties ffmpeg lifecycle to the request context.
+	// Release runs first (LIFO), killing ffmpeg, then Wait collects exit status.
+	defer services.Sessions.Release(userID, infoHash)
+	defer job.Cmd.Wait() //nolint:errcheck
+	services.Sessions.Acquire(userID, infoHash, job, c.Request.Context())
 
 	c.Header("Content-Type", job.ContentType)
 	c.Header("Cache-Control", "no-cache")

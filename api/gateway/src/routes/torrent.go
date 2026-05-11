@@ -25,6 +25,8 @@ func SetupTorrentRoutes(r *gin.Engine) {
 	movies.Use(middleware.JWTMiddleware())
 	{
 		movies.GET("/:id/watched", proxy.ProxyRequest("torrent", "/api/v1/movies/:id/watched"))
+		movies.GET("/:id/progress", proxy.ProxyRequest("torrent", "/api/v1/movies/:id/progress"))
+		movies.PUT("/:id/progress", proxy.ProxyRequest("torrent", "/api/v1/movies/:id/progress"))
 	}
 
 	subtitle := r.Group("/api/v1/subtitle")

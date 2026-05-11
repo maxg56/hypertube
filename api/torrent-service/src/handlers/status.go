@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -12,7 +13,7 @@ import (
 )
 
 func StatusHandler(c *gin.Context) {
-	hash := c.Param("id")
+	hash := strings.ToLower(c.Param("id"))
 	if hash == "" {
 		utils.RespondError(c, http.StatusBadRequest, "missing info hash")
 		return

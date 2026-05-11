@@ -15,21 +15,24 @@ interface Torrent {
   magnet: string
 }
 
-type PlayerState = 'idle' | 'starting' | 'downloading' | 'streaming' | 'error'
+type PlayerState = 'idle' | 'checking' | 'starting' | 'downloading' | 'streaming' | 'error'
 
 interface MoviePlayerProps {
   torrents: Torrent[]
   movieId: number
 }
 
+const SAVE_INTERVAL_MS = 5000
+
 export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
   const { t } = useTranslation()
   const [selected, setSelected] = useState<Torrent | null>(torrents[0] ?? null)
-  const [state, setState] = useState<PlayerState>('idle')
+  const [state, setState] = useState<PlayerState>('checking')
   const [progress, setProgress] = useState(0)
   const [infoHash, setInfoHash] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const saveRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
   const stopPolling = useCallback(() => {
@@ -39,7 +42,92 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
     }
   }, [])
 
-  useEffect(() => () => stopPolling(), [stopPolling])
+  const stopSaving = useCallback(() => {
+    if (saveRef.current) {
+      clearInterval(saveRef.current)
+      saveRef.current = null
+    }
+  }, [])
+
+  useEffect(() => () => { stopPolling(); stopSaving() }, [stopPolling, stopSaving])
+
+  // Restore saved position once the video element is ready.
+  const restorePosition = useCallback(async () => {
+    const video = videoRef.current
+    if (!video) return
+    try {
+      const res = await fetch(`/api/v1/movies/${movieId}/progress`, { credentials: 'include' })
+      if (!res.ok) return
+      const json = await res.json()
+      const sec: number = (json.data ?? json).progress_sec ?? 0
+      if (sec > 0) video.currentTime = sec
+    } catch {
+      // ignore — just start from the beginning
+    }
+  }, [movieId])
+
+  // Periodically save the current playback position.
+  const startSaving = useCallback(() => {
+    saveRef.current = setInterval(async () => {
+      const video = videoRef.current
+      if (!video || video.paused || video.ended) return
+      const sec = Math.floor(video.currentTime)
+      if (sec <= 0) return
+      try {
+        await fetch(`/api/v1/movies/${movieId}/progress`, {
+          method: 'PUT',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ progress_sec: sec }),
+        })
+      } catch {
+        // ignore transient save errors
+      }
+    }, SAVE_INTERVAL_MS)
+  }, [movieId])
+
+  // Check if the selected torrent is already ready on the server.
+  useEffect(() => {
+    if (!selected) {
+      setState('idle')
+      return
+    }
+    let cancelled = false
+    setState('checking')
+    void (async () => {
+      try {
+        const hash = selected.hash.toLowerCase()
+        const res = await fetch(`/api/v1/torrent/status/${hash}`, { credentials: 'include' })
+        if (cancelled) return
+        if (res.ok) {
+          const json = await res.json()
+          const { status } = (json.data ?? json) as { status: string }
+          if (!cancelled && status === 'ready') {
+            setInfoHash(hash)
+            setState('streaming')
+            return
+          }
+        }
+      } catch {
+        // fall through to idle
+      }
+      if (!cancelled) setState('idle')
+    })()
+    return () => { cancelled = true }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected])
+
+  // When streaming starts, restore position and begin saving.
+  useEffect(() => {
+    if (state !== 'streaming') return
+    stopSaving()
+    // Delay slightly so the video element has time to mount.
+    const t = setTimeout(() => {
+      void restorePosition()
+      startSaving()
+    }, 300)
+    return () => clearTimeout(t)
+  }, [state, restorePosition, startSaving, stopSaving])
 
   const pollStatus = useCallback((hash: string) => {
     pollRef.current = setInterval(async () => {
@@ -58,7 +146,7 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
 
         setProgress(Math.round((prog ?? 0) * 100))
 
-        if (status === 'downloading' || status === 'completed') {
+        if (status === 'downloading' || status === 'ready') {
           stopPolling()
           setState('streaming')
         }
@@ -82,7 +170,7 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
       })
       if (!res.ok) throw new Error(`${res.status}`)
       const json = await res.json()
-      const hash = json.data?.info_hash ?? json.info_hash
+      const hash = (json.data?.info_hash ?? json.info_hash as string).toLowerCase()
       setInfoHash(hash)
       setState('downloading')
       pollStatus(hash)
@@ -113,11 +201,11 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
         </video>
       ) : (
         <div className="w-full aspect-video rounded-lg bg-muted flex items-center justify-center">
+          {(state === 'checking' || state === 'starting') && (
+            <span className="text-muted-foreground text-sm animate-pulse">{t('movie.loading')}</span>
+          )}
           {state === 'idle' && (
             <span className="text-muted-foreground text-sm">{t('movie.select_quality')}</span>
-          )}
-          {state === 'starting' && (
-            <span className="text-muted-foreground text-sm animate-pulse">{t('movie.loading')}</span>
           )}
           {state === 'downloading' && (
             <div className="flex flex-col items-center gap-3 w-48">
@@ -143,14 +231,14 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
           {torrents.map(torrent => (
             <button
               key={torrent.hash}
-              onClick={() => { if (state === 'idle') setSelected(torrent) }}
-              disabled={state !== 'idle'}
+              onClick={() => { if (state === 'idle' || state === 'checking') setSelected(torrent) }}
+              disabled={state !== 'idle' && state !== 'checking'}
               className={cn(
                 'text-xs px-3 py-1.5 rounded-md border transition-colors',
                 selected?.hash === torrent.hash
                   ? 'bg-sidebar-primary text-white border-sidebar-primary'
                   : 'bg-muted border-border text-muted-foreground hover:border-sidebar-primary',
-                state !== 'idle' && 'opacity-50 cursor-not-allowed',
+                state !== 'idle' && state !== 'checking' && 'opacity-50 cursor-not-allowed',
               )}
             >
               {torrent.quality} {torrent.type && `· ${torrent.type}`}

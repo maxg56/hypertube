@@ -41,6 +41,11 @@ func StartDownload(magnetURI string, movieID int) (string, error) {
 		return "", err
 	}
 
+	// File is already on disk — stream directly, no need to re-seed.
+	if record.Status == models.StatusReady {
+		return infoHash, nil
+	}
+
 	t, err := addToClient(magnetURI)
 	if err != nil {
 		conf.DB.Model(record).Updates(map[string]any{
@@ -53,6 +58,12 @@ func StartDownload(magnetURI string, movieID int) (string, error) {
 	activeTorrents.Store(infoHash, t)
 	go monitorTorrent(t, record)
 	return infoHash, nil
+}
+
+// ResolveLocalMovieID returns the local movies.id for a TMDB movie ID,
+// inserting a placeholder row if the movie has not been cached yet.
+func ResolveLocalMovieID(tmdbID int) (int, error) {
+	return resolveLocalMovieID(tmdbID)
 }
 
 func resolveLocalMovieID(tmdbID int) (int, error) {

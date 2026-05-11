@@ -3,7 +3,10 @@ package services
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -58,9 +61,19 @@ func readerFromActiveTorrent(t *torrent.Torrent) (ReaderResult, error) {
 	}
 
 	r := f.NewReader()
-	r.SetReadahead(5 << 20) // 5 MiB readahead for smooth streaming
+	r.SetReadahead(readaheadBytes())
 	filePath := downloadDir() + "/" + strings.ToLower(t.InfoHash().HexString()) + "/" + f.DisplayPath()
 	return ReaderResult{Reader: r, Size: f.Length(), FileName: f.DisplayPath(), FilePath: filePath}, nil
+}
+
+// readaheadBytes reads STREAM_BUFFER_SIZE (MiB) from the environment, defaulting to 5 MiB.
+func readaheadBytes() int64 {
+	if s := os.Getenv("STREAM_BUFFER_SIZE"); s != "" {
+		if n, err := strconv.ParseInt(s, 10, 64); err == nil && n > 0 {
+			return n << 20
+		}
+	}
+	return 5 << 20
 }
 
 func readerFromDisk(infoHash string) (ReaderResult, error) {
@@ -72,9 +85,45 @@ func readerFromDisk(infoHash string) (ReaderResult, error) {
 		return ReaderResult{}, errors.New("torrent not ready")
 	}
 
-	f, err := os.Open(record.FilePath)
+	filePath := record.FilePath
+	if _, statErr := os.Stat(filePath); statErr != nil {
+		// Stored path is stale — scan the torrent directory for the largest file.
+		filePath = scanLargestFile(downloadDir() + "/" + infoHash)
+		if filePath == "" {
+			return ReaderResult{}, fmt.Errorf("open file: %w", statErr)
+		}
+		conf.DB.Model(record).Update("file_path", filePath)
+	}
+
+	f, err := os.Open(filePath)
 	if err != nil {
 		return ReaderResult{}, fmt.Errorf("open file: %w", err)
 	}
-	return ReaderResult{Reader: f, Size: record.FileSize, FileName: record.FilePath, FilePath: record.FilePath}, nil
+	info, _ := f.Stat()
+	size := record.FileSize
+	if info != nil && info.Size() > 0 {
+		size = info.Size()
+	}
+	return ReaderResult{Reader: f, Size: size, FileName: filepath.Base(filePath), FilePath: filePath}, nil
+}
+
+// scanLargestFile walks dir and returns the path of the largest file found.
+func scanLargestFile(dir string) string {
+	var best string
+	var bestSize int64
+	_ = filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return nil
+		}
+		info, err := d.Info()
+		if err != nil {
+			return nil
+		}
+		if info.Size() > bestSize {
+			bestSize = info.Size()
+			best = path
+		}
+		return nil
+	})
+	return best
 }
