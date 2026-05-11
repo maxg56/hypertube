@@ -78,6 +78,7 @@
     "films_title": "Films téléchargés",
     "col_title": "Titre",
     "col_info_hash": "Clé torrent",
+    "col_quality": "Qualité",
     "col_language": "Langue",
     "col_status": "Statut",
     "col_size": "Taille",

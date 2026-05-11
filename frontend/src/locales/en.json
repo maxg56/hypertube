@@ -78,6 +78,7 @@
     "films_title": "Downloaded films",
     "col_title": "Title",
     "col_info_hash": "Torrent key",
+    "col_quality": "Quality",
     "col_language": "Language",
     "col_status": "Status",
     "col_size": "Size",

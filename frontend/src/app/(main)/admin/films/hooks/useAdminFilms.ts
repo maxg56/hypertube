@@ -8,7 +8,7 @@ export interface AdminTorrent {
   file_size: number
   downloaded: number
   progress: number
-  language: string
+  quality: string
   created_at: string
 }
 

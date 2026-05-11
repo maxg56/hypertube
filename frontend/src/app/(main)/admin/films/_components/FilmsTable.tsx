@@ -31,7 +31,7 @@ export function FilmsTable({
           <thead>
             <tr className="border-b text-muted-foreground">
               <th className="text-left py-2 pl-6 pr-4 font-medium">{t('admin.col_info_hash')}</th>
-              <th className="text-left py-2 pr-4 font-medium">{t('admin.col_language')}</th>
+              <th className="text-left py-2 pr-4 font-medium">{t('admin.col_quality')}</th>
               <th className="text-left py-2 pr-4 font-medium">{t('admin.col_status')}</th>
               <th className="text-right py-2 pr-4 font-medium">{t('admin.col_size')}</th>
               <th className="text-right py-2 font-medium">{t('admin.col_actions')}</th>

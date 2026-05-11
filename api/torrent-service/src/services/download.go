@@ -20,7 +20,7 @@ import (
 
 // StartDownload adds a magnet URI to the client and begins downloading.
 // It is idempotent: calling it twice with the same magnet returns the existing state.
-func StartDownload(magnetURI string, movieID int) (string, error) {
+func StartDownload(magnetURI string, movieID int, quality string) (string, error) {
 	// Validate the magnet URI first so callers get a clear 4xx error for bad input
 	// regardless of whether the client is ready.
 	infoHash, err := extractInfoHash(magnetURI)
@@ -36,7 +36,7 @@ func StartDownload(magnetURI string, movieID int) (string, error) {
 		return infoHash, nil
 	}
 
-	record, err := findOrCreateRecord(magnetURI, infoHash, movieID)
+	record, err := findOrCreateRecord(magnetURI, infoHash, movieID, quality)
 	if err != nil {
 		return "", err
 	}
@@ -83,7 +83,7 @@ func resolveLocalMovieID(tmdbID int) (int, error) {
 	return localID, nil
 }
 
-func findOrCreateRecord(magnetURI, infoHash string, tmdbID int) (*models.TorrentRecord, error) {
+func findOrCreateRecord(magnetURI, infoHash string, tmdbID int, quality string) (*models.TorrentRecord, error) {
 	var record models.TorrentRecord
 	dbErr := conf.DB.Where("info_hash = ?", infoHash).First(&record).Error
 
@@ -114,6 +114,7 @@ func findOrCreateRecord(magnetURI, infoHash string, tmdbID int) (*models.Torrent
 		MagnetURI: magnetURI,
 		InfoHash:  infoHash,
 		Status:    models.StatusPending,
+		Quality:   quality,
 	}
 	if err := conf.DB.Create(&record).Error; err != nil {
 		return nil, fmt.Errorf("db insert: %w", err)

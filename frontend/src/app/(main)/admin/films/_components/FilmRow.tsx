@@ -45,9 +45,9 @@ export function FilmRow({ torrent, isActing, actionType, onDelete, onReDownload 
       </td>
 
       <td className="py-2.5 pr-4">
-        {torrent.language ? (
+        {torrent.quality ? (
           <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground uppercase tracking-wide">
-            {torrent.language}
+            {torrent.quality}
           </span>
         ) : (
           <span className="text-muted-foreground text-xs">—</span>

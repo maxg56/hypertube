@@ -12,6 +12,7 @@ CREATE TABLE torrents (
     file_size    BIGINT,
     downloaded   BIGINT       DEFAULT 0,
     progress     NUMERIC(5,2) DEFAULT 0,
+    quality      VARCHAR(20),
     source       VARCHAR(50),
     error_msg    TEXT,
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,

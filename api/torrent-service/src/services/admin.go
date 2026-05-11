@@ -22,7 +22,7 @@ type AdminTorrentEntry struct {
 	FileSize   int64   `json:"file_size"`
 	Downloaded int64   `json:"downloaded"`
 	Progress   float64 `json:"progress"`
-	Language   string  `json:"language"`
+	Quality    string  `json:"quality"`
 	CreatedAt  string  `json:"created_at"`
 }
 
@@ -77,7 +77,7 @@ func ListAdminFilms(limit, offset int) ([]AdminGroupedFilm, int64, error) {
 				'file_size',  t.file_size,
 				'downloaded', t.downloaded,
 				'progress',   t.progress,
-				'language',   COALESCE(m.language, ''),
+				'quality',    COALESCE(t.quality, ''),
 				'created_at', to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
 			) ORDER BY t.created_at DESC)   AS torrents_json,
 			mg.max_created
@@ -188,7 +188,7 @@ func ReDownloadFilm(id uint) (string, error) {
 		tmdbID = record.MovieID // fallback: treat stored movie_id as tmdb_id
 	}
 
-	return StartDownload(record.MagnetURI, tmdbID)
+	return StartDownload(record.MagnetURI, tmdbID, record.Quality)
 }
 
 // parseIntCSV splits a comma-separated string of integers into a slice.

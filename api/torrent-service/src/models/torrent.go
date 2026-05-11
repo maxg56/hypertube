@@ -21,6 +21,7 @@ type TorrentRecord struct {
 	FileSize   int64         `gorm:"column:file_size"`
 	Downloaded int64         `gorm:"column:downloaded"`
 	Progress   float64       `gorm:"column:progress"`
+	Quality    string        `gorm:"column:quality"`
 	Source     string        `gorm:"column:source"`
 	ErrorMsg   string        `gorm:"column:error_msg"`
 	CreatedAt  time.Time     `gorm:"column:created_at;autoCreateTime"`
