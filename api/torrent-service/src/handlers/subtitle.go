@@ -15,7 +15,8 @@ import (
 )
 
 // SubtitleAvailableHandler handles GET /api/v1/movies/:id/subtitles
-// Returns the list of language codes that are already cached on disk for this movie.
+// Returns the list of language codes that are either cached on disk or available
+// for download from OpenSubtitles for this movie.
 func SubtitleAvailableHandler(c *gin.Context) {
 	movieID, err := strconv.Atoi(c.Param("id"))
 	if err != nil || movieID <= 0 {
@@ -23,19 +24,24 @@ func SubtitleAvailableHandler(c *gin.Context) {
 		return
 	}
 
+	all := map[string]bool{}
+
 	dir := filepath.Join(services.SubtitleCacheDir(), fmt.Sprintf("%d", movieID))
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		utils.RespondSuccess(c, http.StatusOK, gin.H{"languages": []string{}})
-		return
+	if entries, err := os.ReadDir(dir); err == nil {
+		for _, e := range entries {
+			if !e.IsDir() && strings.HasSuffix(e.Name(), ".vtt") {
+				all[strings.TrimSuffix(e.Name(), ".vtt")] = true
+			}
+		}
 	}
 
-	langs := []string{}
-	for _, e := range entries {
-		if !e.IsDir() && strings.HasSuffix(e.Name(), ".vtt") {
-			langs = append(langs, strings.TrimSuffix(e.Name(), ".vtt"))
-			
-		}
+	for _, lang := range services.ListAvailableLanguages(movieID) {
+		all[lang] = true
+	}
+
+	langs := make([]string, 0, len(all))
+	for l := range all {
+		langs = append(langs, l)
 	}
 	utils.RespondSuccess(c, http.StatusOK, gin.H{"languages": langs})
 }
