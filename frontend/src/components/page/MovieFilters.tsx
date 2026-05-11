@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslation } from 'react-i18next'
-import { Search, Bookmark, Heart } from 'lucide-react'
+import { Search, Bookmark, Heart, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MovieFilters } from '@/hooks/useMovies'
 
@@ -33,6 +33,7 @@ export function MovieFiltersBar({
   filters, onSearchChange, onFilterChange, watchLater, onWatchLaterChange, favorites, onFavoritesChange,
 }: MovieFiltersProps) {
   const { t } = useTranslation()
+  const isUserSearch = filters.query.startsWith('@')
 
   return (
     <div className="flex flex-col gap-3 p-4 pb-0" suppressHydrationWarning>
@@ -43,12 +44,18 @@ export function MovieFiltersBar({
           value={filters.query}
           onChange={e => onSearchChange(e.target.value)}
           placeholder={t('library.search_placeholder')}
-          disabled={watchLater}
+          disabled={watchLater || favorites}
           className="w-full pl-9 pr-4 py-2 bg-card border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50 disabled:opacity-40"
         />
+        {isUserSearch && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex items-center gap-1 text-xs font-medium text-sidebar-primary bg-sidebar-primary/10 rounded-full px-2 py-0.5">
+            <Users className="size-3" />
+            {t('user_search.mode_hint')}
+          </span>
+        )}
       </div>
       <div className="flex flex-wrap gap-2 items-center">
-        <div className={cn('contents', (watchLater || favorites) && 'opacity-40 pointer-events-none')}>
+        <div className={cn('contents', (watchLater || favorites || isUserSearch) && 'opacity-40 pointer-events-none')}>
           <select
             value={filters.genre}
             onChange={e => onFilterChange('genre', e.target.value)}
@@ -92,6 +99,7 @@ export function MovieFiltersBar({
           </select>
         </div>
 
+        <div className={cn('contents', isUserSearch && 'opacity-40 pointer-events-none')}>
         <button
           onClick={() => { onFavoritesChange(!favorites); if (!favorites) onWatchLaterChange(false) }}
           className={cn(
@@ -116,6 +124,7 @@ export function MovieFiltersBar({
           <Bookmark className={cn('size-4', watchLater && 'fill-current')} />
           {t('watch_later.filter')}
         </button>
+        </div>
       </div>
     </div>
   )

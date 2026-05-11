@@ -49,9 +49,9 @@ export default function MainLayout({ children }: { children: ReactNode }) {
               </Avatar>
             </Link>
           )}
-          <span className="font-bold text-lg tracking-tight flex-1 text-center">Hypertube</span>
+          <Link href="/" className="font-bold text-lg tracking-tight flex-1 text-center hover:opacity-80 transition-opacity">Hypertube</Link>
           <div className="flex items-center gap-3">
-            {isAdmin && (
+            {isAdmin && !pathname.startsWith('/admin') && (
               <Link href="/admin">
                 <Button variant="outline" size="sm">{t('nav.admin')}</Button>
               </Link>

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
-import { Loader2 } from 'lucide-react'
+import { Loader2, ArrowLeft } from 'lucide-react'
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation()
@@ -41,7 +41,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="container mx-auto p-6 max-w-6xl">
-      <h1 className="text-3xl font-bold mb-6">{t('admin.title')}</h1>
+      <div className="flex items-center gap-4 mb-6">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="size-4" />
+          Hypertube
+        </Link>
+        <h1 className="text-3xl font-bold">{t('admin.title')}</h1>
+      </div>
       <nav className="flex gap-1 mb-6 border-b">
         {tabs.map((tab) => {
           const active = pathname.startsWith(tab.href)

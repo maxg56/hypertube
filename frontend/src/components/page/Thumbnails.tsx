@@ -3,10 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MovieCard, MovieCardSkeleton } from '@/components/page/MovieCard'
+import { UserCard } from '@/components/page/UserCard'
 import { MovieFiltersBar } from '@/components/page/MovieFilters'
 import { useMovies, type MovieFilters } from '@/hooks/useMovies'
 import { useWatchLater } from '@/hooks/useWatchLater'
 import { useFavorites } from '@/hooks/useFavorites'
+import { useUserSearch } from '@/hooks/useUserSearch'
 import type { Movie } from '@/hooks/useMovies'
 import type { WatchLaterMovie } from '@/hooks/useWatchLater'
 import type { FavoriteMovie } from '@/hooks/useFavorites'
@@ -55,10 +57,14 @@ export default function Thumbnails() {
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const activeFilters: MovieFilters = { ...filters, query: debouncedQuery }
+  const isUserSearch = debouncedQuery.startsWith('@')
+  const userQuery = isUserSearch ? debouncedQuery.slice(1).trim() : ''
+
+  const activeFilters: MovieFilters = { ...filters, query: isUserSearch ? '' : debouncedQuery }
   const { movies, loading, initialLoading, hasMore, loadMore } = useMovies(activeFilters)
   const { list: watchLaterList, loading: watchLaterLoading } = useWatchLater()
   const { list: favoritesList, loading: favoritesLoading } = useFavorites()
+  const { users, loading: usersLoading } = useUserSearch(userQuery)
 
   const handleSearchChange = useCallback((value: string) => {
     setFilters(prev => ({ ...prev, query: value }))
@@ -71,7 +77,7 @@ export default function Thumbnails() {
   }, [])
 
   useEffect(() => {
-    if (watchLater || showFavorites) return
+    if (watchLater || showFavorites || isUserSearch) return
     const sentinel = sentinelRef.current
     if (!sentinel) return
     const observer = new IntersectionObserver(
@@ -80,7 +86,7 @@ export default function Thumbnails() {
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [loadMore, watchLater, showFavorites])
+  }, [loadMore, watchLater, showFavorites, isUserSearch])
 
   const watchLaterMovies = watchLaterList.map(watchLaterToMovie)
   const favoritesMovies = favoritesList.map(favoriteToMovie)
@@ -115,7 +121,19 @@ export default function Thumbnails() {
         onFavoritesChange={setShowFavorites}
       />
       <div className="px-4 pb-6">
-        {showFavorites ? (
+        {isUserSearch ? (
+          usersLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => <MovieCardSkeleton key={i} />)}
+            </div>
+          ) : userQuery === '' ? null : users.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-16">{t('user_search.empty')}</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {users.map(u => <UserCard key={u.id} user={u} />)}
+            </div>
+          )
+        ) : showFavorites ? (
           renderList(favoritesMovies, favoritesLoading, 'favorites.empty')
         ) : watchLater ? (
           renderList(watchLaterMovies, watchLaterLoading, 'watch_later.empty')
