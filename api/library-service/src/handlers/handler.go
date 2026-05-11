@@ -86,3 +86,19 @@ func cacheSet(key string, v interface{}, ttl time.Duration) {
 		_ = conf.SetCache(key, string(data), ttl)
 	}
 }
+
+// cacheRefreshIfStale triggers a background refresh when the remaining TTL
+// drops below 1/6 of the original TTL (e.g. < 10 min for a 1h TTL).
+// The current cached value is still served immediately by the caller.
+func cacheRefreshIfStale(key string, ttl time.Duration, refresh func() (interface{}, error)) {
+	remaining, err := conf.GetCacheTTL(key)
+	if err != nil || remaining > ttl/6 {
+		return
+	}
+	go func() {
+		result, err := refresh()
+		if err == nil {
+			cacheSet(key, result, ttl)
+		}
+	}()
+}

@@ -51,3 +51,11 @@ func SetCache(key string, value string, ttl time.Duration) error {
 	}
 	return RedisClient.Set(Ctx, key, value, ttl).Err()
 }
+
+// GetCacheTTL returns the remaining TTL for a key.
+func GetCacheTTL(key string) (time.Duration, error) {
+	if RedisClient == nil {
+		return 0, fmt.Errorf("redis not initialized")
+	}
+	return RedisClient.TTL(Ctx, key).Result()
+}

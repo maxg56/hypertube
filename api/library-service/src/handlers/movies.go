@@ -13,6 +13,25 @@ import (
 	"library-service/src/utils"
 )
 
+func (h *MovieHandler) fetchMovies(params client.ListParams, year int) (models.CursorResult, error) {
+	searchResult, err := h.yts.List(params)
+	if err != nil {
+		return models.CursorResult{}, err
+	}
+	result := models.CursorResult{
+		Results: searchResult.Results,
+		Total:   searchResult.TotalCount,
+	}
+	if params.Page < searchResult.TotalPages {
+		nextPage := params.Page + 1
+		if year > 0 {
+			nextPage = params.Page + 10
+		}
+		result.NextCursor = encodeCursor(nextPage)
+	}
+	return result, nil
+}
+
 func (h *MovieHandler) Movies(c *gin.Context) {
 	query := c.Query("q")
 	genre := c.Query("genre")
@@ -35,12 +54,6 @@ func (h *MovieHandler) Movies(c *gin.Context) {
 	cacheKey := fmt.Sprintf("movies:q:%s:genre:%s:rating:%.1f:year:%d:sort:%s:page:%d",
 		query, genre, minRating, year, sortBy, page)
 
-	var result models.CursorResult
-	if cacheGet(cacheKey, &result) {
-		utils.RespondSuccess(c, http.StatusOK, result)
-		return
-	}
-
 	params := client.ListParams{
 		Query:     query,
 		Genre:     genre,
@@ -49,9 +62,13 @@ func (h *MovieHandler) Movies(c *gin.Context) {
 		SortBy:    sortBy,
 		Page:      page,
 	}
-	searchResult, err := h.yts.List(params)
-	if err != nil {
-		utils.RespondError(c, http.StatusBadGateway, "failed to fetch movies")
+
+	var result models.CursorResult
+	if cacheGet(cacheKey, &result) {
+		cacheRefreshIfStale(cacheKey, ytsCacheTTL, func() (interface{}, error) {
+			return h.fetchMovies(params, year)
+		})
+		utils.RespondSuccess(c, http.StatusOK, result)
 		return
 	}
 

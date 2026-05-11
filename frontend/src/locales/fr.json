@@ -170,8 +170,14 @@
 
     "logout": "Déconnexion"
   },
-    "library": {
-    "search_placeholder": "Rechercher un film…",
+    "user_search": {
+    "mode_hint": "Recherche d'utilisateurs",
+    "empty": "Aucun utilisateur trouvé.",
+    "placeholder_hint": "ex : @johndoe"
+  },
+
+  "library": {
+    "search_placeholder": "Rechercher un film… ou @utilisateur",
     "filter_all_genres": "Tous les genres",
     "filter_all_ratings": "Toutes les notes",
     "filter_rating_min": "Note ≥ {{rating}}",

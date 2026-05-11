@@ -6,6 +6,8 @@ import { MovieHero } from '@/components/Player/MovieHero'
 import { MovieCast } from '@/components/Player/MovieCast'
 import { MoviePlayer } from '@/components/Player/MoviePlayer'
 import { CommentSection } from '@/components/page/CommentSection'
+import { FavoriteButton } from '@/components/page/FavoriteButton'
+import { WatchLaterButton } from '@/components/page/WatchLaterButton'
 import type { Metadata } from 'next'
 
 interface CastMember {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MovieCard, MovieCardSkeleton } from '@/components/page/MovieCard'
+import { UserCard } from '@/components/page/UserCard'
 import { MovieFiltersBar } from '@/components/page/MovieFilters'
 import { useMovies, type MovieFilters } from '@/hooks/useMovies'
 import { useWatchLater } from '@/hooks/useWatchLater'
@@ -55,7 +56,10 @@ export default function Thumbnails() {
   const sentinelRef = useRef<HTMLDivElement | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const activeFilters: MovieFilters = { ...filters, query: debouncedQuery }
+  const isUserSearch = debouncedQuery.startsWith('@')
+  const userQuery = isUserSearch ? debouncedQuery.slice(1).trim() : ''
+
+  const activeFilters: MovieFilters = { ...filters, query: isUserSearch ? '' : debouncedQuery }
   const { movies, loading, initialLoading, hasMore, loadMore } = useMovies(activeFilters)
   const { list: watchLaterList, loading: watchLaterLoading } = useWatchLater()
   const { list: favoritesList, loading: favoritesLoading } = useFavorites()
