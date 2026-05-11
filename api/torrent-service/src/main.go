@@ -37,6 +37,7 @@ func main() {
 		api.GET("/movies/:id/watched", handlers.WatchedHandler)
 		api.GET("/movies/:id/progress", handlers.GetProgressHandler)
 		api.PUT("/movies/:id/progress", handlers.SaveProgressHandler)
+		api.GET("/movies/:id/subtitles", handlers.SubtitleAvailableHandler)
 		api.GET("/movies/:id/subtitles/:lang", handlers.SubtitleHandler)
 
 		admin := api.Group("/admin")

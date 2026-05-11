@@ -51,6 +51,8 @@ func subtitleCacheDir() string {
 	return "/data/subtitles"
 }
 
+func SubtitleCacheDir() string { return subtitleCacheDir() }
+
 func subtitleCachePath(movieID int, lang string) string {
 	return filepath.Join(subtitleCacheDir(), fmt.Sprintf("%d", movieID), lang+".vtt")
 }
