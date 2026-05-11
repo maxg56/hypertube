@@ -31,15 +31,17 @@ func setupTestDB(t *testing.T) {
 		file_size  INTEGER DEFAULT 0,
 		downloaded INTEGER DEFAULT 0,
 		progress   REAL    DEFAULT 0,
-		source     TEXT,
+		quality    TEXT,
+			source     TEXT,
 		error_msg  TEXT,
 		created_at DATETIME,
 		updated_at DATETIME
 	)`).Error)
 	require.NoError(t, db.Exec(`CREATE TABLE movies (
-		id      INTEGER PRIMARY KEY AUTOINCREMENT,
-		tmdb_id INTEGER UNIQUE NOT NULL,
-		title   TEXT    NOT NULL
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		tmdb_id     INTEGER UNIQUE NOT NULL,
+		title       TEXT    NOT NULL,
+		poster_path TEXT
 	)`).Error)
 	conf.DB = db
 }
@@ -103,7 +105,7 @@ func TestExtractInfoHashIsLowercase(t *testing.T) {
 func TestFindOrCreateRecord_NewRecord(t *testing.T) {
 	setupTestDB(t)
 
-	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1)
+	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1, "")
 	require.NoError(t, err)
 	assert.Equal(t, validInfoHash, rec.InfoHash)
 	assert.Equal(t, validMagnet, rec.MagnetURI)
@@ -126,7 +128,7 @@ func TestFindOrCreateRecord_ExistingReady(t *testing.T) {
 	// Simulate file existing on disk by using a path we know won't exist —
 	// findOrCreateRecord only checks os.Stat when status==ready, and falls
 	// through to re-download if the file is missing.
-	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1)
+	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1, "")
 	require.NoError(t, err)
 	// File doesn't exist on disk → record is reset to pending for re-download.
 	assert.Equal(t, models.StatusPending, rec.Status)
@@ -143,7 +145,7 @@ func TestFindOrCreateRecord_ExistingDownloading(t *testing.T) {
 	}
 	require.NoError(t, conf.DB.Create(&seed).Error)
 
-	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1)
+	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1, "")
 	require.NoError(t, err)
 	assert.Equal(t, models.StatusDownloading, rec.Status)
 }
@@ -159,7 +161,7 @@ func TestFindOrCreateRecord_ExistingPending(t *testing.T) {
 	}
 	require.NoError(t, conf.DB.Create(&seed).Error)
 
-	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1)
+	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1, "")
 	require.NoError(t, err)
 	assert.Equal(t, models.StatusPending, rec.Status)
 }
@@ -176,7 +178,7 @@ func TestFindOrCreateRecord_ErrorStatusReset(t *testing.T) {
 	}
 	require.NoError(t, conf.DB.Create(&seed).Error)
 
-	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1)
+	rec, err := findOrCreateRecord(validMagnet, validInfoHash, 1, "")
 	require.NoError(t, err)
 	assert.Equal(t, models.StatusPending, rec.Status)
 	assert.Empty(t, rec.ErrorMsg)
@@ -214,7 +216,7 @@ func TestStartDownload_ClientNotInitialized(t *testing.T) {
 	setupTestDB(t)
 	client = nil // ensure no client
 
-	_, err := StartDownload(validMagnet, 1)
+	_, err := StartDownload(validMagnet, 1, "")
 	assert.EqualError(t, err, "torrent client not initialized")
 }
 
@@ -222,7 +224,7 @@ func TestStartDownload_InvalidMagnet(t *testing.T) {
 	setupTestDB(t)
 	client = nil
 
-	_, err := StartDownload("not-a-magnet", 1)
+	_, err := StartDownload("not-a-magnet", 1, "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid magnet URI")
 }
