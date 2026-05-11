@@ -3,25 +3,7 @@
 
   "nav": {
     "home": "Home",
-    "admin": "Admin",
-    "favorites": "My favorites",
-    "watch_later": "Watch later"
-  },
-
-  "favorites": {
-    "title": "My favorites",
-    "filter": "Favorites",
-    "empty": "You have no favorites yet.",
-    "add": "Add to favorites",
-    "remove": "Remove from favorites"
-  },
-
-  "watch_later": {
-    "title": "Watch later",
-    "add": "Watch later",
-    "remove": "Remove from list",
-    "filter": "Watch later",
-    "empty": "Your \"Watch later\" list is empty."
+    "admin": "Admin"
   },
 
   "admin": {
