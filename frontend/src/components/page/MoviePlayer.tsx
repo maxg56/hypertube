@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
+import { useProgressSync } from '@/hooks/useProgressSync'
+import { useSubtitleTracks } from '@/hooks/useSubtitleTracks'
+import { Subtitles } from 'lucide-react'
 
 interface Torrent {
   url: string
@@ -22,69 +25,24 @@ interface MoviePlayerProps {
   movieId: number
 }
 
-const SAVE_INTERVAL_MS = 5000
-
 export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
-  const { t, i18n } = useTranslation()
+  const { t } = useTranslation()
   const [selected, setSelected] = useState<Torrent | null>(torrents[0] ?? null)
   const [state, setState] = useState<PlayerState>('checking')
   const [progress, setProgress] = useState(0)
   const [infoHash, setInfoHash] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const saveRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
 
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) {
-      clearInterval(pollRef.current)
-      pollRef.current = null
-    }
+  const isStreaming = state === 'streaming'
+
+  useProgressSync(videoRef, movieId, isStreaming)
+  const subtitleStatus = useSubtitleTracks(videoRef, movieId, isStreaming)
+
+  useEffect(() => () => {
+    if (pollRef.current) clearInterval(pollRef.current)
   }, [])
-
-  const stopSaving = useCallback(() => {
-    if (saveRef.current) {
-      clearInterval(saveRef.current)
-      saveRef.current = null
-    }
-  }, [])
-
-  useEffect(() => () => { stopPolling(); stopSaving() }, [stopPolling, stopSaving])
-
-  // Restore saved position once the video element is ready.
-  const restorePosition = useCallback(async () => {
-    const video = videoRef.current
-    if (!video) return
-    try {
-      const res = await fetch(`/api/v1/movies/${movieId}/progress`, { credentials: 'include' })
-      if (!res.ok) return
-      const json = await res.json()
-      const sec: number = (json.data ?? json).progress_sec ?? 0
-      if (sec > 0) video.currentTime = sec
-    } catch {
-      // ignore — just start from the beginning
-    }
-  }, [movieId])
-
-  // Periodically save the current playback position.
-  const startSaving = useCallback(() => {
-    saveRef.current = setInterval(async () => {
-      const video = videoRef.current
-      if (!video || video.paused || video.ended) return
-      const sec = Math.floor(video.currentTime)
-      if (sec <= 0) return
-      try {
-        await fetch(`/api/v1/movies/${movieId}/progress`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ progress_sec: sec }),
-        })
-      } catch {
-        // ignore transient save errors
-      }
-    }, SAVE_INTERVAL_MS)
-  }, [movieId])
 
   // Check if the selected torrent is already ready on the server.
   useEffect(() => {
@@ -95,118 +53,77 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
     let cancelled = false
     setState('checking')
     void (async () => {
+      const hash = selected.hash.toLowerCase()
       try {
-        const hash = selected.hash.toLowerCase()
+        // Fast path: 200 means the file is on disk and streamable right now.
+        // Avoid head.ok (200-299) — 202 means pending, not ready.
+        const head = await fetch(`/api/v1/stream/${hash}`, { method: 'HEAD', credentials: 'include' })
+        if (!cancelled && head.status === 200) {
+          setInfoHash(hash)
+          setState('streaming')
+          return
+        }
+      } catch { /* fall through to status check */ }
+      if (cancelled) return
+      try {
         const res = await fetch(`/api/v1/torrent/status/${hash}`, { credentials: 'include' })
         if (cancelled) return
         if (res.ok) {
-          const json = await res.json()
-          const { status } = (json.data ?? json) as { status: string }
+          const { status } = ((await res.json()).data ?? {}) as { status?: string }
           if (!cancelled && status === 'ready') {
             setInfoHash(hash)
             setState('streaming')
             return
           }
         }
-      } catch {
-        // fall through to idle
-      }
+        // !res.ok (e.g. 404 = never downloaded) → fall through to idle
+      } catch { /* fall through */ }
       if (!cancelled) setState('idle')
     })()
     return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected])
 
-  // When streaming starts, restore position and begin saving.
-  useEffect(() => {
-    if (state !== 'streaming') return
-    stopSaving()
-    // Delay slightly so the video element has time to mount.
-    const timer = setTimeout(() => {
-      void restorePosition()
-      startSaving()
-    }, 300)
-    return () => clearTimeout(timer)
-  }, [state, restorePosition, startSaving, stopSaving])
-
-  // Fetch subtitle files with credentials and inject them as blob-URL tracks.
-  // This bypasses browser inconsistencies with the declarative <track> + default
-  // attribute, and ensures the JWT cookie is sent with each subtitle request.
-  useEffect(() => {
-    const video = videoRef.current
-    if (!video || state !== 'streaming') return
-
-    const userLang = i18n.language.slice(0, 2)
-    const langs = userLang === 'en' ? ['en'] : [userLang, 'en']
-    const blobUrls: string[] = []
-    let cancelled = false
-
-    langs.forEach(async (lang) => {
-      try {
-        const res = await fetch(`/api/v1/movies/${movieId}/subtitles/${lang}`, {
-          credentials: 'include',
-        })
-        if (!res.ok || cancelled) return
-        const blob = await res.blob()
-        if (cancelled) return
-
-        const url = URL.createObjectURL(blob)
-        blobUrls.push(url)
-
-        const el = document.createElement('track')
-        el.kind = 'subtitles'
-        el.srclang = lang
-        el.label = t(`movie.subtitle_${lang}`)
-        if (lang === userLang) {
-          el.track.mode = 'showing'
-          el.addEventListener('load', () => { el.track.mode = 'showing' })
-        }
-        el.src = url
-        video.appendChild(el)
-      } catch {
-        // subtitle not available for this language — silently ignore
-      }
-    })
-
-    return () => {
-      cancelled = true
-      Array.from(video.querySelectorAll('track')).forEach(el => el.remove())
-      blobUrls.forEach(url => URL.revokeObjectURL(url))
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current)
+      pollRef.current = null
     }
-  }, [state, movieId, i18n.language, t])
+  }, [])
 
   const pollStatus = useCallback((hash: string) => {
     pollRef.current = setInterval(async () => {
       try {
         const res = await fetch(`/api/v1/torrent/status/${hash}`, { credentials: 'include' })
         if (!res.ok) return
-        const json = await res.json()
-        const { status, progress: prog } = json.data ?? json
-
+        const { status, progress: prog } = (await res.json()).data ?? {}
         if (status === 'error') {
           stopPolling()
           setState('error')
           setErrorMsg(t('movie.error_stream'))
           return
         }
-
         setProgress(Math.round((prog ?? 0) * 100))
-
-        if (status === 'downloading' || status === 'ready') {
+        if (status === 'pending' || status === 'downloading' || status === 'ready') {
           stopPolling()
           setState('streaming')
         }
-      } catch {
-        // keep polling on transient errors
-      }
+      } catch { /* keep polling on transient errors */ }
     }, 2000)
   }, [stopPolling, t])
+
+  const handleTorrentSelect = useCallback((torrent: Torrent) => {
+    if (torrent.hash === selected?.hash) return
+    stopPolling()
+    setInfoHash(null)
+    setErrorMsg(null)
+    setSelected(torrent)
+  }, [selected, stopPolling])
 
   const handleWatch = useCallback(async () => {
     if (!selected) return
     setState('starting')
     setErrorMsg(null)
-
     try {
       const res = await fetch('/api/v1/torrent/download', {
         method: 'POST',
@@ -227,14 +144,12 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
   }, [selected, movieId, pollStatus, t])
 
   if (!torrents.length) {
-    return (
-      <p className="text-sm text-muted-foreground">{t('movie.no_torrents')}</p>
-    )
+    return <p className="text-sm text-muted-foreground">{t('movie.no_torrents')}</p>
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {state === 'streaming' && infoHash ? (
+      {isStreaming && infoHash ? (
         <video
           ref={videoRef}
           src={`/api/v1/stream/${infoHash}`}
@@ -246,54 +161,34 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
           {t('movie.video_unsupported')}
         </video>
       ) : (
-        <div className="w-full aspect-video rounded-lg bg-muted flex items-center justify-center">
-          {(state === 'checking' || state === 'starting') && (
-            <span className="text-muted-foreground text-sm animate-pulse">{t('movie.loading')}</span>
-          )}
-          {state === 'idle' && (
-            <span className="text-muted-foreground text-sm">{t('movie.select_quality')}</span>
-          )}
-          {state === 'downloading' && (
-            <div className="flex flex-col items-center gap-3 w-48">
-              <span className="text-sm text-muted-foreground">
-                {t('movie.progress', { percent: progress })}
-              </span>
-              <div className="w-full h-2 bg-border rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-sidebar-primary transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            </div>
-          )}
-          {state === 'error' && (
-            <span className="text-destructive text-sm">{errorMsg}</span>
-          )}
+        <PlayerPlaceholder state={state} progress={progress} errorMsg={errorMsg} t={t} />
+      )}
+
+      {isStreaming && subtitleStatus === 'none' && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground/60 select-none">
+          <span className="relative inline-flex shrink-0">
+            <Subtitles className="size-3.5" />
+            <span className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-muted-foreground/60 rotate-[-35deg]" />
+            </span>
+          </span>
+          <span>{t('movie.no_subtitles_available')}</span>
         </div>
       )}
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-wrap gap-2">
           {torrents.map(torrent => (
-            <button
+            <TorrentButton
               key={torrent.hash}
-              onClick={() => { if (state === 'idle' || state === 'checking') setSelected(torrent) }}
-              disabled={state !== 'idle' && state !== 'checking'}
-              className={cn(
-                'text-xs px-3 py-1.5 rounded-md border transition-colors',
-                selected?.hash === torrent.hash
-                  ? 'bg-sidebar-primary text-white border-sidebar-primary'
-                  : 'bg-muted border-border text-muted-foreground hover:border-sidebar-primary',
-                state !== 'idle' && state !== 'checking' && 'opacity-50 cursor-not-allowed',
-              )}
-            >
-              {torrent.quality} {torrent.type && `· ${torrent.type}`}
-              {torrent.size && <span className="ml-1 opacity-70">{torrent.size}</span>}
-            </button>
+              torrent={torrent}
+              selected={selected}
+              state={state}
+              onSelect={handleTorrentSelect}
+            />
           ))}
         </div>
-
-        {state === 'idle' && (
+        {(state === 'idle' || state === 'error') && (
           <button
             onClick={handleWatch}
             disabled={!selected}
@@ -304,5 +199,75 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
         )}
       </div>
     </div>
+  )
+}
+
+function PlayerPlaceholder({
+  state,
+  progress,
+  errorMsg,
+  t,
+}: {
+  state: PlayerState
+  progress: number
+  errorMsg: string | null
+  t: (key: string, opts?: Record<string, unknown>) => string
+}) {
+  return (
+    <div className="w-full aspect-video rounded-lg bg-muted flex items-center justify-center">
+      {(state === 'checking' || state === 'starting') && (
+        <span className="text-muted-foreground text-sm animate-pulse">{t('movie.loading')}</span>
+      )}
+      {state === 'idle' && (
+        <span className="text-muted-foreground text-sm">{t('movie.select_quality')}</span>
+      )}
+      {state === 'downloading' && (
+        <div className="flex flex-col items-center gap-3 w-48">
+          <span className="text-sm text-muted-foreground">
+            {t('movie.progress', { percent: progress })}
+          </span>
+          <div className="w-full h-2 bg-border rounded-full overflow-hidden">
+            <div
+              className="h-full bg-sidebar-primary transition-all duration-500"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {state === 'error' && (
+        <span className="text-destructive text-sm">{errorMsg}</span>
+      )}
+    </div>
+  )
+}
+
+function TorrentButton({
+  torrent,
+  selected,
+  state,
+  onSelect,
+}: {
+  torrent: Torrent
+  selected: Torrent | null
+  state: PlayerState
+  onSelect: (t: Torrent) => void
+}) {
+  const isSelected = selected?.hash === torrent.hash
+  const locked = state === 'starting'
+  return (
+    <button
+      onClick={() => { if (!locked) onSelect(torrent) }}
+      disabled={locked}
+      className={cn(
+        'text-xs px-3 py-1.5 rounded-md border transition-colors',
+        isSelected
+          ? 'bg-sidebar-primary text-white border-sidebar-primary'
+          : 'bg-muted border-border text-muted-foreground hover:border-sidebar-primary',
+        locked && 'opacity-50 cursor-not-allowed',
+      )}
+    >
+      {torrent.quality} {torrent.type && `· ${torrent.type}`}
+      {torrent.size && <span className="ml-1 opacity-70">{torrent.size}</span>}
+    </button>
   )
 }
