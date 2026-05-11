@@ -1,18 +1,20 @@
 'use client'
+import React from 'react'
+import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { FilmRow } from './FilmRow'
-import type { AdminFilm } from '../hooks/useAdminFilms'
+import type { AdminGroupedFilm } from '../hooks/useAdminFilms'
 
 interface FilmsTableProps {
-  films: AdminFilm[]
+  films: AdminGroupedFilm[]
   total: number
   offset: number
   limit: number
   actionId: number | null
   actionType: 'delete' | 'redownload' | null
-  onDelete: (film: AdminFilm) => void
-  onReDownload: (film: AdminFilm) => void
+  onDelete: (torrentId: number) => void
+  onReDownload: (torrentId: number) => void
   onPageChange: (offset: number) => void
 }
 
@@ -28,25 +30,46 @@ export function FilmsTable({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b text-muted-foreground">
-              <th className="text-left py-2 pr-4 font-medium">{t('admin.col_title')}</th>
-              <th className="text-left py-2 pr-4 font-medium">{t('admin.col_info_hash')}</th>
-              <th className="text-left py-2 pr-4 font-medium">{t('admin.col_language')}</th>
+              <th className="text-left py-2 pl-6 pr-4 font-medium">{t('admin.col_info_hash')}</th>
+              <th className="text-left py-2 pr-4 font-medium">{t('admin.col_quality')}</th>
               <th className="text-left py-2 pr-4 font-medium">{t('admin.col_status')}</th>
               <th className="text-right py-2 pr-4 font-medium">{t('admin.col_size')}</th>
-              <th className="text-right py-2 pr-4 font-medium">{t('admin.col_watchers')}</th>
               <th className="text-right py-2 font-medium">{t('admin.col_actions')}</th>
             </tr>
           </thead>
           <tbody>
             {films.map((film) => (
-              <FilmRow
-                key={film.id}
-                film={film}
-                isActing={actionId === film.id}
-                actionType={actionId === film.id ? actionType : null}
-                onDelete={() => onDelete(film)}
-                onReDownload={() => onReDownload(film)}
-              />
+              <React.Fragment key={film.movie_id}>
+                <tr className="bg-muted/20 border-b">
+                  <td colSpan={5} className="py-2.5 px-3">
+                    <div className="flex items-center justify-between gap-4">
+                      {film.tmdb_id ? (
+                        <Link
+                          href={`/movies/${film.tmdb_id}`}
+                          className="font-semibold hover:underline hover:text-sidebar-primary truncate"
+                        >
+                          {film.title || `movie_${film.movie_id}`}
+                        </Link>
+                      ) : (
+                        <span className="font-semibold truncate">{film.title || `movie_${film.movie_id}`}</span>
+                      )}
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {film.watchers_count} {t('admin.watchers')}
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+                {film.torrents.map((torrent) => (
+                  <FilmRow
+                    key={torrent.id}
+                    torrent={torrent}
+                    isActing={actionId === torrent.id}
+                    actionType={actionId === torrent.id ? actionType : null}
+                    onDelete={() => onDelete(torrent.id)}
+                    onReDownload={() => onReDownload(torrent.id)}
+                  />
+                ))}
+              </React.Fragment>
             ))}
           </tbody>
         </table>

@@ -10,11 +10,15 @@ import (
 	"torrent-service/src/conf"
 	"torrent-service/src/handlers"
 	"torrent-service/src/middleware"
+	"torrent-service/src/models"
 	"torrent-service/src/services"
 )
 
 func main() {
 	conf.InitDB()
+	if err := conf.DB.AutoMigrate(&models.TorrentRecord{}); err != nil {
+		log.Printf("Warning: AutoMigrate failed: %v", err)
+	}
 
 	if err := services.InitTorrentClient(); err != nil {
 		log.Fatal("Failed to initialize torrent client:", err)

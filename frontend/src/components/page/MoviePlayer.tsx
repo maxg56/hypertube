@@ -66,6 +66,24 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
     }
   }, [movieId])
 
+  // Save current position immediately (used before quality switch).
+  const saveNow = useCallback(async () => {
+    const video = videoRef.current
+    if (!video) return
+    const sec = Math.floor(video.currentTime)
+    if (sec <= 0) return
+    try {
+      await fetch(`/api/v1/movies/${movieId}/progress`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ progress_sec: sec }),
+      })
+    } catch {
+      // ignore
+    }
+  }, [movieId])
+
   // Periodically save the current playback position.
   const startSaving = useCallback(() => {
     saveRef.current = setInterval(async () => {
@@ -85,6 +103,13 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
       }
     }, SAVE_INTERVAL_MS)
   }, [movieId])
+
+  // Switch quality: save position immediately if currently streaming, then select new torrent.
+  const handleQualityChange = useCallback(async (torrent: Torrent) => {
+    if (selected?.hash === torrent.hash) return
+    if (state === 'streaming') await saveNow()
+    setSelected(torrent)
+  }, [selected, state, saveNow])
 
   // Check if the selected torrent is already ready on the server.
   useEffect(() => {
@@ -166,7 +191,7 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ magnet_uri: selected.magnet, movie_id: movieId }),
+        body: JSON.stringify({ magnet_uri: selected.magnet, movie_id: movieId, quality: selected.quality }),
       })
       if (!res.ok) throw new Error(`${res.status}`)
       const json = await res.json()
@@ -231,14 +256,14 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
           {torrents.map(torrent => (
             <button
               key={torrent.hash}
-              onClick={() => { if (state === 'idle' || state === 'checking') setSelected(torrent) }}
-              disabled={state !== 'idle' && state !== 'checking'}
+              onClick={() => void handleQualityChange(torrent)}
+              disabled={state === 'downloading' || state === 'starting'}
               className={cn(
                 'text-xs px-3 py-1.5 rounded-md border transition-colors',
                 selected?.hash === torrent.hash
                   ? 'bg-sidebar-primary text-white border-sidebar-primary'
                   : 'bg-muted border-border text-muted-foreground hover:border-sidebar-primary',
-                state !== 'idle' && state !== 'checking' && 'opacity-50 cursor-not-allowed',
+                (state === 'downloading' || state === 'starting') && 'opacity-50 cursor-not-allowed',
               )}
             >
               {torrent.quality} {torrent.type && `· ${torrent.type}`}

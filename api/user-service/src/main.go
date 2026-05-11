@@ -68,6 +68,9 @@ func main() {
 	admin.Use(middleware.AdminMiddleware())
 	{
 		admin.GET("/users", handlers.AdminListUsersHandler)
+		admin.PUT("/users/:id/role", handlers.AdminPromoteUserHandler)
+		admin.DELETE("/users/:id", handlers.AdminDeleteUserHandler)
+		admin.PUT("/users/:id/username", handlers.AdminUpdateUsernameHandler)
 	}
 
 	log.Println("User service starting on port 8002")

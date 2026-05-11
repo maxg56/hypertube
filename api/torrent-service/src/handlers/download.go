@@ -17,7 +17,7 @@ func DownloadHandler(c *gin.Context) {
 		return
 	}
 
-	infoHash, err := services.StartDownload(req.MagnetURI, req.MovieID)
+	infoHash, err := services.StartDownload(req.MagnetURI, req.MovieID, req.Quality)
 	if err != nil {
 		utils.RespondError(c, http.StatusBadRequest, err.Error())
 		return

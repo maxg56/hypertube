@@ -13,6 +13,7 @@ import (
 
 	"github.com/anacrolix/torrent"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"torrent-service/src/conf"
 	"torrent-service/src/models"
@@ -20,7 +21,7 @@ import (
 
 // StartDownload adds a magnet URI to the client and begins downloading.
 // It is idempotent: calling it twice with the same magnet returns the existing state.
-func StartDownload(magnetURI string, movieID int) (string, error) {
+func StartDownload(magnetURI string, movieID int, quality string) (string, error) {
 	// Validate the magnet URI first so callers get a clear 4xx error for bad input
 	// regardless of whether the client is ready.
 	infoHash, err := extractInfoHash(magnetURI)
@@ -36,7 +37,7 @@ func StartDownload(magnetURI string, movieID int) (string, error) {
 		return infoHash, nil
 	}
 
-	record, err := findOrCreateRecord(magnetURI, infoHash, movieID)
+	record, err := findOrCreateRecord(magnetURI, infoHash, movieID, quality)
 	if err != nil {
 		return "", err
 	}
@@ -68,26 +69,29 @@ func ResolveLocalMovieID(tmdbID int) (int, error) {
 
 func resolveLocalMovieID(tmdbID int) (int, error) {
 	var localID int
-	conf.DB.Raw("SELECT id FROM movies WHERE tmdb_id = ?", tmdbID).Scan(&localID)
+	conf.DB.Model(&models.Movie{}).Where("tmdb_id = ?", tmdbID).Pluck("id", &localID)
 	if localID > 0 {
 		return localID, nil
 	}
 	// Movie not yet cached by library-service — insert a minimal placeholder.
-	if err := conf.DB.Exec(
-		"INSERT INTO movies (tmdb_id, title) VALUES (?, ?) ON CONFLICT (tmdb_id) DO NOTHING",
-		tmdbID, fmt.Sprintf("movie:%d", tmdbID),
-	).Error; err != nil {
+	movie := models.Movie{TmdbID: tmdbID, Title: fmt.Sprintf("movie:%d", tmdbID)}
+	if err := conf.DB.Clauses(clause.OnConflict{DoNothing: true}).Create(&movie).Error; err != nil {
 		return 0, fmt.Errorf("placeholder movie insert: %w", err)
 	}
-	conf.DB.Raw("SELECT id FROM movies WHERE tmdb_id = ?", tmdbID).Scan(&localID)
+	conf.DB.Model(&models.Movie{}).Where("tmdb_id = ?", tmdbID).Pluck("id", &localID)
 	return localID, nil
 }
 
-func findOrCreateRecord(magnetURI, infoHash string, tmdbID int) (*models.TorrentRecord, error) {
+func findOrCreateRecord(magnetURI, infoHash string, tmdbID int, quality string) (*models.TorrentRecord, error) {
 	var record models.TorrentRecord
 	dbErr := conf.DB.Where("info_hash = ?", infoHash).First(&record).Error
 
 	if dbErr == nil {
+		// Backfill quality if the stored record doesn't have it yet.
+		if quality != "" && record.Quality == "" {
+			conf.DB.Model(&record).Update("quality", quality)
+			record.Quality = quality
+		}
 		if record.Status == models.StatusReady {
 			if _, statErr := os.Stat(record.FilePath); statErr == nil {
 				return &record, nil
@@ -114,6 +118,7 @@ func findOrCreateRecord(magnetURI, infoHash string, tmdbID int) (*models.Torrent
 		MagnetURI: magnetURI,
 		InfoHash:  infoHash,
 		Status:    models.StatusPending,
+		Quality:   quality,
 	}
 	if err := conf.DB.Create(&record).Error; err != nil {
 		return nil, fmt.Errorf("db insert: %w", err)

@@ -40,7 +40,8 @@ func setupTestDB(t *testing.T) {
 		file_size  INTEGER DEFAULT 0,
 		downloaded INTEGER DEFAULT 0,
 		progress   REAL    DEFAULT 0,
-		source     TEXT,
+		quality    TEXT,
+			source     TEXT,
 		error_msg  TEXT,
 		created_at DATETIME,
 		updated_at DATETIME

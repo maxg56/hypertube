@@ -3,6 +3,7 @@ package types
 type DownloadRequest struct {
 	MagnetURI string `json:"magnet_uri" binding:"required"`
 	MovieID   int    `json:"movie_id" binding:"required"`
+	Quality   string `json:"quality"`
 }
 
 type DownloadResponse struct {

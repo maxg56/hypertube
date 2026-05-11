@@ -1,10 +1,9 @@
 'use client'
-import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { Loader2, Trash2, RefreshCw } from 'lucide-react'
 import { FilmStatusBadge } from './FilmStatusBadge'
-import type { AdminFilm } from '../hooks/useAdminFilms'
+import type { AdminTorrent } from '../hooks/useAdminFilms'
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '—'
@@ -16,52 +15,39 @@ function formatBytes(bytes: number): string {
 }
 
 interface FilmRowProps {
-  film: AdminFilm
+  torrent: AdminTorrent
   isActing: boolean
   actionType: 'delete' | 'redownload' | null
   onDelete: () => void
   onReDownload: () => void
 }
 
-export function FilmRow({ film, isActing, actionType, onDelete, onReDownload }: FilmRowProps) {
+export function FilmRow({ torrent, isActing, actionType, onDelete, onReDownload }: FilmRowProps) {
   const { t } = useTranslation()
 
   return (
     <tr className="border-b last:border-0 hover:bg-muted/40 transition-colors">
-      <td className="py-2.5 pr-4">
-        {film.tmdb_id ? (
-          <Link
-            href={`/movies/${film.tmdb_id}`}
-            className="font-medium leading-tight hover:underline hover:text-sidebar-primary"
-          >
-            {film.title || film.info_hash.slice(0, 12)}
-          </Link>
-        ) : (
-          <span className="font-medium leading-tight">{film.title || film.info_hash.slice(0, 12)}</span>
-        )}
-        {film.status === 'downloading' && (
+      <td className="py-2.5 pl-6 pr-4">
+        <span className="font-mono text-xs text-muted-foreground" title={torrent.info_hash}>
+          {torrent.info_hash.slice(0, 16)}…
+        </span>
+        {torrent.status === 'downloading' && (
           <div className="mt-1 flex items-center gap-2">
             <div className="h-1 w-24 rounded-full bg-muted overflow-hidden">
               <div
                 className="h-full bg-sidebar-primary transition-all"
-                style={{ width: `${Math.min(100, film.progress)}%` }}
+                style={{ width: `${Math.min(100, torrent.progress)}%` }}
               />
             </div>
-            <span className="text-xs text-muted-foreground">{film.progress.toFixed(0)}%</span>
+            <span className="text-xs text-muted-foreground">{torrent.progress.toFixed(0)}%</span>
           </div>
         )}
       </td>
 
       <td className="py-2.5 pr-4">
-        <span className="font-mono text-xs text-muted-foreground" title={film.info_hash}>
-          {film.info_hash.slice(0, 16)}…
-        </span>
-      </td>
-
-      <td className="py-2.5 pr-4">
-        {film.language ? (
+        {torrent.quality ? (
           <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-muted text-muted-foreground uppercase tracking-wide">
-            {film.language}
+            {torrent.quality}
           </span>
         ) : (
           <span className="text-muted-foreground text-xs">—</span>
@@ -69,15 +55,11 @@ export function FilmRow({ film, isActing, actionType, onDelete, onReDownload }: 
       </td>
 
       <td className="py-2.5 pr-4">
-        <FilmStatusBadge status={film.status} />
+        <FilmStatusBadge status={torrent.status} />
       </td>
 
       <td className="py-2.5 pr-4 text-right tabular-nums text-muted-foreground">
-        {formatBytes(film.file_size)}
-      </td>
-
-      <td className="py-2.5 pr-4 text-right tabular-nums">
-        {film.watchers_count}
+        {formatBytes(torrent.file_size)}
       </td>
 
       <td className="py-2.5 text-right">
