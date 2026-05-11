@@ -72,10 +72,18 @@ func (h *MovieHandler) Movies(c *gin.Context) {
 		return
 	}
 
-	result, err := h.fetchMovies(params, year)
-	if err != nil {
-		utils.RespondError(c, http.StatusBadGateway, "failed to fetch movies")
-		return
+	result = models.CursorResult{
+		Results: searchResult.Results,
+		Total:   searchResult.TotalCount,
+	}
+	if page < searchResult.TotalPages {
+		// When year is filtered, List() scans 10 YTS pages at once, so the
+		// next cursor must skip 10 pages forward instead of just 1.
+		nextPage := page + 1
+		if year > 0 {
+			nextPage = page + 10
+		}
+		result.NextCursor = encodeCursor(nextPage)
 	}
 
 	cacheSet(cacheKey, result, ytsCacheTTL)

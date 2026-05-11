@@ -2,7 +2,7 @@
 import React from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { Heart, Lock, ArrowLeft } from 'lucide-react'
+import { Heart, Lock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useTranslation } from 'react-i18next'
@@ -114,13 +114,6 @@ export default function PublicProfilePage() {
 
   return (
     <div className="container mx-auto p-6 max-w-4xl flex flex-col gap-6">
-      <Link
-        href="/"
-        className="fixed top-20 left-4 z-50 inline-flex items-center justify-center text-foreground/80 hover:text-foreground bg-background/70 hover:bg-background/90 backdrop-blur-sm border border-border/50 rounded-full p-2 shadow-sm transition-colors"
-        aria-label="Retour"
-      >
-        <ArrowLeft className="size-4" />
-      </Link>
       <h1 className="text-3xl font-bold">{t('profile.public_title')}</h1>
 
       <Card className="card-glow">

@@ -72,7 +72,8 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    read_only: true
+    volumes:
+      - redis_data_dev:/data
     tmpfs:
       - /tmp
 
@@ -199,7 +200,7 @@ services:
       DB_NAME: ${DB_NAME:-hypertube}
       DB_USER: ${DB_USER:-postgres}
       DB_PASSWORD: ${DB_PASSWORD:-password}
-      TMDB_API_KEY: ${TMDB_API_KEY}
+      TMDB_API_KEY: ${TMDB_API_KEY:-}
       REDIS_HOST: redis
       GIN_MODE: debug
     volumes:
@@ -235,12 +236,17 @@ services:
       STREAM_BUFFER_SIZE: ${STREAM_BUFFER_SIZE:-10}
       GIN_MODE: debug
       AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+      OPENSUBTITLES_API_KEY: ${OPENSUBTITLES_API_KEY:-}
+      OPENSUBTITLES_USERNAME: ${OPENSUBTITLES_USERNAME:-}
+      OPENSUBTITLES_PASSWORD: ${OPENSUBTITLES_PASSWORD:-}
+      SUBTITLE_CACHE_PATH: /data/subtitles
     volumes:
       - ./api/torrent-service/src:/app/src
       - ./api/torrent-service/go.mod:/app/go.mod
       - ./api/torrent-service/go.sum:/app/go.sum
       - ./api/torrent-service/.air.toml:/app/.air.toml
       - torrent_data_dev:/data/torrents
+      - subtitle_data_dev:/data/subtitles
     depends_on:
       - postgres
     networks:
@@ -345,6 +351,12 @@ services:
       - /tmp
 
 volumes:
+  redis_data_dev:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/redis
+      o: bind
   avatar_data:
     driver: local
     driver_opts:
@@ -362,6 +374,12 @@ volumes:
     driver_opts:
       type: none
       device: ./volumes/torrents
+      o: bind
+  subtitle_data_dev:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/subtitles
       o: bind
   caddy_data:
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslation } from 'react-i18next'
-import { Search, Bookmark, Heart, Users } from 'lucide-react'
+import { Search, Bookmark, Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MovieFilters } from '@/hooks/useMovies'
 
@@ -44,7 +44,7 @@ export function MovieFiltersBar({
           value={filters.query}
           onChange={e => onSearchChange(e.target.value)}
           placeholder={t('library.search_placeholder')}
-          disabled={watchLater || favorites}
+          disabled={watchLater}
           className="w-full pl-9 pr-4 py-2 bg-card border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-sidebar-primary/50 disabled:opacity-40"
         />
         {isUserSearch && (
@@ -55,7 +55,7 @@ export function MovieFiltersBar({
         )}
       </div>
       <div className="flex flex-wrap gap-2 items-center">
-        <div className={cn('contents', (watchLater || favorites || isUserSearch) && 'opacity-40 pointer-events-none')}>
+        <div className={cn('contents', (watchLater || favorites) && 'opacity-40 pointer-events-none')}>
           <select
             value={filters.genre}
             onChange={e => onFilterChange('genre', e.target.value)}
@@ -99,7 +99,6 @@ export function MovieFiltersBar({
           </select>
         </div>
 
-        <div className={cn('contents', isUserSearch && 'opacity-40 pointer-events-none')}>
         <button
           onClick={() => { onFavoritesChange(!favorites); if (!favorites) onWatchLaterChange(false) }}
           className={cn(
@@ -124,7 +123,6 @@ export function MovieFiltersBar({
           <Bookmark className={cn('size-4', watchLater && 'fill-current')} />
           {t('watch_later.filter')}
         </button>
-        </div>
       </div>
     </div>
   )

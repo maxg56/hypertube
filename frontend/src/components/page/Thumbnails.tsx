@@ -8,7 +8,6 @@ import { MovieFiltersBar } from '@/components/page/MovieFilters'
 import { useMovies, type MovieFilters } from '@/hooks/useMovies'
 import { useWatchLater } from '@/hooks/useWatchLater'
 import { useFavorites } from '@/hooks/useFavorites'
-import { useUserSearch } from '@/hooks/useUserSearch'
 import type { Movie } from '@/hooks/useMovies'
 import type { WatchLaterMovie } from '@/hooks/useWatchLater'
 import type { FavoriteMovie } from '@/hooks/useFavorites'
@@ -64,7 +63,6 @@ export default function Thumbnails() {
   const { movies, loading, initialLoading, hasMore, loadMore } = useMovies(activeFilters)
   const { list: watchLaterList, loading: watchLaterLoading } = useWatchLater()
   const { list: favoritesList, loading: favoritesLoading } = useFavorites()
-  const { users, loading: usersLoading } = useUserSearch(userQuery)
 
   const handleSearchChange = useCallback((value: string) => {
     setFilters(prev => ({ ...prev, query: value }))
@@ -77,7 +75,7 @@ export default function Thumbnails() {
   }, [])
 
   useEffect(() => {
-    if (watchLater || showFavorites || isUserSearch) return
+    if (watchLater || showFavorites) return
     const sentinel = sentinelRef.current
     if (!sentinel) return
     const observer = new IntersectionObserver(
@@ -86,7 +84,7 @@ export default function Thumbnails() {
     )
     observer.observe(sentinel)
     return () => observer.disconnect()
-  }, [loadMore, watchLater, showFavorites, isUserSearch])
+  }, [loadMore, watchLater, showFavorites])
 
   const watchLaterMovies = watchLaterList.map(watchLaterToMovie)
   const favoritesMovies = favoritesList.map(favoriteToMovie)
@@ -121,19 +119,7 @@ export default function Thumbnails() {
         onFavoritesChange={setShowFavorites}
       />
       <div className="px-4 pb-6">
-        {isUserSearch ? (
-          usersLoading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {Array.from({ length: 10 }).map((_, i) => <MovieCardSkeleton key={i} />)}
-            </div>
-          ) : userQuery === '' ? null : users.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground py-16">{t('user_search.empty')}</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-              {users.map(u => <UserCard key={u.id} user={u} />)}
-            </div>
-          )
-        ) : showFavorites ? (
+        {showFavorites ? (
           renderList(favoritesMovies, favoritesLoading, 'favorites.empty')
         ) : watchLater ? (
           renderList(watchLaterMovies, watchLaterLoading, 'watch_later.empty')
