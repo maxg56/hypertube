@@ -62,6 +62,12 @@ func UpdateProfileHandler(c *gin.Context) {
 		}
 		user.Language = *req.Language
 	}
+	if req.IsPublic != nil {
+		user.IsPublic = *req.IsPublic
+	}
+	if req.FavoritesPublic != nil {
+		user.FavoritesPublic = *req.FavoritesPublic
+	}
 
 	if err := conf.DB.Save(&user).Error; err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to update profile")

@@ -39,6 +39,7 @@ func main() {
 	{
 		users.GET(profileByID, handlers.GetProfileHandler)
 		users.GET("/:id/online-status", handlers.GetUserOnlineStatusHandler)
+		users.GET("/:id/favorites", handlers.ListUserFavoritesHandler)
 
 		protected := users.Group("")
 		protected.Use(middleware.AuthMiddleware())
@@ -48,6 +49,16 @@ func main() {
 			protected.PUT(profileByID, handlers.UpdateProfileHandler)
 			protected.DELETE(profileByID, handlers.DeleteProfileHandler)
 			protected.POST("/avatar", handlers.UploadAvatarHandler)
+
+			protected.GET("/favorites", handlers.ListFavoritesHandler)
+			protected.POST("/favorites", handlers.AddFavoriteHandler)
+			protected.DELETE("/favorites/:tmdbId", handlers.RemoveFavoriteHandler)
+			protected.GET("/favorites/:tmdbId", handlers.CheckFavoriteHandler)
+
+			protected.GET("/watch-later", handlers.ListWatchLaterHandler)
+			protected.POST("/watch-later", handlers.AddWatchLaterHandler)
+			protected.DELETE("/watch-later/:tmdbId", handlers.RemoveWatchLaterHandler)
+			protected.GET("/watch-later/:tmdbId", handlers.CheckWatchLaterHandler)
 		}
 	}
 

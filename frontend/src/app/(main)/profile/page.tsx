@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTranslation } from 'react-i18next'
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle, Loader2, Globe, Lock, Heart } from 'lucide-react'
 
 const LANGUAGES = [
   { code: 'fr', label: '🇫🇷 Français' },
@@ -19,6 +19,8 @@ interface UserProfile {
   last_name: string
   avatar_url: string
   language: string
+  is_public: boolean
+  favorites_public: boolean
 }
 
 type SaveStatus = 'idle' | 'loading' | 'success' | 'error'
@@ -37,6 +39,8 @@ export default function ProfilePage() {
   const [firstName, setFirstName] = React.useState('')
   const [lastName, setLastName] = React.useState('')
   const [selectedLang, setSelectedLang] = React.useState(i18n.language)
+  const [isPublic, setIsPublic] = React.useState(true)
+  const [favoritesPublic, setFavoritesPublic] = React.useState(true)
   const [pendingFile, setPendingFile] = React.useState<File | null>(null)
   const [localPreview, setLocalPreview] = React.useState('')
   const [saveStatus, setSaveStatus] = React.useState<SaveStatus>('idle')
@@ -51,6 +55,8 @@ export default function ProfilePage() {
         setProfile(p)
         setFirstName(p.first_name)
         setLastName(p.last_name)
+        setIsPublic(p.is_public ?? true)
+        setFavoritesPublic(p.favorites_public ?? true)
         if (p.language) {
           setSelectedLang(p.language)
           i18n.changeLanguage(p.language)
@@ -97,7 +103,7 @@ export default function ProfilePage() {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, language: selectedLang }),
+        body: JSON.stringify({ first_name: firstName, last_name: lastName, language: selectedLang, is_public: isPublic, favorites_public: favoritesPublic }),
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
@@ -121,6 +127,8 @@ export default function ProfilePage() {
     if (profile) {
       setFirstName(profile.first_name)
       setLastName(profile.last_name)
+      setIsPublic(profile.is_public ?? true)
+      setFavoritesPublic(profile.favorites_public ?? true)
     }
     setLocalPreview('')
     setPendingFile(null)
@@ -238,6 +246,68 @@ export default function ProfilePage() {
           </div>
         </CardContent>
       </Card>
+      <Card className="card-glow">
+        <CardHeader>
+          <CardTitle className="text-lg">{t('profile.privacy_title')}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <PrivacyToggle
+            icon={isPublic ? <Globe className="size-4 text-sidebar-primary" /> : <Lock className="size-4 text-muted-foreground" />}
+            label={t('profile.privacy_account_public')}
+            hint={t('profile.privacy_account_public_hint')}
+            checked={isPublic}
+            disabled={!isEditing}
+            onChange={setIsPublic}
+          />
+          <PrivacyToggle
+            icon={<Heart className={`size-4 ${favoritesPublic ? 'text-destructive' : 'text-muted-foreground'}`} />}
+            label={t('profile.privacy_favorites_public')}
+            hint={t('profile.privacy_favorites_public_hint')}
+            checked={favoritesPublic}
+            disabled={!isEditing || !isPublic}
+            onChange={setFavoritesPublic}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function PrivacyToggle({
+  icon, label, hint, checked, disabled, onChange,
+}: {
+  icon: React.ReactNode
+  label: string
+  hint: string
+  checked: boolean
+  disabled: boolean
+  onChange: (v: boolean) => void
+}) {
+  return (
+    <div className={`flex items-center justify-between gap-4 ${disabled ? 'opacity-50' : ''}`}>
+      <div className="flex items-center gap-3 min-w-0">
+        {icon}
+        <div className="min-w-0">
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-xs text-muted-foreground">{hint}</p>
+        </div>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        disabled={disabled}
+        onClick={() => !disabled && onChange(!checked)}
+        className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors focus-visible:outline-none disabled:cursor-not-allowed ${
+          checked ? 'bg-sidebar-primary' : 'bg-muted'
+        }`}
+      >
+        <span
+          className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg transition-transform ${
+            checked ? 'translate-x-5' : 'translate-x-0'
+          }`}
+        />
+      </button>
     </div>
   )
 }
