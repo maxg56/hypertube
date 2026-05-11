@@ -26,13 +26,6 @@ export function MovieHero({
 }: MovieHeroProps) {
   return (
     <>
-      {backdropUrl && (
-        <div className="relative w-full h-56 sm:h-72 md:h-96 overflow-hidden">
-          <img src={backdropUrl} alt="" className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        </div>
-      )}
-
       <div className={`flex gap-6 ${backdropUrl ? '-mt-24 relative z-10' : 'mt-8'}`}>
         {posterUrl && (
           <div className="hidden sm:block shrink-0 w-36 md:w-48">

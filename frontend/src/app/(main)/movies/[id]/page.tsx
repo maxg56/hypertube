@@ -97,6 +97,13 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
         <ArrowLeft className="size-4" />
       </Link>
 
+      {movie.backdrop_url && (
+        <div className="relative w-full h-56 sm:h-72 md:h-96 overflow-hidden">
+          <img src={movie.backdrop_url} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto px-4 pb-16">
         <MovieHero
           id={movie.id}
