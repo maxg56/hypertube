@@ -337,11 +337,19 @@ func fetchURL(url string) ([]byte, error) {
 	return io.ReadAll(resp.Body)
 }
 
+// stripBOM removes a leading UTF-8 byte order mark if present.
+func stripBOM(b []byte) []byte {
+	if len(b) >= 3 && b[0] == 0xEF && b[1] == 0xBB && b[2] == 0xBF {
+		return b[3:]
+	}
+	return b
+}
+
 // srtToVTT converts SRT subtitle bytes to WebVTT format.
 func srtToVTT(srt []byte) string {
 	var out strings.Builder
 	out.WriteString("WEBVTT\n\n")
-	scanner := bufio.NewScanner(bytes.NewReader(srt))
+	scanner := bufio.NewScanner(bytes.NewReader(stripBOM(srt)))
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.Contains(line, " --> ") {
@@ -477,23 +485,27 @@ func ExtractTorrentSubtitles(t *torrent.Torrent, tmdbID int) {
 		}
 	}
 	if len(subtitleFiles) == 0 {
+		log.Printf("subtitle: torrent movie %d — no subtitle files found", tmdbID)
 		return
 	}
+	log.Printf("subtitle: torrent movie %d — found %d subtitle file(s)", tmdbID, len(subtitleFiles))
 
-	// Count distinct detected languages to handle the single-file "und" case.
+	undIdx := 0
 	for _, f := range subtitleFiles {
 		lang := detectLangFromPath(f.DisplayPath())
 		if lang == "" {
-			if len(subtitleFiles) == 1 {
+			if undIdx == 0 {
 				lang = "und"
 			} else {
-				continue
+				lang = fmt.Sprintf("und_%d", undIdx)
 			}
+			undIdx++
 		}
 
 		cachePath := subtitleCachePath(tmdbID, lang)
 		if _, err := os.Stat(cachePath); err == nil {
-			continue // already cached
+			log.Printf("subtitle: torrent %s already cached (lang=%s)", f.DisplayPath(), lang)
+			continue
 		}
 
 		r := f.NewReader()
@@ -508,7 +520,7 @@ func ExtractTorrentSubtitles(t *torrent.Torrent, tmdbID int) {
 		var vtt string
 		switch ext {
 		case ".vtt":
-			vtt = string(raw)
+			vtt = string(stripBOM(raw))
 		case ".ass", ".ssa":
 			vtt = assToVTT(raw)
 		default: // .srt, .sub
@@ -523,6 +535,6 @@ func ExtractTorrentSubtitles(t *torrent.Torrent, tmdbID int) {
 			log.Printf("subtitle: torrent extract write error: %v", err)
 			continue
 		}
-		log.Printf("subtitle: extracted %s → %s (lang=%s)", f.DisplayPath(), cachePath, lang)
+		log.Printf("subtitle: extracted %s → %s (lang=%s, %d bytes)", f.DisplayPath(), cachePath, lang, len(vtt))
 	}
 }

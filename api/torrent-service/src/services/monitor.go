@@ -52,6 +52,11 @@ func monitorTorrent(t *torrent.Torrent, record *models.TorrentRecord) {
 		"file_path":  filePath,
 	})
 	log.Printf("torrent %s download complete: %s", infoHash, filePath)
+
+	var movie models.Movie
+	if err := conf.DB.Where("id = ?", record.MovieID).First(&movie).Error; err == nil && movie.TmdbID > 0 {
+		go ExtractTorrentSubtitles(t, movie.TmdbID)
+	}
 }
 
 func runProgressLoop(t *torrent.Torrent, record *models.TorrentRecord, totalLength int64, infoHash string) error {
