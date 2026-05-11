@@ -33,27 +33,30 @@ export function MoviePlayer({ torrents, movieId }: MoviePlayerProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {isStreaming && infoHash ? (
-        <video
-          ref={videoRef}
-          src={`/api/v1/stream/${infoHash}`}
-          controls
-          preload="metadata"
-          crossOrigin="use-credentials"
-          className="w-full rounded-lg bg-black aspect-video"
-        >
-          {t('movie.video_unsupported')}
-        </video>
-      ) : (
-        <PlayerPlaceholder
-          state={state}
-          progress={progress}
-          errorMsg={errorMsg}
-          hasSelected={!!selected}
-          onWatch={startWatch}
-        />
-      )}
+    <div className="flex flex-col gap-2">
+      <div className="relative w-full aspect-video rounded-lg overflow-hidden group">
+        {isStreaming && infoHash ? (
+          <video
+            ref={videoRef}
+            src={`/api/v1/stream/${infoHash}`}
+            controls
+            preload="metadata"
+            crossOrigin="use-credentials"
+            className="w-full h-full bg-black"
+          >
+            {t('movie.video_unsupported')}
+          </video>
+        ) : (
+          <PlayerPlaceholder
+            state={state}
+            progress={progress}
+            errorMsg={errorMsg}
+            hasSelected={!!selected}
+            onWatch={startWatch}
+          />
+        )}
+
+      </div>
 
       <SubtitleIndicator show={isStreaming && subtitleStatus === 'none'} />
 

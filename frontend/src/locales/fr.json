@@ -185,6 +185,7 @@
 
   "movie": {
     "watch": "Regarder",
+    "quality": "Qualité",
     "select_quality": "Sélectionnez une qualité pour lancer",
     "loading": "Chargement…",
     "progress": "Téléchargement {{percent}}%",

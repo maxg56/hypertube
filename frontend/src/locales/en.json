@@ -185,6 +185,7 @@
 
   "movie": {
     "watch": "Watch",
+    "quality": "Quality",
     "select_quality": "Select a quality to start",
     "loading": "Loading…",
     "progress": "Downloading {{percent}}%",

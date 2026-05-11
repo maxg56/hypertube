@@ -1,5 +1,6 @@
 'use client'
 
+import { Download } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { PlayerState } from '@/hooks/useTorrentStream'
 
@@ -15,7 +16,7 @@ export function PlayerPlaceholder({ state, progress, errorMsg, hasSelected, onWa
   const { t } = useTranslation()
 
   return (
-    <div className="w-full aspect-video rounded-lg bg-muted flex items-center justify-center">
+    <div className="w-full h-full bg-muted flex items-center justify-center">
       {(state === 'checking' || state === 'starting') && (
         <span className="text-muted-foreground text-sm animate-pulse">{t('movie.loading')}</span>
       )}
@@ -25,7 +26,7 @@ export function PlayerPlaceholder({ state, progress, errorMsg, hasSelected, onWa
             <span className="text-destructive text-sm">{errorMsg}</span>
           )}
           {state === 'idle' && (
-            <span className="text-muted-foreground text-sm">{t('movie.select_quality')}</span>
+            <Download className="size-10 text-muted-foreground/40" />
           )}
           <button
             onClick={onWatch}
