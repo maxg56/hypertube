@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -13,101 +14,102 @@ import (
 	"torrent-service/src/models"
 )
 
-// AdminFilmRow is the result of the admin films list query.
-type AdminFilmRow struct {
-	ID            uint    `json:"id"`
-	MovieID       int     `json:"movie_id"`
-	TmdbID        int     `json:"tmdb_id"`
-	InfoHash      string  `json:"info_hash"`
-	Status        string  `json:"status"`
-	FilePath      string  `json:"file_path"`
-	FileSize      int64   `json:"file_size"`
-	Downloaded    int64   `json:"downloaded"`
-	Progress      float64 `json:"progress"`
-	Title         string  `json:"title"`
-	PosterPath    string  `json:"poster_path"`
-	Language      string  `json:"language"`
-	CreatedAt     string  `json:"created_at"`
-	WatchersCount int64   `json:"watchers_count"`
-	// comma-separated user IDs — parsed by the handler
-	watcherIDsRaw string
-	WatcherIDs    []int `json:"watcher_ids"`
+// AdminTorrentEntry holds per-torrent info inside a grouped film.
+type AdminTorrentEntry struct {
+	ID         uint    `json:"id"`
+	InfoHash   string  `json:"info_hash"`
+	Status     string  `json:"status"`
+	FileSize   int64   `json:"file_size"`
+	Downloaded int64   `json:"downloaded"`
+	Progress   float64 `json:"progress"`
+	Language   string  `json:"language"`
+	CreatedAt  string  `json:"created_at"`
 }
 
-// ListAdminFilms returns all torrent records with movie metadata and watcher info.
-func ListAdminFilms(limit, offset int) ([]AdminFilmRow, int64, error) {
+// AdminGroupedFilm groups all torrents for a single movie.
+type AdminGroupedFilm struct {
+	MovieID       int                 `json:"movie_id"`
+	TmdbID        int                 `json:"tmdb_id"`
+	Title         string              `json:"title"`
+	PosterPath    string              `json:"poster_path"`
+	WatchersCount int64               `json:"watchers_count"`
+	WatcherIDs    []int               `json:"watcher_ids"`
+	Torrents      []AdminTorrentEntry `json:"torrents"`
+}
+
+// ListAdminFilms returns torrent records grouped by movie with watcher info.
+func ListAdminFilms(limit, offset int) ([]AdminGroupedFilm, int64, error) {
 	var total int64
-	if err := conf.DB.Table("torrents").Count(&total).Error; err != nil {
+	if err := conf.DB.Raw("SELECT COUNT(DISTINCT movie_id) FROM torrents").Scan(&total).Error; err != nil {
 		return nil, 0, fmt.Errorf("count: %w", err)
 	}
 
 	type rawRow struct {
-		ID            uint    `gorm:"column:id"`
-		MovieID       int     `gorm:"column:movie_id"`
-		TmdbID        int     `gorm:"column:tmdb_id"`
-		InfoHash      string  `gorm:"column:info_hash"`
-		Status        string  `gorm:"column:status"`
-		FilePath      string  `gorm:"column:file_path"`
-		FileSize      int64   `gorm:"column:file_size"`
-		Downloaded    int64   `gorm:"column:downloaded"`
-		Progress      float64 `gorm:"column:progress"`
-		Title         string  `gorm:"column:title"`
-		PosterPath    string  `gorm:"column:poster_path"`
-		Language      string  `gorm:"column:language"`
-		CreatedAt     string  `gorm:"column:created_at"`
-		WatchersCount int64   `gorm:"column:watchers_count"`
-		WatcherIDsRaw string  `gorm:"column:watcher_ids"`
+		MovieID       int    `gorm:"column:movie_id"`
+		TmdbID        int    `gorm:"column:tmdb_id"`
+		Title         string `gorm:"column:title"`
+		PosterPath    string `gorm:"column:poster_path"`
+		WatchersCount int64  `gorm:"column:watchers_count"`
+		WatcherIDsRaw string `gorm:"column:watcher_ids"`
+		TorrentsJSON  string `gorm:"column:torrents_json"`
 	}
 
 	var rows []rawRow
 	err := conf.DB.Raw(`
+		WITH movie_groups AS (
+			SELECT movie_id, MAX(created_at) AS max_created
+			FROM torrents
+			GROUP BY movie_id
+			ORDER BY max_created DESC
+			LIMIT ? OFFSET ?
+		)
 		SELECT
-			t.id,
 			t.movie_id,
-			COALESCE(m.tmdb_id, 0)         AS tmdb_id,
-			t.info_hash,
-			t.status,
-			COALESCE(t.file_path, '')       AS file_path,
-			t.file_size,
-			t.downloaded,
-			t.progress,
+			COALESCE(m.tmdb_id, 0)          AS tmdb_id,
 			COALESCE(m.title, '')           AS title,
 			COALESCE(m.poster_path, '')     AS poster_path,
-			COALESCE(m.language, '')        AS language,
-			to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS created_at,
 			COUNT(DISTINCT wh.user_id)      AS watchers_count,
-			COALESCE(string_agg(DISTINCT wh.user_id::text, ','), '') AS watcher_ids
-		FROM torrents t
-		LEFT JOIN movies m  ON m.id = t.movie_id
+			COALESCE(string_agg(DISTINCT wh.user_id::text, ','), '') AS watcher_ids,
+			json_agg(json_build_object(
+				'id',         t.id,
+				'info_hash',  t.info_hash,
+				'status',     t.status::text,
+				'file_size',  t.file_size,
+				'downloaded', t.downloaded,
+				'progress',   t.progress,
+				'language',   COALESCE(m.language, ''),
+				'created_at', to_char(t.created_at, 'YYYY-MM-DD"T"HH24:MI:SS"Z"')
+			) ORDER BY t.created_at DESC)   AS torrents_json,
+			mg.max_created
+		FROM movie_groups mg
+		JOIN torrents t ON t.movie_id = mg.movie_id
+		LEFT JOIN movies m ON m.id = t.movie_id
 		LEFT JOIN watch_history wh ON wh.movie_id = t.movie_id
-		GROUP BY t.id, m.tmdb_id, m.title, m.poster_path, m.language
-		ORDER BY t.created_at DESC
-		LIMIT ? OFFSET ?
+		GROUP BY t.movie_id, m.tmdb_id, m.title, m.poster_path, mg.max_created
+		ORDER BY mg.max_created DESC
 	`, limit, offset).Scan(&rows).Error
 	if err != nil {
 		return nil, 0, fmt.Errorf("query: %w", err)
 	}
 
-	result := make([]AdminFilmRow, 0, len(rows))
+	result := make([]AdminGroupedFilm, 0, len(rows))
 	for _, r := range rows {
-		row := AdminFilmRow{
-			ID:            r.ID,
+		var torrents []AdminTorrentEntry
+		if r.TorrentsJSON != "" {
+			if err := json.Unmarshal([]byte(r.TorrentsJSON), &torrents); err != nil {
+				log.Printf("[admin] warn: failed to parse torrents_json for movie %d: %v", r.MovieID, err)
+				torrents = []AdminTorrentEntry{}
+			}
+		}
+		result = append(result, AdminGroupedFilm{
 			MovieID:       r.MovieID,
 			TmdbID:        r.TmdbID,
-			InfoHash:      r.InfoHash,
-			Status:        r.Status,
-			FilePath:      r.FilePath,
-			FileSize:      r.FileSize,
-			Downloaded:    r.Downloaded,
-			Progress:      r.Progress,
 			Title:         r.Title,
 			PosterPath:    r.PosterPath,
-			Language:      r.Language,
-			CreatedAt:     r.CreatedAt,
 			WatchersCount: r.WatchersCount,
 			WatcherIDs:    parseIntCSV(r.WatcherIDsRaw),
-		}
-		result = append(result, row)
+			Torrents:      torrents,
+		})
 	}
 	return result, total, nil
 }

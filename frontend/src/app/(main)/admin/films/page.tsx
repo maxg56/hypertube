@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useAdminFilms } from './hooks/useAdminFilms'
 import { FilmsTable } from './_components/FilmsTable'
-import type { AdminFilm } from './hooks/useAdminFilms'
 
 function ConfirmDialog({
   title, body, cancelLabel, confirmLabel, onCancel, onConfirm,
@@ -35,18 +34,18 @@ function ConfirmDialog({
 export default function AdminFilmsPage() {
   const { t } = useTranslation()
   const { films, total, offset, loading, actionId, actionType, limit, goTo, deleteFilm, reDownload } = useAdminFilms()
-  const [pendingDelete, setPendingDelete] = React.useState<AdminFilm | null>(null)
+  const [pendingDelete, setPendingDelete] = React.useState<number | null>(null)
 
   const handleDeleteConfirm = async () => {
-    if (!pendingDelete) return
-    const film = pendingDelete
+    if (pendingDelete === null) return
+    const id = pendingDelete
     setPendingDelete(null)
-    await deleteFilm(film)
+    await deleteFilm(id)
   }
 
   return (
     <>
-      {pendingDelete && (
+      {pendingDelete !== null && (
         <ConfirmDialog
           title={t('admin.confirm_delete_title')}
           body={t('admin.confirm_delete_body')}
