@@ -37,8 +37,10 @@ export function useSubtitleTracks(
 
       if (cancelled) return
 
+      // The API returns all languages that exist (cached or on OpenSubtitles).
+      // Load all of them so the player can offer every available track.
       if (available.length === 0) {
-        setStatus('none')
+        if (!cancelled) setStatus('none')
         return
       }
 
@@ -49,7 +51,8 @@ export function useSubtitleTracks(
         return
       }
 
-      // 3. Load each available language as a blob-URL track.
+      // 3. Load each language as a blob-URL track (backend downloads if not cached).
+      let loaded = 0
       for (const lang of available) {
         if (cancelled) break
         try {
@@ -68,10 +71,11 @@ export function useSubtitleTracks(
           el.src = url
           if (lang === userLang) el.default = true
           video.appendChild(el)
+          loaded++
         } catch { /* not available for this language */ }
       }
 
-      if (!cancelled) setStatus('available')
+      if (!cancelled) setStatus(loaded > 0 ? 'available' : 'none')
     })()
 
     return () => {
