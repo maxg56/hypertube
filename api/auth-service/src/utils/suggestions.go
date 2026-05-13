@@ -1,43 +1,46 @@
 package utils
 
 import (
+	"math/rand"
 	"strconv"
 	"strings"
 	"time"
+
+	db "auth-service/src/conf"
+	models "auth-service/src/models"
 )
 
-// GenerateUsernameSuggestions generates alternative username suggestions
+// GenerateUsernameSuggestions returns available username alternatives using a
+// single WHERE IN query instead of one query per candidate.
 func GenerateUsernameSuggestions(baseUsername string) []string {
-	suggestions := make([]string, 0, 5)
 	baseUsername = strings.ToLower(baseUsername)
-	
-	for i := 1; i <= 5; i++ {
-		var suggestion string
-		
-		switch i {
-		case 1:
-			suggestion = baseUsername + strconv.Itoa(generateRandomNumber(10, 99))
-		case 2:
-			suggestion = baseUsername + strconv.Itoa(time.Now().Year())
-		case 3:
-			suggestion = baseUsername + strconv.Itoa(generateRandomNumber(100, 999))
-		case 4:
-			suggestion = baseUsername + "_" + strconv.Itoa(generateRandomNumber(1, 999))
-		case 5:
-			suggestion = baseUsername + strconv.Itoa(generateRandomNumber(1000, 9999))
-		}
-		
-		available, err := CheckUsernameAvailability(suggestion)
-		if err == nil && available {
-			suggestions = append(suggestions, suggestion)
+	candidates := [5]string{
+		baseUsername + strconv.Itoa(generateRandomNumber(10, 99)),
+		baseUsername + strconv.Itoa(time.Now().Year()),
+		baseUsername + strconv.Itoa(generateRandomNumber(100, 999)),
+		baseUsername + "_" + strconv.Itoa(generateRandomNumber(1, 999)),
+		baseUsername + strconv.Itoa(generateRandomNumber(1000, 9999)),
+	}
+
+	var taken []string
+	db.DB.Model(&models.Users{}).
+		Where("username IN ?", candidates[:]).
+		Pluck("username", &taken)
+
+	takenSet := make(map[string]struct{}, len(taken))
+	for _, u := range taken {
+		takenSet[u] = struct{}{}
+	}
+
+	suggestions := make([]string, 0, len(candidates))
+	for _, c := range candidates {
+		if _, exists := takenSet[c]; !exists {
+			suggestions = append(suggestions, c)
 		}
 	}
-	
 	return suggestions
 }
 
-// generateRandomNumber generates a random number between min and max (inclusive)
 func generateRandomNumber(min, max int) int {
-	seed := time.Now().UnixNano()
-	return min + int(seed%(int64(max-min+1)))
+	return min + rand.Intn(max-min+1)
 }

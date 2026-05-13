@@ -51,17 +51,6 @@ func VerifyTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// Validate expiration explicitly
-	if exp, ok := claims["exp"].(float64); ok {
-		if time.Now().Unix() > int64(exp) {
-			utils.RespondError(c, http.StatusUnauthorized, "token expired")
-			return
-		}
-	} else {
-		utils.RespondError(c, http.StatusUnauthorized, "invalid token claims: missing expiration")
-		return
-	}
-
 	// Extract user ID from claims
 	userID, ok := claims["sub"].(string)
 	if !ok || userID == "" {

@@ -1,11 +1,13 @@
 package handlers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 
 	db "auth-service/src/conf"
@@ -101,6 +103,11 @@ func RegisterHandler(c *gin.Context) {
 
 	user, err := services.CreateUser(req)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+			utils.RespondError(c, http.StatusConflict, "username or email already taken")
+			return
+		}
 		utils.RespondError(c, http.StatusInternalServerError, err.Error())
 		return
 	}

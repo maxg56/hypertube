@@ -6,6 +6,7 @@ type StandardResponse struct {
 	Success bool        `json:"success"`
 	Data    interface{} `json:"data,omitempty"`
 	Error   string      `json:"error,omitempty"`
+	Message string      `json:"message,omitempty"`
 }
 
 func RespondSuccess(c *gin.Context, status int, data interface{}) {
