@@ -67,7 +67,7 @@ func getJWTSecret() (string, error) {
 }
 
 // GenerateTokenPair generates access and refresh token pair for a user
-func GenerateTokenPair(userID uint, role string) (*TokenPair, error) {
+func GenerateTokenPair(userID uint, role string, emailVerified bool) (*TokenPair, error) {
 	secret, err := getJWTSecret()
 	if err != nil {
 		return nil, err
@@ -89,12 +89,13 @@ func GenerateTokenPair(userID uint, role string) (*TokenPair, error) {
 	refreshTTL := GetDurationFromEnv("JWT_REFRESH_TTL", 7*24*time.Hour)
 
 	accessClaims := jwt.MapClaims{
-		"sub":   userIDStr,
-		"iat":   now.Unix(),
-		"nbf":   now.Unix(),
-		"exp":   now.Add(accessTTL).Unix(),
-		"scope": "access",
-		"role":  role,
+		"sub":            userIDStr,
+		"iat":            now.Unix(),
+		"nbf":            now.Unix(),
+		"exp":            now.Add(accessTTL).Unix(),
+		"scope":          "access",
+		"role":           role,
+		"email_verified": emailVerified,
 	}
 	accessToken, err := SignToken(accessClaims, secret)
 	if err != nil {

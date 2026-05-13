@@ -8,6 +8,7 @@ import (
 	"time"
 
 	db "auth-service/src/conf"
+	"auth-service/src/models"
 	"auth-service/src/utils"
 	"github.com/gin-gonic/gin"
 	jwt "github.com/golang-jwt/jwt/v5"
@@ -116,11 +117,15 @@ func RefreshTokenHandler(c *gin.Context) {
 		return
 	}
 
-	// Fetch user role from DB to embed in the refreshed token
-	role := "user"
-	if r, ok := claims["role"].(string); ok && r != "" {
-		role = r
+	// Re-fetch user to get fresh email_verified and role, and validate user still exists.
+	var user models.Users
+	if err := db.DB.Select("role, email_verified").Where("id = ?", userIDUint).First(&user).Error; err != nil {
+		utils.RespondError(c, http.StatusUnauthorized, "user not found")
+		return
 	}
+
+	// Blacklist the consumed refresh token before issuing new ones.
+	blacklistIfValid(req.RefreshToken, refreshSecret)
 
 	// Issue new tokens
 	accessTTL := utils.GetDurationFromEnv("JWT_ACCESS_TTL", 15*time.Minute)
@@ -128,12 +133,13 @@ func RefreshTokenHandler(c *gin.Context) {
 
 	now := time.Now()
 	accessToken, err := utils.SignToken(jwt.MapClaims{
-		"sub":   userID,
-		"iat":   now.Unix(),
-		"nbf":   now.Unix(),
-		"exp":   now.Add(accessTTL).Unix(),
-		"scope": "access",
-		"role":  role,
+		"sub":            userID,
+		"iat":            now.Unix(),
+		"nbf":            now.Unix(),
+		"exp":            now.Add(accessTTL).Unix(),
+		"scope":          "access",
+		"role":           string(user.Role),
+		"email_verified": user.EmailVerified,
 	}, secret)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to issue token")
@@ -146,7 +152,7 @@ func RefreshTokenHandler(c *gin.Context) {
 		"nbf":   now.Unix(),
 		"exp":   now.Add(refreshTTL).Unix(),
 		"scope": "refresh",
-		"role":  role,
+		"role":  string(user.Role),
 	}, refreshSecret)
 	if err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to issue token")

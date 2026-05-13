@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	CtxUserIDKey   = "userID"
-	CtxUserRoleKey = "userRole"
+	CtxUserIDKey        = "userID"
+	CtxUserRoleKey      = "userRole"
+	CtxEmailVerifiedKey = "emailVerified"
 )
 
 // JWTMiddleware validates JWT tokens and sets user context
@@ -55,10 +56,19 @@ func JWTMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		if sub, ok := claims["sub"].(string); ok && sub != "" {
-			c.Set(CtxUserIDKey, sub)
-		} else {
+		sub, hasSub := claims["sub"].(string)
+		if !hasSub || sub == "" {
 			log.Printf("[JWT] no valid 'sub' claim found in token")
+		} else {
+			c.Set(CtxUserIDKey, sub)
+
+			// Reject tokens issued before a user-level invalidation (e.g. password reset).
+			if iat, ok := utils.GetNumericClaim(claims["iat"]); ok {
+				if utils.IsUserInvalidated(sub, iat) {
+					c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "token revoked"})
+					return
+				}
+			}
 		}
 
 		if role, ok := claims["role"].(string); ok && role != "" {
@@ -67,6 +77,24 @@ func JWTMiddleware() gin.HandlerFunc {
 			c.Set(CtxUserRoleKey, "user")
 		}
 
+		if ev, ok := claims["email_verified"].(bool); ok {
+			c.Set(CtxEmailVerifiedKey, ev)
+		} else {
+			c.Set(CtxEmailVerifiedKey, false)
+		}
+
+		c.Next()
+	}
+}
+
+// RequireEmailVerified rejects requests from users who have not verified their email.
+// Must be chained after JWTMiddleware.
+func RequireEmailVerified() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if v, _ := c.Get(CtxEmailVerifiedKey); v != true {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "email verification required"})
+			return
+		}
 		c.Next()
 	}
 }

@@ -9,20 +9,20 @@ import (
 
 func SetupTorrentRoutes(r *gin.Engine) {
 	torrent := r.Group("/api/v1/torrent")
-	torrent.Use(middleware.JWTMiddleware())
+	torrent.Use(middleware.JWTMiddleware(), middleware.RequireEmailVerified())
 	{
 		torrent.POST("/download", proxy.ProxyRequest("torrent", "/api/v1/torrent/download"))
 		torrent.GET("/status/:id", proxy.ProxyRequest("torrent", "/api/v1/torrent/status/:id"))
 	}
 
 	stream := r.Group("/api/v1/stream")
-	stream.Use(middleware.JWTMiddleware())
+	stream.Use(middleware.JWTMiddleware(), middleware.RequireEmailVerified())
 	{
 		stream.GET("/:id", proxy.ProxyRequest("torrent", "/api/v1/stream/:id"))
 	}
 
 	movies := r.Group("/api/v1/movies")
-	movies.Use(middleware.JWTMiddleware())
+	movies.Use(middleware.JWTMiddleware(), middleware.RequireEmailVerified())
 	{
 		movies.GET("/:id/watched", proxy.ProxyRequest("torrent", "/api/v1/movies/:id/watched"))
 		movies.GET("/:id/progress", proxy.ProxyRequest("torrent", "/api/v1/movies/:id/progress"))

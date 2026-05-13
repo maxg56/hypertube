@@ -125,6 +125,12 @@ func copyHeaders(c *gin.Context, req *http.Request) {
 		}
 	}
 
+	if v, ok := c.Get(middleware.CtxEmailVerifiedKey); ok {
+		if verified, ok := v.(bool); ok && verified {
+			req.Header.Set("X-User-Email-Verified", "true")
+		}
+	}
+
 	if token := utils.ExtractToken(c); token != "" {
 		req.Header.Set("X-JWT-Token", token)
 	}

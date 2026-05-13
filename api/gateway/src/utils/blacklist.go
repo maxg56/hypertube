@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"log"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -67,6 +68,27 @@ func IsTokenBlacklisted(token string) bool {
 	}
 
 	return exists > 0
+}
+
+// IsUserInvalidated returns true when all tokens issued before the stored
+// invalidation timestamp (set on password reset) should be rejected.
+// Fails open: returns false when Redis is unavailable.
+func IsUserInvalidated(userID string, issuedAt int64) bool {
+	if redisClient == nil {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	val, err := redisClient.Get(ctx, "user_invalidated:"+userID).Result()
+	if err != nil {
+		return false // key absent or Redis error → fail open
+	}
+	invalidatedAt, err := strconv.ParseInt(val, 10, 64)
+	if err != nil {
+		return false
+	}
+	return issuedAt < invalidatedAt
 }
 
 // BlacklistToken adds a token to the blacklist with TTL matching token expiration

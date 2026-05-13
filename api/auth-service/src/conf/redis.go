@@ -83,3 +83,13 @@ func IsTokenBlacklisted(tokenString string) (bool, error) {
 	return exists > 0, nil
 }
 
+// InvalidateUserTokens stores a timestamp in Redis so any token issued before
+// this moment is considered revoked (e.g. after a password reset).
+func InvalidateUserTokens(userID string) error {
+	if Client == nil {
+		return fmt.Errorf("Redis client not initialized")
+	}
+	key := "user_invalidated:" + userID
+	return Client.Set(ctx, key, time.Now().Unix(), 7*24*time.Hour).Err()
+}
+

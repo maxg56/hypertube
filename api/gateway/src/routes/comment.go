@@ -13,7 +13,12 @@ func SetupCommentRoutes(r *gin.Engine) {
 	{
 		comment.GET("/user/:userId", proxy.ProxyRequest("comment", "/api/v1/comments/user/:userId"))
 		comment.GET("/:movieId", proxy.ProxyRequest("comment", "/api/v1/comments/:movieId"))
-		comment.POST("/:movieId", proxy.ProxyRequest("comment", "/api/v1/comments/:movieId"))
-		comment.DELETE("/:id", proxy.ProxyRequest("comment", "/api/v1/comments/:id"))
+
+		write := comment.Group("")
+		write.Use(middleware.RequireEmailVerified())
+		{
+			write.POST("/:movieId", proxy.ProxyRequest("comment", "/api/v1/comments/:movieId"))
+			write.DELETE("/:id", proxy.ProxyRequest("comment", "/api/v1/comments/:id"))
+		}
 	}
 }

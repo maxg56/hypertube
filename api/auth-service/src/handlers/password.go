@@ -3,6 +3,8 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"log"
 	"net/http"
 	"time"
 
@@ -143,6 +145,12 @@ func ResetPasswordHandler(c *gin.Context) {
 	if err := db.DB.Model(&passwordReset.User).Update("password_hash", string(hashedPassword)).Error; err != nil {
 		utils.RespondError(c, http.StatusInternalServerError, "failed to update password")
 		return
+	}
+
+	// Revoke all tokens issued before this moment so stolen tokens can't be reused.
+	userIDStr := fmt.Sprintf("%d", passwordReset.UserID)
+	if err := db.InvalidateUserTokens(userIDStr); err != nil {
+		log.Printf("failed to invalidate user tokens after password reset for user %s: %v", userIDStr, err)
 	}
 
 	// Mark token as used
