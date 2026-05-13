@@ -11,6 +11,7 @@ export interface Movie {
   rating: number
   poster_url: string
   genres: string[]
+  watched?: boolean
 }
 
 interface MoviesResponse {

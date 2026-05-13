@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"library-service/src/client"
+	"library-service/src/conf"
 	"library-service/src/models"
 	"library-service/src/utils"
 )
@@ -39,6 +40,7 @@ func (h *MovieHandler) Movies(c *gin.Context) {
 	yearStr := c.Query("year")
 	sortBy := c.DefaultQuery("sort_by", "seeds")
 	cursor := c.Query("cursor")
+	userIDStr := c.GetHeader("X-User-ID")
 
 	page := decodeCursor(cursor)
 
@@ -68,6 +70,7 @@ func (h *MovieHandler) Movies(c *gin.Context) {
 		cacheRefreshIfStale(cacheKey, ytsCacheTTL, func() (interface{}, error) {
 			return h.fetchMovies(params, year)
 		})
+		applyWatchedFlags(result.Results, userIDStr)
 		utils.RespondSuccess(c, http.StatusOK, result)
 		return
 	}
@@ -79,7 +82,48 @@ func (h *MovieHandler) Movies(c *gin.Context) {
 	}
 
 	cacheSet(cacheKey, result, ytsCacheTTL)
+	applyWatchedFlags(result.Results, userIDStr)
 	utils.RespondSuccess(c, http.StatusOK, result)
+}
+
+func applyWatchedFlags(results []models.Movie, userIDStr string) {
+	if conf.DB == nil || userIDStr == "" || len(results) == 0 {
+		return
+	}
+
+	userID, err := strconv.Atoi(userIDStr)
+	if err != nil || userID <= 0 {
+		return
+	}
+
+	tmdbIDs := make([]int, 0, len(results))
+	for _, movie := range results {
+		if movie.ID > 0 {
+			tmdbIDs = append(tmdbIDs, movie.ID)
+		}
+	}
+	if len(tmdbIDs) == 0 {
+		return
+	}
+
+	var watchedIDs []int
+	if err := conf.DB.Raw(`
+		SELECT DISTINCT m.tmdb_id
+		FROM watch_history wh
+		INNER JOIN movies m ON m.id = wh.movie_id
+		WHERE wh.user_id = ? AND m.tmdb_id IN ?
+	`, userID, tmdbIDs).Scan(&watchedIDs).Error; err != nil {
+		return
+	}
+
+	watchedSet := make(map[int]struct{}, len(watchedIDs))
+	for _, id := range watchedIDs {
+		watchedSet[id] = struct{}{}
+	}
+
+	for i := range results {
+		_, results[i].Watched = watchedSet[results[i].ID]
+	}
 }
 
 func encodeCursor(page int) string {
