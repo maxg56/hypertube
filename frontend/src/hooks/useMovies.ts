@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { apiClient } from '@/lib/api'
 
 export interface Movie {
   id: number
@@ -42,6 +43,8 @@ export function useMovies(filters: MovieFilters) {
   const [hasMore, setHasMore] = useState(true)
   const abortRef = useRef<AbortController | null>(null)
 
+  const validYear = isValidYear(filters.year) ? filters.year : ''
+
   const fetchMovies = useCallback(async (cursor: string | null, reset: boolean) => {
     if (abortRef.current) abortRef.current.abort()
     const controller = new AbortController()
@@ -53,17 +56,15 @@ export function useMovies(filters: MovieFilters) {
     if (filters.query) params.set('q', filters.query)
     if (filters.genre) params.set('genre', filters.genre)
     if (filters.rating) params.set('rating', filters.rating)
-    if (isValidYear(filters.year)) params.set('year', filters.year)
+    if (validYear) params.set('year', validYear)
     if (filters.sort_by) params.set('sort_by', filters.sort_by)
     if (cursor) params.set('cursor', cursor)
 
     try {
-      const res = await fetch(`/api/v1/library/movies?${params.toString()}`, {
-        signal: controller.signal,
-        credentials: 'include',
-      })
-      if (!res.ok) throw new Error('fetch failed')
-      const json: MoviesResponse = await res.json()
+      const json = await apiClient.get<MoviesResponse>(
+        `/library/movies?${params.toString()}`,
+        { signal: controller.signal },
+      )
       const { results, next_cursor } = json.data
 
       setMovies(prev => {
@@ -80,7 +81,8 @@ export function useMovies(filters: MovieFilters) {
       setLoading(false)
       setInitialLoading(false)
     }
-  }, [filters.query, filters.genre, filters.rating, isValidYear(filters.year) ? filters.year : '', filters.sort_by])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters.query, filters.genre, filters.rating, validYear, filters.sort_by])
 
   useEffect(() => {
     setInitialLoading(true)

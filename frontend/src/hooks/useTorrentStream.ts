@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { apiClient } from '@/lib/api'
 
 export type PlayerState = 'idle' | 'checking' | 'starting' | 'downloading' | 'streaming' | 'error'
 
@@ -14,6 +15,15 @@ export interface Torrent {
   seeds: number
   peers: number
   magnet: string
+}
+
+interface TorrentStatusResponse {
+  data?: { status?: string; progress?: number }
+}
+
+interface TorrentDownloadResponse {
+  data?: { info_hash?: string }
+  info_hash?: string
 }
 
 export function useTorrentStream(initialTorrent: Torrent | null, movieId: number) {
@@ -40,8 +50,7 @@ export function useTorrentStream(initialTorrent: Torrent | null, movieId: number
     void (async () => {
       const hash = selected.hash.toLowerCase()
       try {
-        // 200 = streamable now; 202 = pending (not ready yet)
-        const head = await fetch(`/api/v1/stream/${hash}`, { method: 'HEAD', credentials: 'include' })
+        const head = await apiClient.head(`/stream/${hash}`)
         if (!cancelled && head.status === 200) {
           setInfoHash(hash)
           setState('streaming')
@@ -50,15 +59,13 @@ export function useTorrentStream(initialTorrent: Torrent | null, movieId: number
       } catch { /* fall through to status check */ }
       if (cancelled) return
       try {
-        const res = await fetch(`/api/v1/torrent/status/${hash}`, { credentials: 'include' })
+        const json = await apiClient.get<TorrentStatusResponse>(`/torrent/status/${hash}`)
         if (cancelled) return
-        if (res.ok) {
-          const { status } = ((await res.json()).data ?? {}) as { status?: string }
-          if (!cancelled && status === 'ready') {
-            setInfoHash(hash)
-            setState('streaming')
-            return
-          }
+        const { status } = json.data ?? {}
+        if (!cancelled && status === 'ready') {
+          setInfoHash(hash)
+          setState('streaming')
+          return
         }
       } catch { /* fall through */ }
       if (!cancelled) setState('idle')
@@ -77,9 +84,8 @@ export function useTorrentStream(initialTorrent: Torrent | null, movieId: number
   const pollStatus = useCallback((hash: string) => {
     pollRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`/api/v1/torrent/status/${hash}`, { credentials: 'include' })
-        if (!res.ok) return
-        const { status, progress: prog } = (await res.json()).data ?? {}
+        const json = await apiClient.get<TorrentStatusResponse>(`/torrent/status/${hash}`)
+        const { status, progress: prog } = json.data ?? {}
         if (status === 'error') {
           stopPolling()
           setState('error')
@@ -108,15 +114,11 @@ export function useTorrentStream(initialTorrent: Torrent | null, movieId: number
     setState('starting')
     setErrorMsg(null)
     try {
-      const res = await fetch('/api/v1/torrent/download', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ magnet_uri: selected.magnet, movie_id: movieId }),
+      const json = await apiClient.post<TorrentDownloadResponse>('/torrent/download', {
+        magnet_uri: selected.magnet,
+        movie_id: movieId,
       })
-      if (!res.ok) throw new Error(`${res.status}`)
-      const json = await res.json()
-      const hash = (json.data?.info_hash ?? json.info_hash as string).toLowerCase()
+      const hash = (json.data?.info_hash ?? (json as TorrentDownloadResponse).info_hash ?? '').toLowerCase()
       setInfoHash(hash)
       setState('downloading')
       pollStatus(hash)

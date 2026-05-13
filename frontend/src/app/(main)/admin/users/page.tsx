@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader2, Pencil, Shield, Trash2 } from 'lucide-react'
+import { apiClient } from '@/lib/api'
 
 interface AdminUser {
   id: number
@@ -99,8 +100,7 @@ export default function AdminUsersPage() {
   const limit = 20
 
   React.useEffect(() => {
-    fetch('/api/v1/users/profile', { credentials: 'include' })
-      .then(r => r.json())
+    apiClient.get<{ data: { id: number } }>('/users/profile')
       .then(json => { if (json.data?.id) setCurrentUserId(json.data.id) })
       .catch(() => {})
   }, [])
@@ -108,11 +108,13 @@ export default function AdminUsersPage() {
   const fetchUsers = React.useCallback(async (off: number) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/v1/admin/users?limit=${limit}&offset=${off}`, { credentials: 'include' })
-      if (!res.ok) return
-      const json = await res.json()
+      const json = await apiClient.get<{ data: { users: AdminUser[]; pagination: { total: number } } }>(
+        `/admin/users?limit=${limit}&offset=${off}`,
+      )
       setUsers(json.data?.users ?? [])
       setTotal(json.data?.pagination?.total ?? 0)
+    } catch {
+      // keep previous state on error
     } finally {
       setLoading(false)
     }
@@ -129,15 +131,10 @@ export default function AdminUsersPage() {
     setActing(user.id)
     const newRole = user.role === 'admin' ? 'user' : 'admin'
     try {
-      const res = await fetch(`/api/v1/admin/users/${user.id}/role`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-        credentials: 'include',
-      })
-      if (res.ok) {
-        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
-      }
+      await apiClient.put(`/admin/users/${user.id}/role`, { role: newRole })
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, role: newRole } : u))
+    } catch {
+      // keep previous state on error
     } finally {
       setActing(null)
     }
@@ -146,14 +143,11 @@ export default function AdminUsersPage() {
   const deleteUser = async (user: AdminUser) => {
     setActing(user.id)
     try {
-      const res = await fetch(`/api/v1/admin/users/${user.id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-      if (res.ok) {
-        setUsers(prev => prev.filter(u => u.id !== user.id))
-        setTotal(prev => prev - 1)
-      }
+      await apiClient.delete(`/admin/users/${user.id}`)
+      setUsers(prev => prev.filter(u => u.id !== user.id))
+      setTotal(prev => prev - 1)
+    } catch {
+      // keep previous state on error
     } finally {
       setActing(null)
     }
@@ -162,15 +156,10 @@ export default function AdminUsersPage() {
   const renameUser = async (user: AdminUser, username: string) => {
     setActing(user.id)
     try {
-      const res = await fetch(`/api/v1/admin/users/${user.id}/username`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: username.trim() }),
-        credentials: 'include',
-      })
-      if (res.ok) {
-        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, username: username.trim() } : u))
-      }
+      await apiClient.put(`/admin/users/${user.id}/username`, { username: username.trim() })
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, username: username.trim() } : u))
+    } catch {
+      // keep previous state on error
     } finally {
       setActing(null)
     }

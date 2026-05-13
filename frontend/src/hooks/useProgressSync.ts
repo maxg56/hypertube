@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { apiClient } from '@/lib/api'
 
 const SAVE_INTERVAL_MS = 5000
 
@@ -18,9 +19,9 @@ export function useProgressSync(
       const video = videoRef.current
       if (!video || cancelled) return
       try {
-        const res = await fetch(`/api/v1/movies/${movieId}/progress`, { credentials: 'include' })
-        if (!res.ok || cancelled) return
-        const json = await res.json()
+        const json = await apiClient.get<{ data?: { progress_sec?: number }; progress_sec?: number }>(
+          `/movies/${movieId}/progress`,
+        )
         const sec: number = (json.data ?? json).progress_sec ?? 0
         if (sec > 0 && videoRef.current) videoRef.current.currentTime = sec
       } catch { /* start from beginning */ }
@@ -33,7 +34,7 @@ export function useProgressSync(
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isStreaming, movieId])
 
-  // Save position every SAVE_INTERVAL_MS with PUT only — no GET here.
+  // Save position every SAVE_INTERVAL_MS.
   useEffect(() => {
     if (!isStreaming) return
 
@@ -43,12 +44,7 @@ export function useProgressSync(
       const sec = Math.floor(video.currentTime)
       if (sec <= 0) return
       try {
-        await fetch(`/api/v1/movies/${movieId}/progress`, {
-          method: 'PUT',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ progress_sec: sec }),
-        })
+        await apiClient.put(`/movies/${movieId}/progress`, { progress_sec: sec })
       } catch { /* ignore transient errors */ }
     }, SAVE_INTERVAL_MS)
 

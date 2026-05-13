@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { apiClient } from '@/lib/api'
 
 export interface UserResult {
   id: number
@@ -26,11 +27,11 @@ export function useUserSearch(query: string) {
     abortRef.current = controller
 
     setLoading(true)
-    fetch(`/api/v1/users/search?q=${encodeURIComponent(query.trim())}`, {
-      credentials: 'include',
-      signal: controller.signal,
-    })
-      .then((r) => r.json())
+    apiClient
+      .get<{ data: { users: UserResult[] } }>(
+        `/users/search?q=${encodeURIComponent(query.trim())}`,
+        { signal: controller.signal },
+      )
       .then((json) => setUsers(json.data?.users ?? []))
       .catch(() => {})
       .finally(() => setLoading(false))

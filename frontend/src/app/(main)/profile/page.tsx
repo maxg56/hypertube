@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle, XCircle, Loader2, Globe, Lock, Heart } from 'lucide-react'
+import { apiClient } from '@/lib/api'
 
 const LANGUAGES = [
   { code: 'fr', label: '🇫🇷 Français' },
@@ -48,8 +49,7 @@ export default function ProfilePage() {
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   React.useEffect(() => {
-    fetch('/api/v1/users/profile', { credentials: 'include' })
-      .then((r) => r.json())
+    apiClient.get<{ data: { profile: UserProfile } }>('/users/profile')
       .then(({ data }) => {
         const p: UserProfile = data.profile
         setProfile(p)
@@ -82,43 +82,24 @@ export default function ProfilePage() {
       if (pendingFile) {
         const form = new FormData()
         form.append('avatar', pendingFile)
-        const res = await fetch('/api/v1/users/avatar', {
-          method: 'POST',
-          credentials: 'include',
-          body: form,
-        })
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}))
-          setErrorMsg(body.error ?? t('profile.save_error'))
-          setSaveStatus('error')
-          return
-        }
-        const { data } = await res.json()
-        setProfile((prev) => prev ? { ...prev, avatar_url: data.avatar_url } : prev)
+        const avatarJson = await apiClient.post<{ data: { avatar_url: string } }>('/users/avatar', form)
+        setProfile((prev) => prev ? { ...prev, avatar_url: avatarJson.data.avatar_url } : prev)
         setLocalPreview('')
         setPendingFile(null)
       }
 
-      const res = await fetch(`/api/v1/users/profile/${profile.id}`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ first_name: firstName, last_name: lastName, language: selectedLang, is_public: isPublic, favorites_public: favoritesPublic }),
-      })
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        setErrorMsg(body.error ?? t('profile.save_error'))
-        setSaveStatus('error')
-        return
-      }
-      const { data } = await res.json()
-      setProfile(data.profile)
+      const profileJson = await apiClient.put<{ data: { profile: UserProfile } }>(
+        `/users/profile/${profile.id}`,
+        { first_name: firstName, last_name: lastName, language: selectedLang, is_public: isPublic, favorites_public: favoritesPublic },
+      )
+      setProfile(profileJson.data.profile)
       await i18n.changeLanguage(selectedLang)
       setSaveStatus('success')
       setIsEditing(false)
       setTimeout(() => setSaveStatus('idle'), 3000)
-    } catch {
-      setErrorMsg(t('profile.save_error'))
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : ''
+      setErrorMsg(message || t('profile.save_error'))
       setSaveStatus('error')
     }
   }
