@@ -45,7 +45,7 @@ func CheckUsernameAvailability(username string) (bool, error) {
 	var user models.Users
 	err := db.DB.Where("username = ?", username).First(&user).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return true, nil
 		}
 		return false, fmt.Errorf("database error: %w", err)
@@ -58,7 +58,7 @@ func CheckEmailAvailability(email string) (bool, error) {
 	var user models.Users
 	err := db.DB.Where("email = ?", email).First(&user).Error
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return true, nil
 		}
 		return false, fmt.Errorf("database error: %w", err)
