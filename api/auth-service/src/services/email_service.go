@@ -64,7 +64,7 @@ func (es *EmailService) SendVerificationEmail(toEmail, verificationCode string) 
 	}
 
 	// Email subject
-	subject := "Vérification de votre email - Matcha"
+	subject := "Vérification de votre email - Hypertube"
 
 	return es.sendEmail(toEmail, subject, body.String())
 }
@@ -103,7 +103,7 @@ func (es *EmailService) SendPasswordResetEmail(toEmail, resetToken string) error
 	}
 
 	// Email subject
-	subject := "Réinitialisation de votre mot de passe - Matcha"
+	subject := "Réinitialisation de votre mot de passe - Hypertube"
 
 	return es.sendEmail(toEmail, subject, body.String())
 }
