@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { apiClient } from '@/lib/api'
 
 export interface FavoriteMovie {
   tmdb_id: number
@@ -16,10 +17,9 @@ export function useFavorites() {
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    fetch('/api/v1/users/favorites?limit=500', { credentials: 'include' })
-      .then((r) => r.json())
+    apiClient.get<{ data: { favorites: FavoriteMovie[] } }>('/users/favorites?limit=500')
       .then((json) => {
-        const movies: FavoriteMovie[] = json.data?.favorites ?? []
+        const movies = json.data?.favorites ?? []
         setList(movies)
         setFavorites(new Set(movies.map((f) => f.tmdb_id)))
       })
@@ -41,14 +41,9 @@ export function useFavorites() {
 
     try {
       if (was) {
-        await fetch(`/api/v1/users/favorites/${tmdbId}`, { method: 'DELETE', credentials: 'include' })
+        await apiClient.delete(`/users/favorites/${tmdbId}`)
       } else {
-        await fetch('/api/v1/users/favorites', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tmdb_id: tmdbId }),
-        })
+        await apiClient.post('/users/favorites', { tmdb_id: tmdbId })
       }
     } catch {
       setFavorites((prev) => {

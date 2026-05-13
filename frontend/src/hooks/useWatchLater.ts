@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { apiClient } from '@/lib/api'
 
 export interface WatchLaterMovie {
   tmdb_id: number
@@ -16,10 +17,9 @@ export function useWatchLater() {
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    fetch('/api/v1/users/watch-later?limit=500', { credentials: 'include' })
-      .then((r) => r.json())
+    apiClient.get<{ data: { items: WatchLaterMovie[] } }>('/users/watch-later?limit=500')
       .then((json) => {
-        const movies: WatchLaterMovie[] = json.data?.items ?? []
+        const movies = json.data?.items ?? []
         setList(movies)
         setItems(new Set(movies.map((m) => m.tmdb_id)))
       })
@@ -43,14 +43,9 @@ export function useWatchLater() {
 
     try {
       if (was) {
-        await fetch(`/api/v1/users/watch-later/${tmdbId}`, { method: 'DELETE', credentials: 'include' })
+        await apiClient.delete(`/users/watch-later/${tmdbId}`)
       } else {
-        await fetch('/api/v1/users/watch-later', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tmdb_id: tmdbId }),
-        })
+        await apiClient.post('/users/watch-later', { tmdb_id: tmdbId })
       }
     } catch {
       setItems((prev) => {

@@ -8,6 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { useTranslation } from 'react-i18next'
 import { MovieCard } from '@/components/page/MovieCard'
 import type { Movie } from '@/hooks/useMovies'
+import { apiClient, ApiError } from '@/lib/api'
 
 interface PublicProfile {
   id: number
@@ -64,23 +65,19 @@ export default function PublicProfilePage() {
   const [privateAccount, setPrivateAccount] = React.useState(false)
 
   React.useEffect(() => {
-    fetch(`/api/v1/users/profile/${id}`, { credentials: 'include' })
-      .then((r) => {
-        if (r.status === 404) { setNotFound(true); return null }
-        if (r.status === 403) { setPrivateAccount(true); return null }
-        return r.json()
+    apiClient.get<{ data: { profile: PublicProfile } }>(`/users/profile/${id}`)
+      .then(({ data }) => setProfile(data.profile))
+      .catch((err: unknown) => {
+        if (err instanceof ApiError && err.status === 403) setPrivateAccount(true)
+        else setNotFound(true)
       })
-      .then((body) => { if (body) setProfile(body.data.profile) })
-      .catch(() => setNotFound(true))
 
-    fetch(`/api/v1/comments/user/${id}`, { credentials: 'include' })
-      .then((r) => r.json())
+    apiClient.get<{ data: UserComment[] }>(`/comments/user/${id}`)
       .then(({ data }) => setComments(data ?? []))
       .catch(() => {})
 
-    fetch(`/api/v1/users/${id}/favorites?limit=50`, { credentials: 'include' })
-      .then((r) => r.ok ? r.json() : null)
-      .then((body) => { if (body) setFavorites(body.data?.favorites ?? []) })
+    apiClient.get<{ data: { favorites: FavoriteMovie[] } }>(`/users/${id}/favorites?limit=50`)
+      .then(({ data }) => setFavorites(data?.favorites ?? []))
       .catch(() => {})
   }, [id])
 

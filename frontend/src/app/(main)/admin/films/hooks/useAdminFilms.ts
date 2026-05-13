@@ -1,5 +1,6 @@
 'use client'
 import React from 'react'
+import { apiClient } from '@/lib/api'
 
 export interface AdminTorrent {
   id: number
@@ -35,11 +36,13 @@ export function useAdminFilms() {
   const fetchFilms = React.useCallback(async (off: number) => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/v1/admin/films?limit=${LIMIT}&offset=${off}`, { credentials: 'include' })
-      if (!res.ok) return
-      const json = await res.json()
+      const json = await apiClient.get<{ data: { films: AdminGroupedFilm[]; pagination: { total: number } } }>(
+        `/admin/films?limit=${LIMIT}&offset=${off}`,
+      )
       setFilms(json.data?.films ?? [])
       setTotal(json.data?.pagination?.total ?? 0)
+    } catch {
+      // keep previous state on error
     } finally {
       setLoading(false)
     }
@@ -56,7 +59,7 @@ export function useAdminFilms() {
     setActionId(torrentId)
     setActionType('delete')
     try {
-      await fetch(`/api/v1/admin/films/${torrentId}`, { method: 'DELETE', credentials: 'include' })
+      await apiClient.delete(`/admin/films/${torrentId}`)
       await fetchFilms(offset)
     } finally {
       setActionId(null)
@@ -68,7 +71,7 @@ export function useAdminFilms() {
     setActionId(torrentId)
     setActionType('redownload')
     try {
-      await fetch(`/api/v1/admin/films/${torrentId}/download`, { method: 'POST', credentials: 'include' })
+      await apiClient.post(`/admin/films/${torrentId}/download`)
       await fetchFilms(offset)
     } finally {
       setActionId(null)

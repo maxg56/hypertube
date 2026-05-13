@@ -3,6 +3,7 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, Users, Film, Eye, TrendingUp } from 'lucide-react'
+import { apiClient } from '@/lib/api'
 import {
   AreaChart, Area,
   BarChart, Bar,
@@ -49,9 +50,9 @@ export default function AdminOverviewPage() {
   const [loading, setLoading] = React.useState(true)
 
   React.useEffect(() => {
-    fetch('/api/v1/admin/stats', { credentials: 'include' })
-      .then((r) => r.json())
+    apiClient.get<{ data: AdminStats }>('/admin/stats')
       .then((json) => setStats(json.data ?? null))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 

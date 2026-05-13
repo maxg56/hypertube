@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import { apiClient } from '@/lib/api'
 
 interface Comment {
   id: number
@@ -40,15 +41,11 @@ export function CommentSection({ movieId, initialComments }: CommentSectionProps
     setError(null)
 
     try {
-      const res = await fetch(`/api/v1/comments/${movieId}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: content.trim() }),
-      })
-      if (!res.ok) throw new Error(`${res.status}`)
-      const json = await res.json()
-      const newComment: Comment = json.data ?? json
+      const json = await apiClient.post<{ data?: Comment } & Comment>(
+        `/comments/${movieId}`,
+        { content: content.trim() },
+      )
+      const newComment: Comment = (json.data ?? json) as Comment
       setComments(prev => [newComment, ...prev])
       setContent('')
     } catch {
@@ -60,13 +57,8 @@ export function CommentSection({ movieId, initialComments }: CommentSectionProps
 
   const handleDelete = async (commentId: number) => {
     try {
-      const res = await fetch(`/api/v1/comments/${commentId}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      })
-      if (res.ok) {
-        setComments(prev => prev.filter(c => c.id !== commentId))
-      }
+      await apiClient.delete(`/comments/${commentId}`)
+      setComments(prev => prev.filter(c => c.id !== commentId))
     } catch {
       // silently ignore
     }
