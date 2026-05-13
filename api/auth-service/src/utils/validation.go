@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"time"
 	"unicode"
 
 	db "auth-service/src/conf"
@@ -65,20 +64,4 @@ func CheckEmailAvailability(email string) (bool, error) {
 		return false, fmt.Errorf("database error: %w", err)
 	}
 	return false, nil
-}
-
-
-// ParseDate parses date string in YYYY-MM-DD format
-func ParseDate(dateStr string) (time.Time, error) {
-	return time.Parse("2006-01-02", dateStr)
-}
-
-// CalculateAge calculates age from birth date
-func CalculateAge(birthDate time.Time) int {
-	now := time.Now()
-	age := now.Year() - birthDate.Year()
-	if now.YearDay() < birthDate.YearDay() {
-		age--
-	}
-	return age
 }
