@@ -8,18 +8,20 @@ import (
 
 	db "auth-service/src/conf"
 	"auth-service/src/handlers"
+	"auth-service/src/utils"
 )
 
 func main() {
 	// Initialize database (will AutoMigrate models)
 	db.ConnectDatabase()
 
-	// Initialize Redis for token blacklisting
+	// Initialize Redis for token blacklisting and rate limiting
 	if err := db.InitRedis(); err != nil {
 		log.Printf("Failed to initialize Redis: %v", err)
 		log.Println("Redis initialization failed - tokens will not be blacklisted on logout")
 	} else {
 		log.Println("Redis initialized successfully for token blacklisting")
+		utils.InitRateLimiter()
 	}
 
 	r := gin.Default()

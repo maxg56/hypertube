@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"log"
 	"math/big"
@@ -89,7 +90,7 @@ func SendEmailVerificationHandler(c *gin.Context) {
 
 	var user User
 	if err := db.DB.Where(emailWhereClause, req.Email).First(&user).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			utils.RespondError(c, http.StatusNotFound, "User not found")
 			return
 		}
@@ -121,26 +122,23 @@ func VerifyEmailHandler(c *gin.Context) {
 
 	// Block after 5 failed attempts within 15 minutes to prevent brute-force
 	// of the 6-digit code (1 000 000 combinations).
-	const maxAttempts int64 = 5
-	if utils.IsRateLimited("verify-email", req.Email, maxAttempts) {
+	const (
+		maxAttempts      int64         = 5
+		verifyEmailWindow time.Duration = 15 * time.Minute
+	)
+	if utils.IsRateLimited("verify-email", req.Email, maxAttempts, verifyEmailWindow) {
 		utils.RespondError(c, http.StatusTooManyRequests, "Too many failed attempts. Please request a new verification code.")
 		return
 	}
 
 	var verification EmailVerification
-	if err := db.DB.Where("email = ? AND verification_code = ?", req.Email, req.VerificationCode).First(&verification).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			utils.RecordFailure("verify-email", req.Email, 15*time.Minute)
+	if err := db.DB.Where("email = ? AND verification_code = ? AND expires_at > ?", req.Email, req.VerificationCode, time.Now()).First(&verification).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			utils.RecordFailure("verify-email", req.Email, maxAttempts, verifyEmailWindow)
 			utils.RespondError(c, http.StatusBadRequest, "Invalid verification code")
 			return
 		}
 		utils.RespondError(c, http.StatusInternalServerError, "Database error")
-		return
-	}
-
-	if time.Now().After(verification.ExpiresAt) {
-		db.DB.Delete(&verification)
-		utils.RespondError(c, http.StatusBadRequest, "Verification code expired")
 		return
 	}
 
