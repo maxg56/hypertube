@@ -135,29 +135,3 @@ func (tb *TokenBucket) cleanup() {
 	}
 }
 
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-// GetRateLimitStats returns current rate limiting statistics
-func GetRateLimitStats() map[string]interface{} {
-	if globalRateLimiter == nil {
-		return map[string]interface{}{
-			"enabled": false,
-		}
-	}
-	
-	globalRateLimiter.mu.RLock()
-	defer globalRateLimiter.mu.RUnlock()
-	
-	return map[string]interface{}{
-		"enabled":        true,
-		"max_tokens":     globalRateLimiter.maxTokens,
-		"refill_rate":    globalRateLimiter.refillRate,
-		"active_clients": len(globalRateLimiter.limiters),
-	}
-}
