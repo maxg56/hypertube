@@ -50,7 +50,6 @@ export default function Thumbnails() {
   const { t } = useTranslation()
   const [filters, setFilters] = useState<MovieFilters>(DEFAULT_FILTERS)
   const [debouncedQuery, setDebouncedQuery] = useState('')
-  const [watchedMovies] = useState<Set<number>>(new Set())
   const [watchLater, setWatchLater] = useState(false)
   const [showFavorites, setShowFavorites] = useState(false)
   const sentinelRef = useRef<HTMLDivElement | null>(null)
@@ -101,7 +100,7 @@ export default function Thumbnails() {
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         {movieList.map(movie => (
-          <MovieCard key={movie.id} movie={movie} watched={watchedMovies.has(movie.id)} />
+          <MovieCard key={movie.id} movie={movie} watched={movie.watched ?? false} />
         ))}
       </div>
     )
@@ -129,7 +128,7 @@ export default function Thumbnails() {
               {initialLoading
                 ? Array.from({ length: SKELETON_COUNT }).map((_, i) => <MovieCardSkeleton key={i} />)
                 : movies.map(movie => (
-                    <MovieCard key={movie.id} movie={movie} watched={watchedMovies.has(movie.id)} />
+                    <MovieCard key={movie.id} movie={movie} watched={movie.watched ?? false} />
                   ))
               }
               {!initialLoading && loading &&
