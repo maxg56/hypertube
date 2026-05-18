@@ -24,6 +24,8 @@ func main() {
 		log.Fatal("Failed to initialize torrent client:", err)
 	}
 
+	services.StartCleanupWorker()
+
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
