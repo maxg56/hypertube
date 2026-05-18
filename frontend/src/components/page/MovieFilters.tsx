@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslation } from 'react-i18next'
-import { Search, Bookmark, Heart } from 'lucide-react'
+import { Search, Bookmark, Heart, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { MovieFilters } from '@/hooks/useMovies'
 
