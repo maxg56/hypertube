@@ -6,6 +6,7 @@ import { MovieCard, MovieCardSkeleton } from '@/components/page/MovieCard'
 import { UserCard } from '@/components/page/UserCard'
 import { MovieFiltersBar } from '@/components/page/MovieFilters'
 import { useMovies, type MovieFilters } from '@/hooks/useMovies'
+import { useUserSearch } from '@/hooks/useUserSearch'
 import { useWatchLater } from '@/hooks/useWatchLater'
 import { useFavorites } from '@/hooks/useFavorites'
 import type { Movie } from '@/hooks/useMovies'
@@ -61,6 +62,7 @@ export default function Thumbnails() {
 
   const activeFilters: MovieFilters = { ...filters, query: isUserSearch ? '' : debouncedQuery }
   const { movies, loading, initialLoading, hasMore, loadMore } = useMovies(activeFilters)
+  const { users, loading: usersLoading } = useUserSearch(userQuery)
   const { list: watchLaterList, loading: watchLaterLoading } = useWatchLater()
   const { list: favoritesList, loading: favoritesLoading } = useFavorites()
 
@@ -123,6 +125,18 @@ export default function Thumbnails() {
           renderList(favoritesMovies, favoritesLoading, 'favorites.empty')
         ) : watchLater ? (
           renderList(watchLaterMovies, watchLaterLoading, 'watch_later.empty')
+        ) : isUserSearch ? (
+          usersLoading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => <MovieCardSkeleton key={i} />)}
+            </div>
+          ) : users.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-16">{t('user_search.empty')}</p>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+              {users.map(user => <UserCard key={user.id} user={user} />)}
+            </div>
+          )
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
