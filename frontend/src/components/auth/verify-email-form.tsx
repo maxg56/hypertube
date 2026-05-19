@@ -34,7 +34,7 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
       <div className="space-y-6">
         <form action={verifyAction} className="space-y-4">
           {verifyState?.message && (
-            <p className="text-sm text-destructive text-center">{verifyState.message}</p>
+            <p role="alert" className="text-sm text-destructive text-center">{verifyState.message}</p>
           )}
 
           <div className="space-y-1.5">
@@ -46,10 +46,12 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
               autoComplete="email"
               defaultValue={defaultEmail}
               placeholder={t('auth.verify_email_placeholder')}
+              aria-invalid={!!verifyState?.errors?.email}
+              aria-describedby={verifyState?.errors?.email ? 'err-email' : undefined}
               required
             />
             {verifyState?.errors?.email && (
-              <p className="text-xs text-destructive">{verifyState.errors.email[0]}</p>
+              <p id="err-email" role="alert" className="text-xs text-destructive">{verifyState.errors.email[0]}</p>
             )}
           </div>
 
@@ -62,10 +64,12 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
               inputMode="numeric"
               maxLength={6}
               placeholder={t('auth.verify_code_placeholder')}
+              aria-invalid={!!verifyState?.errors?.verification_code}
+              aria-describedby={verifyState?.errors?.verification_code ? 'err-verification_code' : undefined}
               required
             />
             {verifyState?.errors?.verification_code && (
-              <p className="text-xs text-destructive">{verifyState.errors.verification_code[0]}</p>
+              <p id="err-verification_code" role="alert" className="text-xs text-destructive">{verifyState.errors.verification_code[0]}</p>
             )}
           </div>
 
@@ -79,7 +83,7 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
             {t('auth.verify_email_no_code')}
           </p>
           {sendState?.success && (
-            <p className="text-xs text-sidebar-primary text-center mb-2">
+            <p role="status" className="text-xs text-sidebar-primary text-center mb-2">
               {sendState.success}
             </p>
           )}
