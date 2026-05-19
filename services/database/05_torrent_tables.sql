@@ -15,6 +15,7 @@ CREATE TABLE torrents (
     quality      VARCHAR(20),
     source       VARCHAR(50),
     error_msg    TEXT,
+    reencoded    BOOLEAN        DEFAULT FALSE,
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );

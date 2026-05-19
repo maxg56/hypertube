@@ -57,6 +57,8 @@ func monitorTorrent(t *torrent.Torrent, record *models.TorrentRecord) {
 	if err := conf.DB.Where("id = ?", record.MovieID).First(&movie).Error; err == nil && movie.TmdbID > 0 {
 		go ExtractTorrentSubtitles(t, movie.TmdbID)
 	}
+
+	go ReencodeToHEVC(record)
 }
 
 func runProgressLoop(t *torrent.Torrent, record *models.TorrentRecord, totalLength int64, infoHash string) error {
