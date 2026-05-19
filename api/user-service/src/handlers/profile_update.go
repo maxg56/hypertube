@@ -41,9 +41,17 @@ func UpdateProfileHandler(c *gin.Context) {
 	}
 
 	if req.FirstName != nil {
+		if err := utils.ValidateString(*req.FirstName, "first_name", 1, 50); err != nil {
+			utils.RespondError(c, http.StatusBadRequest, err.Error())
+			return
+		}
 		user.FirstName = *req.FirstName
 	}
 	if req.LastName != nil {
+		if err := utils.ValidateString(*req.LastName, "last_name", 1, 50); err != nil {
+			utils.RespondError(c, http.StatusBadRequest, err.Error())
+			return
+		}
 		user.LastName = *req.LastName
 	}
 	if req.AvatarURL != nil {

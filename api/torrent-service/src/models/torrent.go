@@ -24,6 +24,7 @@ type TorrentRecord struct {
 	Quality    string        `gorm:"column:quality"`
 	Source     string        `gorm:"column:source"`
 	ErrorMsg   string        `gorm:"column:error_msg"`
+	Reencoded  bool          `gorm:"column:reencoded;default:false"`
 	CreatedAt  time.Time     `gorm:"column:created_at;autoCreateTime"`
 	UpdatedAt  time.Time     `gorm:"column:updated_at;autoUpdateTime"`
 }

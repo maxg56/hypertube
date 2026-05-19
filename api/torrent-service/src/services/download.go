@@ -113,6 +113,17 @@ func findOrCreateRecord(magnetURI, infoHash string, tmdbID int, quality string) 
 		return nil, fmt.Errorf("resolve movie id: %w", err)
 	}
 
+	// If a ready version already exists for this movie, reuse it instead of downloading
+	// a second copy. Returns the smallest ready torrent (already re-encoded or lowest quality).
+	var readyRecord models.TorrentRecord
+	if conf.DB.Where("movie_id = ? AND status = ?", localMovieID, models.StatusReady).
+		Order("file_size ASC").
+		First(&readyRecord).Error == nil {
+		if _, statErr := os.Stat(readyRecord.FilePath); statErr == nil {
+			return &readyRecord, nil
+		}
+	}
+
 	record = models.TorrentRecord{
 		MovieID:   localMovieID,
 		MagnetURI: magnetURI,

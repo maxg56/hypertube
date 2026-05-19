@@ -117,7 +117,6 @@ export async function logout() {
   }
 
   await clearTokens()
-  redirect('/login')
 }
 
 export async function forgotPassword(
