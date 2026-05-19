@@ -54,26 +54,37 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
 }
 
 export async function register(_state: ActionState, formData: FormData): Promise<ActionState> {
-  const validated = RegisterSchema.safeParse({
-    username: formData.get('username'),
-    email: formData.get('email'),
-    password: formData.get('password'),
-    first_name: formData.get('first_name'),
-    last_name: formData.get('last_name'),
-  })
-
-  if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+  const raw = {
+    username: formData.get('username') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    confirm_password: formData.get('confirm_password') as string,
+    first_name: formData.get('first_name') as string,
+    last_name: formData.get('last_name') as string,
   }
 
+  const values = {
+    username: raw.username,
+    email: raw.email,
+    first_name: raw.first_name,
+    last_name: raw.last_name,
+  }
+
+  const validated = RegisterSchema.safeParse(raw)
+
+  if (!validated.success) {
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
+  }
+
+  const { confirm_password: _, ...payload } = validated.data
   const res = await apiFetch('/api/v1/auth/register', {
     method: 'POST',
-    body: JSON.stringify(validated.data),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error ??"L'inscription a échoué" }
+    return { message: body.error ?? "L'inscription a échoué", values }
   }
 
   const { data } = await res.json()

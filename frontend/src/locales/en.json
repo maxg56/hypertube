@@ -156,6 +156,8 @@
     "register_email_placeholder": "john@example.com",
     "register_password": "Password",
     "register_password_placeholder": "••••••••",
+    "register_confirm_password": "Confirm password",
+    "register_confirm_password_placeholder": "••••••••",
     "register_submit": "Register",
     "register_submitting": "Registering…",
     "register_already_account": "Already have an account?",
