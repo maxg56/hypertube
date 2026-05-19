@@ -1,3 +1,5 @@
+'use client'
+
 import { refreshToken } from '@/app/actions/auth'
 
 const BASE = '/api/v1'

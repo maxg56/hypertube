@@ -1,37 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <title>Vérification Email - Hypertube</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vérification de compte — Hypertube</title>
 </head>
-<body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-    <div style="background: linear-gradient(135deg, #e50914 0%, #b20710 100%); padding: 30px; text-align: center; border-radius: 10px;">
-        <h1 style="color: white; margin: 0; font-size: 28px; letter-spacing: 2px;">HYPERTUBE</h1>
-        <p style="color: rgba(255,255,255,0.85); margin: 10px 0 0 0;">Vérification de votre compte</p>
-    </div>
+<body style="margin:0;padding:0;background-color:#0d1117;font-family:'Segoe UI',Arial,sans-serif;">
 
-    <div style="padding: 30px; background: #f8f9fa; border-radius: 0 0 10px 10px;">
-        <h2 style="color: #333; margin-top: 0;">Vérifiez votre email</h2>
-        <p style="color: #666; line-height: 1.6;">
-            Bienvenue sur Hypertube ! Pour finaliser votre inscription, utilisez le code de vérification suivant :
-        </p>
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#0d1117;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
-        <div style="background: white; border: 2px solid #e50914; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0;">
-            <h3 style="margin: 0; color: #e50914;">Code de vérification</h3>
-            <div style="font-size: 32px; font-weight: bold; color: #333; letter-spacing: 8px; margin: 10px 0;">
-                {{.VerificationCode}}
-            </div>
-        </div>
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#1a1f3a 0%,#0d1117 100%);border-radius:12px 12px 0 0;padding:36px 40px;text-align:center;border-bottom:3px solid #d9562a;">
+              <div style="display:inline-flex;align-items:center;gap:10px;">
+                <span style="display:inline-block;width:10px;height:10px;background:#d9562a;border-radius:50%;"></span>
+                <span style="display:inline-block;width:10px;height:10px;background:#3b52d4;border-radius:50%;"></span>
+              </div>
+              <h1 style="color:#ffffff;margin:12px 0 4px;font-size:30px;font-weight:800;letter-spacing:4px;text-transform:uppercase;">HYPERTUBE</h1>
+              <p style="color:#7c88a8;margin:0;font-size:13px;letter-spacing:1px;text-transform:uppercase;">Vérification de votre compte</p>
+            </td>
+          </tr>
 
-        <p style="color: #666; line-height: 1.6;">
-            Ce code est valide pendant <strong>15 minutes</strong>. Si vous n'avez pas demandé cette vérification, vous pouvez ignorer cet email.
-        </p>
+          <!-- Body -->
+          <tr>
+            <td style="background:#161b27;padding:40px;border-radius:0 0 12px 12px;">
 
-        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd;">
-            <p style="color: #999; font-size: 14px; text-align: center; margin: 0;">
-                Cet email a été envoyé par Hypertube. Si vous avez des questions, contactez notre support.
-            </p>
-        </div>
-    </div>
+              <h2 style="color:#e8ecf4;margin:0 0 16px;font-size:22px;font-weight:700;">Bienvenue sur Hypertube !</h2>
+              <p style="color:#7c88a8;line-height:1.7;margin:0 0 28px;font-size:15px;">
+                Pour finaliser votre inscription, entrez le code de vérification suivant dans l'application :
+              </p>
+
+              <!-- Code box -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:4px 0 32px;">
+                    <table cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="background:linear-gradient(135deg,#1a1f3a 0%,#1e2433 100%);border:2px solid #3b52d4;border-radius:12px;padding:24px 48px;text-align:center;box-shadow:0 4px 24px rgba(59,82,212,0.25);">
+                          <p style="color:#7c88a8;font-size:12px;text-transform:uppercase;letter-spacing:2px;margin:0 0 10px;">Code de vérification</p>
+                          <div style="font-size:38px;font-weight:800;color:#ffffff;letter-spacing:10px;font-family:'Courier New',monospace;">
+                            {{.VerificationCode}}
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Info box -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="background:#1e2433;border-left:3px solid #d9562a;border-radius:0 6px 6px 0;padding:16px 20px;">
+                    <p style="color:#7c88a8;font-size:14px;margin:0;line-height:1.6;">
+                      Ce code est valide pendant <strong style="color:#e8ecf4;">15 minutes</strong>. Si vous n'avez pas créé de compte, ignorez cet email.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:36px;">
+                <tr>
+                  <td style="border-top:1px solid #252d40;padding-top:24px;text-align:center;">
+                    <p style="color:#3d4a60;font-size:13px;margin:0;">
+                      Cet email a été envoyé par <strong style="color:#4a5a7a;">Hypertube</strong>. Ne pas répondre à ce message.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
 </body>
 </html>
