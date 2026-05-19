@@ -10,7 +10,7 @@ import {
   SendVerificationSchema,
   type ActionState,
 } from '@/lib/definitions'
-import { setTokens, clearTokens, getAccessToken, getRefreshToken } from '@/lib/session'
+import { setTokens, setEmailVerified, clearTokens, getAccessToken, getRefreshToken } from '@/lib/session'
 
 const API = process.env.API_URL ?? 'https://localhost:8443'
 
@@ -49,6 +49,12 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
 
   const data = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
+  await setEmailVerified(data.email_verified === true)
+
+  if (!data.email_verified) {
+    redirect(`/verify-email?email=${encodeURIComponent(data.email ?? '')}`)
+  }
+
   const callbackUrl = formData.get('callbackUrl') as string | null
   redirect(callbackUrl?.startsWith('/') ? callbackUrl : '/')
 }
@@ -78,7 +84,8 @@ export async function register(_state: ActionState, formData: FormData): Promise
 
   const { data } = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
-  redirect('/')
+  await setEmailVerified(false)
+  redirect(`/verify-email?email=${encodeURIComponent(data.user?.email ?? '')}`)
 }
 
 export async function refreshToken(): Promise<boolean> {
@@ -220,5 +227,6 @@ export async function verifyEmail(
     return { message: body.error ??'Code invalide ou expiré' }
   }
 
-  return { success: 'Email vérifié avec succès !' }
+  await setEmailVerified(true)
+  redirect('/')
 }

@@ -17,7 +17,7 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
     return (
       <div className="space-y-4 text-center">
         <p className="text-sm text-sidebar-primary">{verifyState.success}</p>
-        <Link href="/login" className="text-sm text-primary hover:underline">
+        <Link href="/" className="text-sm text-primary hover:underline">
           {t('auth.verify_email_login_link')}
         </Link>
       </div>
