@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -16,6 +17,8 @@ import (
 	"auth-service/src/types"
 	"auth-service/src/utils"
 )
+
+var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 const invalidPayloadPrefix = "invalid payload: "
 
@@ -72,6 +75,11 @@ func RegisterHandler(c *gin.Context) {
 	var req types.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondError(c, http.StatusBadRequest, invalidPayloadPrefix+err.Error())
+		return
+	}
+
+	if !usernameRegex.MatchString(req.Username) {
+		utils.RespondError(c, http.StatusBadRequest, "username may only contain letters, digits, underscores, and hyphens")
 		return
 	}
 

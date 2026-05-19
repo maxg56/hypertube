@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"net/http"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
@@ -10,6 +12,12 @@ import (
 	"comment-service/src/models"
 	"comment-service/src/utils"
 )
+
+var htmlTagRegex = regexp.MustCompile(`<[^>]*>`)
+
+func sanitizeText(s string) string {
+	return strings.TrimSpace(htmlTagRegex.ReplaceAllString(s, ""))
+}
 
 func ListCommentsByUser(c *gin.Context) {
 	userID, err := strconv.Atoi(c.Param("userId"))
@@ -136,6 +144,12 @@ func CreateComment(c *gin.Context) {
 	var req createCommentRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.RespondError(c, http.StatusBadRequest, "content is required")
+		return
+	}
+
+	req.Content = sanitizeText(req.Content)
+	if req.Content == "" {
+		utils.RespondError(c, http.StatusBadRequest, "comment content cannot be empty")
 		return
 	}
 

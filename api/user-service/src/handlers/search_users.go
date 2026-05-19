@@ -26,6 +26,10 @@ func SearchUsersHandler(c *gin.Context) {
 		utils.RespondSuccess(c, http.StatusOK, gin.H{"users": []struct{}{}})
 		return
 	}
+	if len(q) > 50 {
+		utils.RespondError(c, http.StatusBadRequest, "search query too long")
+		return
+	}
 
 	var results []userSearchResult
 	if err := conf.DB.Model(&models.User{}).
