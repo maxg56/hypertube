@@ -237,7 +237,11 @@
     "comment_submit": "Post",
     "comment_submitting": "Posting…",
     "comment_delete": "Delete",
+    "comment_edit": "Edit",
+    "comment_save": "Save",
+    "comment_cancel": "Cancel",
     "comment_error": "Failed to post comment.",
+    "comment_edit_error": "Failed to update comment.",
     "no_comments": "No comments yet for this movie."
   },
 

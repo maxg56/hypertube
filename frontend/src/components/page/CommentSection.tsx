@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { apiClient } from '@/lib/api'
 
@@ -15,7 +16,9 @@ interface Comment {
 
 interface CommentSectionProps {
   movieId: number
+  movieTitle?: string
   initialComments: Comment[]
+  currentUserId?: number
 }
 
 function formatDate(iso: string): string {
@@ -26,12 +29,16 @@ function formatDate(iso: string): string {
   }
 }
 
-export function CommentSection({ movieId, initialComments }: CommentSectionProps) {
+export function CommentSection({ movieId, movieTitle, initialComments, currentUserId }: CommentSectionProps) {
   const { t } = useTranslation()
+  const router = useRouter()
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [content, setContent] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editContent, setEditContent] = useState('')
+  const [editError, setEditError] = useState<string | null>(null)
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,12 +49,13 @@ export function CommentSection({ movieId, initialComments }: CommentSectionProps
 
     try {
       const json = await apiClient.post<{ data?: Comment } & Comment>(
-        `/comments/${movieId}`,
-        { content: content.trim() },
+        `/movies/${movieId}/comments`,
+        { content: content.trim(), title: movieTitle },
       )
       const newComment: Comment = (json.data ?? json) as Comment
       setComments(prev => [newComment, ...prev])
       setContent('')
+      router.refresh()
     } catch {
       setError(t('movie.comment_error'))
     } finally {
@@ -59,8 +67,40 @@ export function CommentSection({ movieId, initialComments }: CommentSectionProps
     try {
       await apiClient.delete(`/comments/${commentId}`)
       setComments(prev => prev.filter(c => c.id !== commentId))
+      router.refresh()
     } catch {
       // silently ignore
+    }
+  }
+
+  const handleEditStart = (comment: Comment) => {
+    setEditingId(comment.id)
+    setEditContent(comment.content)
+    setEditError(null)
+  }
+
+  const handleEditCancel = () => {
+    setEditingId(null)
+    setEditContent('')
+    setEditError(null)
+  }
+
+  const handleEditSubmit = async (commentId: number) => {
+    if (!editContent.trim()) return
+    setEditError(null)
+
+    try {
+      const json = await apiClient.patch<{ data?: Comment } & Comment>(
+        `/comments/${commentId}`,
+        { content: editContent.trim() },
+      )
+      const updated: Comment = (json.data ?? json) as Comment
+      setComments(prev => prev.map(c => c.id === commentId ? { ...c, content: updated.content } : c))
+      setEditingId(null)
+      setEditContent('')
+      router.refresh()
+    } catch {
+      setEditError(t('movie.comment_edit_error'))
     }
   }
 
@@ -110,15 +150,57 @@ export function CommentSection({ movieId, initialComments }: CommentSectionProps
                 <span className="text-sm font-medium">{comment.username}</span>
                 <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
               </div>
-              <p className="text-sm text-muted-foreground break-words">{comment.content}</p>
+              {editingId === comment.id ? (
+                <div className="flex flex-col gap-1">
+                  <textarea
+                    value={editContent}
+                    onChange={e => setEditContent(e.target.value)}
+                    rows={2}
+                    maxLength={2000}
+                    className="w-full rounded-lg border border-border bg-muted px-3 py-2 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-sidebar-primary"
+                  />
+                  {editError && <p className="text-xs text-destructive">{editError}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditSubmit(comment.id)}
+                      disabled={!editContent.trim()}
+                      className="px-3 py-1 rounded-md bg-sidebar-primary text-white text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {t('movie.comment_save')}
+                    </button>
+                    <button
+                      onClick={handleEditCancel}
+                      className="px-3 py-1 rounded-md border border-border text-xs hover:bg-muted transition-colors"
+                    >
+                      {t('movie.comment_cancel')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground break-words">{comment.content}</p>
+              )}
             </div>
-            <button
-              onClick={() => handleDelete(comment.id)}
-              className="shrink-0 text-xs text-muted-foreground hover:text-destructive transition-colors self-start mt-0.5"
-              aria-label={t('movie.comment_delete')}
-            >
-              ✕
-            </button>
+            {currentUserId === comment.user_id && editingId !== comment.id && (
+              <div className="shrink-0 flex gap-2 self-start mt-0.5">
+                <button
+                  onClick={() => handleEditStart(comment)}
+                  className="text-xs text-muted-foreground hover:text-sidebar-primary transition-colors"
+                  aria-label={t('movie.comment_edit')}
+                >
+                  ✎
+                </button>
+                <button
+                  onClick={() => handleDelete(comment.id)}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                  aria-label={t('movie.comment_delete')}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+            {currentUserId !== comment.user_id && (
+              <div className="shrink-0 self-start mt-0.5" />
+            )}
           </div>
         ))}
       </div>

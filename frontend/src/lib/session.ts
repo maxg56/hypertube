@@ -39,6 +39,18 @@ export async function getRefreshToken() {
   return store.get(REFRESH_TOKEN)?.value
 }
 
+export async function getCurrentUserId(): Promise<number | null> {
+  const token = await getAccessToken()
+  if (!token) return null
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString())
+    const sub = parseInt(payload.sub, 10)
+    return isNaN(sub) ? null : sub
+  } catch {
+    return null
+  }
+}
+
 export async function clearTokens() {
   const store = await cookies()
   store.delete(ACCESS_TOKEN)
