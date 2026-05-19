@@ -32,17 +32,22 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
     return { errors: validated.error.flatten(i => i.message).fieldErrors }
   }
 
-  const res = await apiFetch('/api/v1/auth/login', {
+  const res = await fetch(`${API}/api/v1/oauth/token`, {
     method: 'POST',
-    body: JSON.stringify(validated.data),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'password',
+      username: validated.data.login,
+      password: validated.data.password,
+    }).toString(),
   })
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error ?? 'Identifiants invalides' }
+    return { message: body.error_description ?? body.error ?? 'Identifiants invalides' }
   }
 
-  const { data } = await res.json()
+  const data = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
   const callbackUrl = formData.get('callbackUrl') as string | null
   redirect(callbackUrl?.startsWith('/') ? callbackUrl : '/')
@@ -74,6 +79,29 @@ export async function register(_state: ActionState, formData: FormData): Promise
   const { data } = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
   redirect('/')
+}
+
+export async function refreshToken(): Promise<boolean> {
+  const token = await getRefreshToken()
+  if (!token) return false
+
+  const res = await fetch(`${API}/api/v1/oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: token,
+    }).toString(),
+  })
+
+  if (!res.ok) {
+    await clearTokens()
+    return false
+  }
+
+  const data = await res.json()
+  await setTokens(data.access_token, data.refresh_token, data.expires_in)
+  return true
 }
 
 export async function logout() {

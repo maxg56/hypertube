@@ -42,6 +42,11 @@ func setupTestRouter() *gin.Engine {
 			auth.POST("/forgot-password", handlers.ForgotPasswordHandler)
 			auth.POST("/reset-password", handlers.ResetPasswordHandler)
 		}
+
+		oauth := api.Group("/oauth")
+		{
+			oauth.POST("/token", handlers.OAuthTokenHandler)
+		}
 	}
 
 	return r
