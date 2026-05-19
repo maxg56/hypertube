@@ -44,7 +44,7 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
               name="email"
               type="email"
               autoComplete="email"
-              defaultValue={defaultEmail}
+              defaultValue={verifyState?.values?.email ?? defaultEmail}
               placeholder={t('auth.verify_email_placeholder')}
               required
             />
@@ -84,7 +84,7 @@ export default function VerifyEmailForm({ defaultEmail }: Readonly<{ defaultEmai
             </p>
           )}
           <form action={sendAction}>
-            <input type="hidden" name="email" value={defaultEmail ?? ''} />
+            <input type="hidden" name="email" value={verifyState?.values?.email ?? defaultEmail ?? ''} />
             <Button type="submit" variant="outline" className="w-full" disabled={sendPending}>
               {sendPending ? t('auth.verify_email_resending') : t('auth.verify_email_resend')}
             </Button>

@@ -137,6 +137,7 @@
     "login_identifier_label": "Username or email",
     "login_identifier_placeholder": "johndoe or john@example.com",
     "login_password_label": "Password",
+    "login_password_placeholder": "••••••••",
     "login_forgot_password": "Forgot password?",
     "login_submit": "Log in",
     "login_submitting": "Logging in…",

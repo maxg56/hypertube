@@ -69,6 +69,7 @@ export default function LoginForm({
             type="text"
             autoComplete="username"
             placeholder={t('auth.login_identifier_placeholder')}
+            defaultValue={state?.values?.login}
             required
           />
           {state?.errors?.login && (
@@ -91,7 +92,7 @@ export default function LoginForm({
             name="password"
             type="password"
             autoComplete="current-password"
-            placeholder="••••••••"
+            placeholder={t('auth.login_password_placeholder')}
             required
           />
           {state?.errors?.password && (

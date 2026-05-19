@@ -43,6 +43,7 @@ export default function ForgotPasswordForm() {
             type="email"
             autoComplete="email"
             placeholder={t('auth.forgot_password_email_placeholder')}
+            defaultValue={state?.values?.email}
             required
           />
           {state?.errors?.email && (
