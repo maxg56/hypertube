@@ -61,13 +61,13 @@ type PasswordResetData struct {
 
 func (es *EmailService) SendPasswordResetEmail(toEmail, resetToken string) error {
 	if es.SMTPUsername == "" || es.SMTPPassword == "" {
-		resetURL := fmt.Sprintf("%s/reinitialiser-mot-de-passe?token=%s", getEnvOrDefault("FRONTEND_URL", "https://localhost:8443"), resetToken)
+		resetURL := fmt.Sprintf("%s/reset-password?token=%s", getEnvOrDefault("FRONTEND_URL", "https://localhost:8443"), resetToken)
 		log.Printf("password reset link for %s: %s (SMTP not configured)", toEmail, resetURL)
 		return nil
 	}
 
 	frontendURL := getEnvOrDefault("FRONTEND_URL", "https://localhost:8443")
-	resetURL := fmt.Sprintf("%s/reinitialiser-mot-de-passe?token=%s", frontendURL, resetToken)
+	resetURL := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, resetToken)
 
 	tmpl, err := template.ParseFiles(filepath.Join("templates", "email", "password_reset.html"))
 	if err != nil {
