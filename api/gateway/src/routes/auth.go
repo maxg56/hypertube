@@ -30,4 +30,7 @@ func SetupAuthRoutes(r *gin.Engine) {
 
 	// Health check endpoint
 	auth.GET("/", proxy.ProxyRequest("auth", "/health"))
+
+	// OAuth2 token endpoint (RFC 6749) — public
+	r.POST("/api/v1/oauth/token", proxy.ProxyRequest("auth", "/api/v1/oauth/token"))
 }

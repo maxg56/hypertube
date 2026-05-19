@@ -45,6 +45,12 @@ func main() {
 			auth.POST("/send-email-verification", handlers.SendEmailVerificationHandler)
 			auth.POST("/verify-email", handlers.VerifyEmailHandler)
 		}
+
+		// OAuth2 token endpoint (RFC 6749)
+		oauth := api.Group("/oauth")
+		{
+			oauth.POST("/token", handlers.OAuthTokenHandler)
+		}
 	}
 
 	log.Println("Auth service starting on port 8001")
