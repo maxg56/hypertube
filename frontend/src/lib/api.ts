@@ -1,3 +1,5 @@
+import { refreshToken } from '@/app/actions/auth'
+
 const BASE = '/api/v1'
 
 export class ApiError extends Error {
@@ -10,17 +12,33 @@ export class ApiError extends Error {
   }
 }
 
+let refreshPromise: Promise<boolean> | null = null
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const isFormData = init.body instanceof FormData
   const { headers, ...rest } = init
 
-  const res = await fetch(`${BASE}${path}`, {
+  const buildInit = (): RequestInit => ({
     credentials: 'include',
     ...rest,
     headers: isFormData
       ? (headers as HeadersInit | undefined)
       : { 'Content-Type': 'application/json', ...(headers as Record<string, string>) },
   })
+
+  let res = await fetch(`${BASE}${path}`, buildInit())
+
+  if (res.status === 401) {
+    if (!refreshPromise) {
+      refreshPromise = refreshToken().finally(() => { refreshPromise = null })
+    }
+    const refreshed = await refreshPromise
+    if (!refreshed) {
+      window.location.href = '/login'
+      throw new ApiError('Session expirée', 401)
+    }
+    res = await fetch(`${BASE}${path}`, buildInit())
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
