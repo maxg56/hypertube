@@ -13,6 +13,19 @@ import (
 	"torrent-service/src/utils"
 )
 
+func sanitizeErrorMsg(msg string) string {
+	switch {
+	case strings.Contains(msg, "no seeders") || strings.Contains(msg, "info timeout"):
+		return "torrent unavailable: no seeders found"
+	case strings.Contains(msg, "stalled"):
+		return "download stalled"
+	case msg != "":
+		return "download failed"
+	default:
+		return ""
+	}
+}
+
 func StatusHandler(c *gin.Context) {
 	hash := strings.ToLower(c.Param("id"))
 	if hash == "" {
@@ -36,7 +49,6 @@ func StatusHandler(c *gin.Context) {
 		Progress:   record.Progress,
 		Downloaded: record.Downloaded,
 		FileSize:   record.FileSize,
-		FilePath:   record.FilePath,
-		ErrorMsg:   record.ErrorMsg,
+		ErrorMsg:   sanitizeErrorMsg(record.ErrorMsg),
 	})
 }

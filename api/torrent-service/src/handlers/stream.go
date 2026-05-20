@@ -46,7 +46,7 @@ func StreamHandler(c *gin.Context) {
 		return
 	case models.StatusError:
 		log.Printf("torrent %s failed: %s", hash, record.ErrorMsg)
-		utils.RespondError(c, http.StatusServiceUnavailable, record.ErrorMsg)
+		utils.RespondError(c, http.StatusServiceUnavailable, sanitizeErrorMsg(record.ErrorMsg))
 		return
 	}
 
@@ -85,7 +85,7 @@ func serveTranscoded(c *gin.Context, result services.ReaderResult, userID int, i
 	if err != nil {
 		// Bug 2 fix: single RespondError call (log first, then respond once).
 		log.Printf("transcoding error for %s: %v", result.FileName, err)
-		utils.RespondError(c, http.StatusInternalServerError, "transcoding error: "+err.Error())
+		utils.RespondError(c, http.StatusInternalServerError, "transcoding unavailable")
 		return
 	}
 	// Bug 3 fix: session ties ffmpeg lifecycle to the request context.

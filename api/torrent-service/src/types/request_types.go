@@ -18,6 +18,5 @@ type StatusResponse struct {
 	Progress   float64 `json:"progress"`
 	Downloaded int64   `json:"downloaded_bytes"`
 	FileSize   int64   `json:"file_size_bytes"`
-	FilePath   string  `json:"file_path,omitempty"`
 	ErrorMsg   string  `json:"error,omitempty"`
 }

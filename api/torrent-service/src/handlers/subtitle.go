@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -13,6 +14,8 @@ import (
 	"torrent-service/src/services"
 	"torrent-service/src/utils"
 )
+
+var langCodeRe = regexp.MustCompile(`^[a-z_]{2,20}$`)
 
 // SubtitleAvailableHandler handles GET /api/v1/movies/:id/subtitles
 // Returns the list of language codes that are either cached on disk or available
@@ -56,14 +59,14 @@ func SubtitleHandler(c *gin.Context) {
 	}
 
 	lang := c.Param("lang")
-	if lang == "" {
-		utils.RespondError(c, http.StatusBadRequest, "missing language")
+	if !langCodeRe.MatchString(lang) {
+		utils.RespondError(c, http.StatusBadRequest, "invalid language code")
 		return
 	}
 
 	path, err := services.FetchSubtitle(movieID, lang)
 	if err != nil {
-		utils.RespondError(c, http.StatusNotFound, "subtitles unavailable: "+err.Error())
+		utils.RespondError(c, http.StatusNotFound, "subtitles unavailable")
 		return
 	}
 

@@ -34,7 +34,6 @@ type AdminGroupedFilm struct {
 	Title         string              `json:"title"`
 	PosterPath    string              `json:"poster_path"`
 	WatchersCount int64               `json:"watchers_count"`
-	WatcherIDs    []int               `json:"watcher_ids"`
 	Torrents      []AdminTorrentEntry `json:"torrents"`
 }
 
@@ -130,18 +129,12 @@ func ListAdminFilms(limit, offset int) ([]AdminGroupedFilm, int64, error) {
 			})
 		}
 
-		watchers := watchersByMovie[g.MovieID]
-		if watchers == nil {
-			watchers = []int{}
-		}
-
 		result = append(result, AdminGroupedFilm{
 			MovieID:       g.MovieID,
 			TmdbID:        movie.TmdbID,
 			Title:         movie.Title,
 			PosterPath:    movie.PosterPath,
-			WatchersCount: int64(len(watchers)),
-			WatcherIDs:    watchers,
+			WatchersCount: int64(len(watchersByMovie[g.MovieID])),
 			Torrents:      entries,
 		})
 	}

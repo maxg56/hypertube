@@ -2,6 +2,7 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os/exec"
@@ -37,12 +38,15 @@ func NeedsTranscoding(filename string) bool {
 
 // ProbeCodecs runs ffprobe on filePath and returns the first video and audio codec names.
 func ProbeCodecs(filePath string) (*CodecInfo, error) {
+	if !isValidMediaPath(filePath) {
+		return nil, fmt.Errorf("invalid file path")
+	}
 	out, err := exec.Command(
 		"ffprobe",
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_streams",
-		filePath,
+		"file:"+filePath,
 	).Output()
 	if err != nil {
 		return nil, err
@@ -127,6 +131,14 @@ func buildFFmpegArgs(info *CodecInfo) []string {
 		"-c:a", "aac",
 		"-b:a", "128k",
 	}, output...)
+}
+
+// isValidMediaPath ensures the path is within the expected torrent download directory,
+// preventing path traversal or command injection via crafted file paths.
+func isValidMediaPath(path string) bool {
+	base := downloadDir()
+	cleaned := filepath.Clean(path)
+	return strings.HasPrefix(cleaned, base+"/")
 }
 
 // prefixWriter writes log lines prefixed with a label.

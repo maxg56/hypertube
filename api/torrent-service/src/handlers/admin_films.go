@@ -86,7 +86,7 @@ func parseTorrentID(c *gin.Context) (uint, error) {
 func parsePagination(c *gin.Context) (int, int) {
 	limit := 20
 	offset := 0
-	if l, err := strconv.Atoi(c.DefaultQuery("limit", "20")); err == nil && l > 0 {
+	if l, err := strconv.Atoi(c.DefaultQuery("limit", "20")); err == nil && l > 0 && l <= 100 {
 		limit = l
 	}
 	if o, err := strconv.Atoi(c.DefaultQuery("offset", "0")); err == nil && o >= 0 {

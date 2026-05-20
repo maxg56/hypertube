@@ -25,13 +25,18 @@ func ReencodeToHEVC(record *models.TorrentRecord) {
 		return
 	}
 
+	if !isValidMediaPath(record.FilePath) {
+		log.Printf("[reencoder] rejected invalid path for %s", record.InfoHash)
+		return
+	}
+
 	log.Printf("[reencoder] starting H.265 re-encode for %s: %s", record.InfoHash, record.FilePath)
 
 	ext := filepath.Ext(record.FilePath)
 	outputPath := strings.TrimSuffix(record.FilePath, ext) + ".hevc.mp4"
 
 	cmd := exec.Command("ffmpeg",
-		"-i", record.FilePath,
+		"-i", "file:"+record.FilePath,
 		"-c:v", "libx265",
 		"-preset", hevcPreset(),
 		"-crf", "28",
