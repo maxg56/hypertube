@@ -8,9 +8,11 @@ import {
   ResetPasswordSchema,
   VerifyEmailSchema,
   SendVerificationSchema,
+  RequestEmailChangeSchema,
+  ConfirmEmailChangeSchema,
   type ActionState,
 } from '@/lib/definitions'
-import { setTokens, clearTokens, getAccessToken, getRefreshToken } from '@/lib/session'
+import { setTokens, setEmailVerified, clearTokens, getAccessToken, getRefreshToken } from '@/lib/session'
 
 const API = process.env.API_URL ?? 'https://localhost:8443'
 
@@ -23,13 +25,16 @@ async function apiFetch(path: string, options: RequestInit = {}) {
 }
 
 export async function login(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const loginValue = formData.get('login') as string
+  const values = { login: loginValue }
+
   const validated = LoginSchema.safeParse({
-    login: formData.get('login'),
+    login: loginValue,
     password: formData.get('password'),
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
   }
 
   const res = await fetch(`${API}/api/v1/oauth/token`, {
@@ -44,41 +49,59 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error_description ?? body.error ?? 'Identifiants invalides' }
+    return { message: body.error_description ?? body.error ?? 'Identifiants invalides', values }
   }
 
   const data = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
+  await setEmailVerified(data.email_verified === true)
+
+  if (!data.email_verified) {
+    redirect(`/verify-email?email=${encodeURIComponent(data.email ?? '')}`)
+  }
+
   const callbackUrl = formData.get('callbackUrl') as string | null
   redirect(callbackUrl?.startsWith('/') ? callbackUrl : '/')
 }
 
 export async function register(_state: ActionState, formData: FormData): Promise<ActionState> {
-  const validated = RegisterSchema.safeParse({
-    username: formData.get('username'),
-    email: formData.get('email'),
-    password: formData.get('password'),
-    first_name: formData.get('first_name'),
-    last_name: formData.get('last_name'),
-  })
-
-  if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+  const raw = {
+    username: formData.get('username') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    confirm_password: formData.get('confirm_password') as string,
+    first_name: formData.get('first_name') as string,
+    last_name: formData.get('last_name') as string,
   }
 
+  const values = {
+    username: raw.username,
+    email: raw.email,
+    first_name: raw.first_name,
+    last_name: raw.last_name,
+  }
+
+  const validated = RegisterSchema.safeParse(raw)
+
+  if (!validated.success) {
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
+  }
+
+  const { confirm_password: _, ...payload } = validated.data
   const res = await apiFetch('/api/v1/auth/register', {
     method: 'POST',
-    body: JSON.stringify(validated.data),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error ??"L'inscription a échoué" }
+    return { message: body.error ?? "L'inscription a échoué", values }
   }
 
   const { data } = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
-  redirect('/')
+  await setEmailVerified(false)
+  redirect(`/verify-email?email=${encodeURIComponent(data.user?.email ?? '')}`)
 }
 
 export async function refreshToken(): Promise<boolean> {
@@ -123,12 +146,13 @@ export async function forgotPassword(
   _state: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const validated = ForgotPasswordSchema.safeParse({
-    email: formData.get('email'),
-  })
+  const email = formData.get('email') as string
+  const values = { email }
+
+  const validated = ForgotPasswordSchema.safeParse({ email })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
   }
 
   await apiFetch('/api/v1/auth/forgot-password', {
@@ -201,13 +225,16 @@ export async function verifyEmail(
   _state: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const email = formData.get('email') as string
+  const values = { email }
+
   const validated = VerifyEmailSchema.safeParse({
-    email: formData.get('email'),
+    email,
     verification_code: formData.get('verification_code'),
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
   }
 
   const res = await apiFetch('/api/v1/auth/verify-email', {
@@ -217,8 +244,65 @@ export async function verifyEmail(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error ??'Code invalide ou expiré' }
+    return { message: body.error ?? 'Code invalide ou expiré', values }
   }
 
-  return { success: 'Email vérifié avec succès !' }
+  await setEmailVerified(true)
+  redirect('/')
+}
+
+export async function requestEmailChange(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const validated = RequestEmailChangeSchema.safeParse({
+    new_email: formData.get('new_email'),
+  })
+
+  if (!validated.success) {
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+  }
+
+  const accessToken = await getAccessToken()
+  const res = await apiFetch('/api/v1/auth/request-email-change', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(validated.data),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    return { message: body.error ?? "Impossible d'envoyer le code de vérification" }
+  }
+
+  redirect(`/verify-email?email=${encodeURIComponent(validated.data.new_email)}&mode=change`)
+}
+
+export async function confirmEmailChange(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const validated = ConfirmEmailChangeSchema.safeParse({
+    new_email: formData.get('email'),
+    verification_code: formData.get('verification_code'),
+  })
+
+  if (!validated.success) {
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+  }
+
+  const accessToken = await getAccessToken()
+  const res = await apiFetch('/api/v1/auth/confirm-email-change', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(validated.data),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    return { message: body.error ?? 'Code invalide ou expiré' }
+  }
+
+  await setEmailVerified(true)
+  redirect('/profile')
 }

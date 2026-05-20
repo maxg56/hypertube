@@ -1,9 +1,12 @@
 package services
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"sort"
 	"time"
@@ -148,7 +151,15 @@ func ListAdminFilms(limit, offset int) ([]AdminGroupedFilm, int64, error) {
 	return result, total, nil
 }
 
-// DeleteAdminFilm removes a torrent from disk and clears all related DB records.
+func workerURL() string {
+	if u := os.Getenv("WORKER_SERVICE_URL"); u != "" {
+		return u
+	}
+	return "http://worker-service:8006"
+}
+
+// DeleteAdminFilm drops the active torrent from memory then delegates file
+// deletion and DB update to the worker-service, preserving watch history.
 func DeleteAdminFilm(id uint) error {
 	var record models.TorrentRecord
 	if err := conf.DB.First(&record, id).Error; err != nil {
@@ -165,23 +176,21 @@ func DeleteAdminFilm(id uint) error {
 		activeTorrents.Delete(record.InfoHash)
 	}
 
-	torrentDir := downloadDir() + "/" + record.InfoHash
-	if err := os.RemoveAll(torrentDir); err != nil && !os.IsNotExist(err) {
-		log.Printf("[admin] warning: failed to remove torrent dir %s: %v", torrentDir, err)
+	body, _ := json.Marshal(map[string]any{
+		"torrent_id": record.ID,
+		"info_hash":  record.InfoHash,
+		"file_path":  record.FilePath,
+	})
+	resp, err := http.Post(workerURL()+"/delete-torrent", "application/json", bytes.NewReader(body))
+	if err != nil {
+		return fmt.Errorf("worker request: %w", err)
 	}
-	if record.FilePath != "" {
-		if err := os.RemoveAll(record.FilePath); err != nil && !os.IsNotExist(err) {
-			log.Printf("[admin] warning: failed to remove file %s: %v", record.FilePath, err)
-		}
-	}
-
-	conf.DB.Where("movie_id = ?", record.MovieID).Delete(&models.WatchHistory{})
-
-	if err := conf.DB.Delete(&record).Error; err != nil {
-		return fmt.Errorf("db delete: %w", err)
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("worker returned %d", resp.StatusCode)
 	}
 
-	log.Printf("[admin] deleted torrent %d (hash=%s)", id, record.InfoHash)
+	log.Printf("[admin] delegated deletion of torrent %d (hash=%s) to worker", id, record.InfoHash)
 	return nil
 }
 

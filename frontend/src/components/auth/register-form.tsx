@@ -116,6 +116,21 @@ export default function RegisterForm() {
           )}
         </div>
 
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm_password">{t('auth.register_confirm_password')}</Label>
+          <Input
+            id="confirm_password"
+            name="confirm_password"
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('auth.register_confirm_password_placeholder')}
+            required
+          />
+          {state?.errors?.confirm_password && (
+            <p className="text-xs text-destructive">{state.errors.confirm_password[0]}</p>
+          )}
+        </div>
+
         <Button type="submit" className="w-full" disabled={pending}>
           {pending ? t('auth.register_submitting') : t('auth.register_submit')}
         </Button>

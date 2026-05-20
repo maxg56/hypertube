@@ -26,6 +26,8 @@ func SetupAuthRoutes(r *gin.Engine) {
 	{
 		protected.POST("/logout", proxy.ProxyRequest("auth", "/api/v1/auth/logout"))
 		protected.GET("/verify", proxy.ProxyRequest("auth", "/api/v1/auth/verify"))
+		protected.POST("/request-email-change", proxy.ProxyRequest("auth", "/api/v1/auth/request-email-change"))
+		protected.POST("/confirm-email-change", proxy.ProxyRequest("auth", "/api/v1/auth/confirm-email-change"))
 	}
 
 	// Health check endpoint

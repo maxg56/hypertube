@@ -5,20 +5,26 @@ export const LoginSchema = z.object({
   password: z.string().min(1, { message: 'Ce champ est requis' }),
 })
 
-export const RegisterSchema = z.object({
-  username: z
-    .string()
-    .min(3, { message: 'Au moins 3 caractères' })
-    .max(50, { message: '50 caractères maximum' }),
-  email: z.string().email({ message: 'Email invalide' }),
-  password: z
-    .string()
-    .min(8, { message: 'Au moins 8 caractères' })
-    .regex(/[a-zA-Z]/, { message: 'Au moins une lettre' })
-    .regex(/[0-9]/, { message: 'Au moins un chiffre' }),
-  first_name: z.string().min(1, { message: 'Ce champ est requis' }),
-  last_name: z.string().min(1, { message: 'Ce champ est requis' }),
-})
+export const RegisterSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3, { message: 'Au moins 3 caractères' })
+      .max(50, { message: '50 caractères maximum' }),
+    email: z.string().email({ message: 'Email invalide' }),
+    password: z
+      .string()
+      .min(8, { message: 'Au moins 8 caractères' })
+      .regex(/[a-zA-Z]/, { message: 'Au moins une lettre' })
+      .regex(/[0-9]/, { message: 'Au moins un chiffre' }),
+    confirm_password: z.string().min(1, { message: 'Ce champ est requis' }),
+    first_name: z.string().min(1, { message: 'Ce champ est requis' }),
+    last_name: z.string().min(1, { message: 'Ce champ est requis' }),
+  })
+  .refine((d) => d.password === d.confirm_password, {
+    message: 'Les mots de passe ne correspondent pas',
+    path: ['confirm_password'],
+  })
 
 export const ForgotPasswordSchema = z.object({
   email: z.string().email({ message: 'Email invalide' }),
@@ -46,10 +52,22 @@ export const SendVerificationSchema = z.object({
   email: z.string().email({ message: 'Email invalide' }),
 })
 
+export const RequestEmailChangeSchema = z.object({
+  new_email: z.string().email({ message: 'Email invalide' }),
+})
+
+export const ConfirmEmailChangeSchema = z.object({
+  new_email: z.string().email({ message: 'Email invalide' }),
+  verification_code: z
+    .string()
+    .length(6, { message: 'Code à 6 chiffres requis' }),
+})
+
 export type ActionState =
   | {
       errors?: Record<string, string[]>
       message?: string
       success?: string
+      values?: Record<string, string>
     }
   | undefined

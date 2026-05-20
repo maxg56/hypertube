@@ -128,7 +128,13 @@
     "privacy_account_public_hint": "Other users can view your profile.",
     "privacy_favorites_public": "Public favorites",
     "privacy_favorites_public_hint": "Other users can see your favorite movies.",
-    "private_account": "This account is private."
+    "private_account": "This account is private.",
+    "email_label": "Email",
+    "email_change_dialog_title": "Change email address",
+    "email_change_dialog_body": "A verification code will be sent to {{email}}. You will need to enter it to confirm the change.",
+    "email_change_dialog_confirm": "Send code",
+    "email_change_sending": "Sending…",
+    "email_change_error": "Failed to send the verification code."
   },
 
   "auth": {
@@ -192,6 +198,9 @@
     "verify_email_resend": "Resend code",
     "verify_email_resending": "Sending…",
     "verify_email_login_link": "Log in",
+    "verify_email_change_title": "Confirm new email",
+    "verify_email_change_subtitle": "Enter the 6-digit code sent to your new email address.",
+    "verify_email_change_cancel": "Cancel change",
 
     "logout": "Log out"
   },
@@ -239,7 +248,11 @@
     "comment_submit": "Post",
     "comment_submitting": "Posting…",
     "comment_delete": "Delete",
+    "comment_edit": "Edit",
+    "comment_save": "Save",
+    "comment_cancel": "Cancel",
     "comment_error": "Failed to post comment.",
+    "comment_edit_error": "Failed to update comment.",
     "no_comments": "No comments yet for this movie."
   },
 
