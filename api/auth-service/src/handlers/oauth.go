@@ -78,10 +78,12 @@ func oauthPassword(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"access_token":  tokens.AccessToken,
-		"refresh_token": tokens.RefreshToken,
-		"token_type":    "Bearer",
-		"expires_in":    tokens.ExpiresIn,
+		"access_token":   tokens.AccessToken,
+		"refresh_token":  tokens.RefreshToken,
+		"token_type":     "Bearer",
+		"expires_in":     tokens.ExpiresIn,
+		"email_verified": user.EmailVerified,
+		"email":          user.Email,
 	})
 }
 
