@@ -4,6 +4,8 @@ import (
 	"log"
 	"time"
 
+	"gorm.io/gorm"
+
 	"worker-service/src/conf"
 	"worker-service/src/models"
 	"worker-service/src/utils"
@@ -39,7 +41,7 @@ func MarkTorrentAsDeleted(torrentID int) error {
 		Model(&models.Torrent{}).
 		Where("id = ?", torrentID).
 		Updates(map[string]any{
-			"status":     models.StatusDeleted,
+			"status":     gorm.Expr("?::torrent_status_enum", models.StatusDeleted),
 			"file_path":  nil,
 			"downloaded": 0,
 			"progress":   0,
