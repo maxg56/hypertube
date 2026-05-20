@@ -118,16 +118,17 @@ export default function RegisterForm() {
 
         <div className="space-y-1.5">
           <Label htmlFor="confirm_password">{t('auth.register_confirm_password')}</Label>
-          <Input
+          <PasswordInput
             id="confirm_password"
             name="confirm_password"
-            type="password"
             autoComplete="new-password"
             placeholder={t('auth.register_confirm_password_placeholder')}
+            aria-invalid={!!state?.errors?.confirm_password}
+            aria-describedby={state?.errors?.confirm_password ? 'err-confirm_password' : undefined}
             required
           />
           {state?.errors?.confirm_password && (
-            <p className="text-xs text-destructive">{state.errors.confirm_password[0]}</p>
+            <p id="err-confirm_password" role="alert" className="text-xs text-destructive">{state.errors.confirm_password[0]}</p>
           )}
         </div>
 
