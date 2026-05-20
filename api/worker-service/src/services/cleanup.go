@@ -2,12 +2,14 @@ package services
 
 import (
 	"log"
+	"time"
 
 	"worker-service/src/conf"
+	"worker-service/src/models"
 	"worker-service/src/utils"
 )
 
-type DownloadedMovie struct {
+type expiredTorrent struct {
 	TorrentID int
 	MovieID   int
 	FilePath  string
@@ -15,68 +17,64 @@ type DownloadedMovie struct {
 	Title     string
 }
 
-func fetchExpiredMovies() ([]DownloadedMovie, error) {
-	query := `
-		SELECT
-			t.id                    AS torrent_id,
-			t.movie_id,
-			t.file_path,
-			MAX(wh.user_id)         AS user_id,
-			m.title,
-			MAX(wh.watched_at)      AS last_watched_at
-		FROM torrents t
-		JOIN movies m ON m.id = t.movie_id
-		JOIN watch_history wh ON wh.movie_id = t.movie_id
-		WHERE t.file_path IS NOT NULL
-		  AND t.status = 'ready'
-		  AND t.file_path != ''
-		GROUP BY t.id, t.movie_id, t.file_path, m.title
-		HAVING MAX(wh.watched_at) < NOW() - INTERVAL '2 minutes'
-	`
-	var movies []DownloadedMovie
-	return movies, conf.DB.Raw(query).Scan(&movies).Error
+func fetchExpiredTorrents() ([]expiredTorrent, error) {
+	expiry := time.Now().Add(-30 * 24 * time.Hour)
+
+	var results []expiredTorrent
+	err := conf.DB.
+		Model(&models.Torrent{}).
+		Select("torrents.id AS torrent_id, torrents.movie_id, torrents.file_path, MAX(watch_history.user_id) AS user_id, movies.title").
+		Joins("JOIN movies ON movies.id = torrents.movie_id").
+		Joins("JOIN watch_history ON watch_history.movie_id = torrents.movie_id").
+		Where("torrents.status = ? AND torrents.file_path IS NOT NULL AND torrents.file_path != ''", models.StatusReady).
+		Group("torrents.id, torrents.movie_id, torrents.file_path, movies.title").
+		Having("MAX(watch_history.watched_at) < ?", expiry).
+		Scan(&results).Error
+
+	return results, err
 }
 
 func MarkTorrentAsDeleted(torrentID int) error {
-	return conf.DB.Exec(`
-		UPDATE torrents
-		SET file_path  = NULL,
-		    status     = 'suppr',
-		    downloaded = 0,
-		    progress   = 0,
-		    updated_at = NOW()
-		WHERE id = ?
-	`, torrentID).Error
+	return conf.DB.
+		Model(&models.Torrent{}).
+		Where("id = ?", torrentID).
+		Updates(map[string]any{
+			"status":     models.StatusDeleted,
+			"file_path":  nil,
+			"downloaded": 0,
+			"progress":   0,
+			"updated_at": time.Now(),
+		}).Error
 }
 
 func CleanupUnwatchedMovies() {
 	log.Println("[CRON] démarrage nettoyage des films expirés")
 
-	movies, err := fetchExpiredMovies()
+	torrents, err := fetchExpiredTorrents()
 	if err != nil {
 		log.Printf("[CRON] erreur récupération films expirés: %v", err)
 		return
 	}
-	if len(movies) == 0 {
+	if len(torrents) == 0 {
 		log.Println("[CRON] aucun film expiré")
 		return
 	}
 
-	log.Printf("[CRON] %d film(s) expiré(s) trouvé(s)", len(movies))
+	log.Printf("[CRON] %d film(s) expiré(s) trouvé(s)", len(torrents))
 
 	var success, failed int
-	for _, movie := range movies {
-		utils.DeleteFromDisk(movie.FilePath)
+	for _, t := range torrents {
+		utils.DeleteFromDisk(t.FilePath)
 
-		if err := MarkTorrentAsDeleted(movie.TorrentID); err != nil {
+		if err := MarkTorrentAsDeleted(t.TorrentID); err != nil {
 			log.Printf("[CRON] erreur BDD — torrent_id=%d | movie_id=%d | err=%v",
-				movie.TorrentID, movie.MovieID, err)
+				t.TorrentID, t.MovieID, err)
 			failed++
 			continue
 		}
 
 		log.Printf("[CRON] supprimé — torrent_id=%d | movie_id=%d | user_id=%d | path=%s",
-			movie.TorrentID, movie.MovieID, movie.UserID, movie.FilePath)
+			t.TorrentID, t.MovieID, t.UserID, t.FilePath)
 		success++
 	}
 
