@@ -53,7 +53,7 @@ export default function VerifyEmailForm({
               name="email"
               type="email"
               autoComplete="email"
-              defaultValue={defaultEmail}
+              defaultValue={verifyState?.values?.email ?? defaultEmail}
               placeholder={t('auth.verify_email_placeholder')}
               readOnly={isChangeMode}
               required
@@ -89,27 +89,14 @@ export default function VerifyEmailForm({
             <p className="text-center text-sm text-muted-foreground mb-3">
               {t('auth.verify_email_no_code')}
             </p>
-            {sendState?.success && (
-              <p className="text-xs text-sidebar-primary text-center mb-2">
-                {sendState.success}
-              </p>
-            )}
-            <form action={sendAction}>
-              <input type="hidden" name="email" value={defaultEmail ?? ''} />
-              <Button type="submit" variant="outline" className="w-full" disabled={sendPending}>
-                {sendPending ? t('auth.verify_email_resending') : t('auth.verify_email_resend')}
-              </Button>
-            </form>
-          </div>
-        )}
-
-        {isChangeMode && (
-          <div className="border-t pt-4 text-center">
-            <Link href="/profile" className="text-sm text-muted-foreground hover:text-foreground">
-              {t('auth.verify_email_change_cancel')}
-            </Link>
-          </div>
-        )}
+          )}
+          <form action={sendAction}>
+            <input type="hidden" name="email" value={verifyState?.values?.email ?? defaultEmail ?? ''} />
+            <Button type="submit" variant="outline" className="w-full" disabled={sendPending}>
+              {sendPending ? t('auth.verify_email_resending') : t('auth.verify_email_resend')}
+            </Button>
+          </form>
+        </div>
       </div>
     </>
   )

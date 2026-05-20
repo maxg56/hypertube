@@ -33,6 +33,7 @@ export default function RegisterForm() {
               type="text"
               autoComplete="given-name"
               placeholder={t('auth.register_first_name_placeholder')}
+              defaultValue={state?.values?.first_name}
               required
             />
             {state?.errors?.first_name && (
@@ -47,6 +48,7 @@ export default function RegisterForm() {
               type="text"
               autoComplete="family-name"
               placeholder={t('auth.register_last_name_placeholder')}
+              defaultValue={state?.values?.last_name}
               required
             />
             {state?.errors?.last_name && (
@@ -63,6 +65,7 @@ export default function RegisterForm() {
             type="text"
             autoComplete="username"
             placeholder={t('auth.register_username_placeholder')}
+            defaultValue={state?.values?.username}
             required
           />
           {state?.errors?.username && (
@@ -78,6 +81,7 @@ export default function RegisterForm() {
             type="email"
             autoComplete="email"
             placeholder={t('auth.register_email_placeholder')}
+            defaultValue={state?.values?.email}
             required
           />
           {state?.errors?.email && (
@@ -101,6 +105,21 @@ export default function RegisterForm() {
                 <li key={e}>• {e}</li>
               ))}
             </ul>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm_password">{t('auth.register_confirm_password')}</Label>
+          <Input
+            id="confirm_password"
+            name="confirm_password"
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('auth.register_confirm_password_placeholder')}
+            required
+          />
+          {state?.errors?.confirm_password && (
+            <p className="text-xs text-destructive">{state.errors.confirm_password[0]}</p>
           )}
         </div>
 

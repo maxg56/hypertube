@@ -25,13 +25,16 @@ async function apiFetch(path: string, options: RequestInit = {}) {
 }
 
 export async function login(_state: ActionState, formData: FormData): Promise<ActionState> {
+  const loginValue = formData.get('login') as string
+  const values = { login: loginValue }
+
   const validated = LoginSchema.safeParse({
-    login: formData.get('login'),
+    login: loginValue,
     password: formData.get('password'),
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
   }
 
   const res = await fetch(`${API}/api/v1/oauth/token`, {
@@ -46,7 +49,7 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error_description ?? body.error ?? 'Identifiants invalides' }
+    return { message: body.error_description ?? body.error ?? 'Identifiants invalides', values }
   }
 
   const data = await res.json()
@@ -62,26 +65,37 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
 }
 
 export async function register(_state: ActionState, formData: FormData): Promise<ActionState> {
-  const validated = RegisterSchema.safeParse({
-    username: formData.get('username'),
-    email: formData.get('email'),
-    password: formData.get('password'),
-    first_name: formData.get('first_name'),
-    last_name: formData.get('last_name'),
-  })
-
-  if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+  const raw = {
+    username: formData.get('username') as string,
+    email: formData.get('email') as string,
+    password: formData.get('password') as string,
+    confirm_password: formData.get('confirm_password') as string,
+    first_name: formData.get('first_name') as string,
+    last_name: formData.get('last_name') as string,
   }
 
+  const values = {
+    username: raw.username,
+    email: raw.email,
+    first_name: raw.first_name,
+    last_name: raw.last_name,
+  }
+
+  const validated = RegisterSchema.safeParse(raw)
+
+  if (!validated.success) {
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
+  }
+
+  const { confirm_password: _, ...payload } = validated.data
   const res = await apiFetch('/api/v1/auth/register', {
     method: 'POST',
-    body: JSON.stringify(validated.data),
+    body: JSON.stringify(payload),
   })
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error ??"L'inscription a échoué" }
+    return { message: body.error ?? "L'inscription a échoué", values }
   }
 
   const { data } = await res.json()
@@ -132,12 +146,13 @@ export async function forgotPassword(
   _state: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const validated = ForgotPasswordSchema.safeParse({
-    email: formData.get('email'),
-  })
+  const email = formData.get('email') as string
+  const values = { email }
+
+  const validated = ForgotPasswordSchema.safeParse({ email })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
   }
 
   await apiFetch('/api/v1/auth/forgot-password', {
@@ -210,13 +225,16 @@ export async function verifyEmail(
   _state: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
+  const email = formData.get('email') as string
+  const values = { email }
+
   const validated = VerifyEmailSchema.safeParse({
-    email: formData.get('email'),
+    email,
     verification_code: formData.get('verification_code'),
   })
 
   if (!validated.success) {
-    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+    return { errors: validated.error.flatten(i => i.message).fieldErrors, values }
   }
 
   const res = await apiFetch('/api/v1/auth/verify-email', {
@@ -226,7 +244,7 @@ export async function verifyEmail(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    return { message: body.error ??'Code invalide ou expiré' }
+    return { message: body.error ?? 'Code invalide ou expiré', values }
   }
 
   await setEmailVerified(true)
