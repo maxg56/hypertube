@@ -39,6 +39,8 @@ func InitDB() {
 		log.Fatal("Failed to connect to database:", err)
 	}
 	log.Println("Database connected")
+
+	DB.Exec("ALTER TYPE torrent_status_enum ADD VALUE IF NOT EXISTS 'suppr'")
 }
 
 func getEnv(key, def string) string {
