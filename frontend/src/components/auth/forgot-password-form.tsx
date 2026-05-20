@@ -32,7 +32,7 @@ export default function ForgotPasswordForm() {
 
       <form action={action} className="space-y-4">
         {state?.message && (
-          <p className="text-sm text-destructive text-center">{state.message}</p>
+          <p role="alert" className="text-sm text-destructive text-center">{state.message}</p>
         )}
 
         <div className="space-y-1.5">
@@ -43,11 +43,12 @@ export default function ForgotPasswordForm() {
             type="email"
             autoComplete="email"
             placeholder={t('auth.forgot_password_email_placeholder')}
-            defaultValue={state?.values?.email}
+            aria-invalid={!!state?.errors?.email}
+            aria-describedby={state?.errors?.email ? 'err-email' : undefined}
             required
           />
           {state?.errors?.email && (
-            <p className="text-xs text-destructive">{state.errors.email[0]}</p>
+            <p id="err-email" role="alert" className="text-xs text-destructive">{state.errors.email[0]}</p>
           )}
         </div>
 

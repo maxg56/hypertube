@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useTranslation } from 'react-i18next'
 import { resetPassword } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 
 export default function ResetPasswordForm({ token }: Readonly<{ token: string }>) {
@@ -23,36 +23,38 @@ export default function ResetPasswordForm({ token }: Readonly<{ token: string }>
         <input type="hidden" name="token" value={token} />
 
         {state?.message && (
-          <p className="text-sm text-destructive text-center">{state.message}</p>
+          <p role="alert" className="text-sm text-destructive text-center">{state.message}</p>
         )}
 
         <div className="space-y-1.5">
           <Label htmlFor="new_password">{t('auth.reset_password_new_label')}</Label>
-          <Input
+          <PasswordInput
             id="new_password"
             name="new_password"
-            type="password"
             autoComplete="new-password"
             placeholder={t('auth.reset_password_placeholder')}
+            aria-invalid={!!state?.errors?.new_password}
+            aria-describedby={state?.errors?.new_password ? 'err-new_password' : undefined}
             required
           />
           {state?.errors?.new_password && (
-            <p className="text-xs text-destructive">{state.errors.new_password[0]}</p>
+            <p id="err-new_password" role="alert" className="text-xs text-destructive">{state.errors.new_password[0]}</p>
           )}
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="confirm_password">{t('auth.reset_password_confirm_label')}</Label>
-          <Input
+          <PasswordInput
             id="confirm_password"
             name="confirm_password"
-            type="password"
             autoComplete="new-password"
             placeholder={t('auth.reset_password_placeholder')}
+            aria-invalid={!!state?.errors?.confirm_password}
+            aria-describedby={state?.errors?.confirm_password ? 'err-confirm_password' : undefined}
             required
           />
           {state?.errors?.confirm_password && (
-            <p className="text-xs text-destructive">{state.errors.confirm_password[0]}</p>
+            <p id="err-confirm_password" role="alert" className="text-xs text-destructive">{state.errors.confirm_password[0]}</p>
           )}
         </div>
 
