@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   const callbackUrl = sp.get('callbackUrl') ?? '/'
   const error = sp.get('error')
 
-  const base = request.nextUrl.origin
+  const base = process.env.BASE_URL ?? request.nextUrl.origin
 
   if (error || !accessToken || !refreshToken) {
     const dest = new URL('/login', base)
