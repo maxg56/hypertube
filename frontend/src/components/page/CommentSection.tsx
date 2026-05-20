@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { apiClient } from '@/lib/api'
@@ -136,7 +137,7 @@ export function CommentSection({ movieId, movieTitle, initialComments, currentUs
         )}
         {comments.map(comment => (
           <div key={comment.id} className="flex gap-3">
-            <div className="shrink-0 w-9 h-9 rounded-full overflow-hidden bg-muted border border-border">
+            <Link href={`/users/${comment.user_id}`} className="shrink-0 w-9 h-9 rounded-full overflow-hidden bg-muted border border-border hover:opacity-80 transition-opacity">
               {comment.avatar_url ? (
                 <img src={comment.avatar_url} alt={comment.username} className="w-full h-full object-cover" />
               ) : (
@@ -144,10 +145,10 @@ export function CommentSection({ movieId, movieTitle, initialComments, currentUs
                   {comment.username?.charAt(0).toUpperCase()}
                 </span>
               )}
-            </div>
+            </Link>
             <div className="flex flex-col gap-1 min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">{comment.username}</span>
+                <Link href={`/users/${comment.user_id}`} className="text-sm font-medium hover:underline">{comment.username}</Link>
                 <span className="text-xs text-muted-foreground">{formatDate(comment.created_at)}</span>
               </div>
               {editingId === comment.id ? (
