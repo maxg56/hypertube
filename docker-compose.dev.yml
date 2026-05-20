@@ -240,6 +240,7 @@ services:
       OPENSUBTITLES_USERNAME: ${OPENSUBTITLES_USERNAME:-}
       OPENSUBTITLES_PASSWORD: ${OPENSUBTITLES_PASSWORD:-}
       SUBTITLE_CACHE_PATH: /data/subtitles
+      WORKER_SERVICE_URL: http://worker-service:8006
     volumes:
       - ./api/torrent-service/src:/app/src
       - ./api/torrent-service/go.mod:/app/go.mod
@@ -249,6 +250,7 @@ services:
       - subtitle_data_dev:/data/subtitles
     depends_on:
       - postgres
+      - worker-service
     networks:
       - DB
       - backend
