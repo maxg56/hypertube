@@ -9,6 +9,7 @@ const (
 	StatusDownloading TorrentStatus = "downloading"
 	StatusReady       TorrentStatus = "ready"
 	StatusError       TorrentStatus = "error"
+	StatusDeleted     TorrentStatus = "suppr"
 )
 
 type TorrentRecord struct {

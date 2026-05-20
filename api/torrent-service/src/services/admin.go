@@ -148,7 +148,8 @@ func ListAdminFilms(limit, offset int) ([]AdminGroupedFilm, int64, error) {
 	return result, total, nil
 }
 
-// DeleteAdminFilm removes a torrent from disk and clears all related DB records.
+// DeleteAdminFilm removes torrent files from disk and marks the record as deleted.
+// Watch history is preserved so users retain their viewing records.
 func DeleteAdminFilm(id uint) error {
 	var record models.TorrentRecord
 	if err := conf.DB.First(&record, id).Error; err != nil {
@@ -175,13 +176,15 @@ func DeleteAdminFilm(id uint) error {
 		}
 	}
 
-	conf.DB.Where("movie_id = ?", record.MovieID).Delete(&models.WatchHistory{})
-
-	if err := conf.DB.Delete(&record).Error; err != nil {
-		return fmt.Errorf("db delete: %w", err)
+	if err := conf.DB.Model(&record).Updates(map[string]any{
+		"status":    models.StatusDeleted,
+		"file_path": "",
+		"progress":  0,
+	}).Error; err != nil {
+		return fmt.Errorf("db update: %w", err)
 	}
 
-	log.Printf("[admin] deleted torrent %d (hash=%s)", id, record.InfoHash)
+	log.Printf("[admin] deleted torrent files %d (hash=%s), record kept with status=suppr", id, record.InfoHash)
 	return nil
 }
 
