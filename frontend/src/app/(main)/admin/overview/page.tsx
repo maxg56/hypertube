@@ -105,8 +105,8 @@ export default function AdminOverviewPage() {
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} className="text-muted-foreground" />
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
-                  labelFormatter={(v: string) => v}
-                  formatter={(v: number) => [v, t('admin.stat_watches')]}
+                  labelFormatter={(v) => String(v)}
+                  formatter={(v) => [`${v}`, t('admin.stat_watches')]}
                 />
                 <Area
                   type="monotone"
@@ -147,12 +147,12 @@ export default function AdminOverviewPage() {
                 </Pie>
                 <Tooltip
                   contentStyle={{ fontSize: 12 }}
-                  formatter={(v: number, name: string) => [v, t(`admin.status_${name}`) || name]}
+                  formatter={(v, name) => [`${v}`, t(`admin.status_${name}`) || String(name)]}
                 />
                 <Legend
                   iconType="circle"
                   iconSize={8}
-                  formatter={(value: string) => t(`admin.status_${value}`) || value}
+                  formatter={(value) => t(`admin.status_${value}`) || value}
                   wrapperStyle={{ fontSize: 12 }}
                 />
               </PieChart>
@@ -184,7 +184,7 @@ export default function AdminOverviewPage() {
                   tickFormatter={(v: string) => v.length > 16 ? v.slice(0, 15) + '…' : v}
                   className="text-muted-foreground"
                 />
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, t('admin.stat_watches')]} />
+                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`${v}`, t('admin.stat_watches')]} />
                 <Bar dataKey="watches" fill="oklch(0.488 0.243 264.376)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -205,7 +205,7 @@ export default function AdminOverviewPage() {
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis dataKey="month" tick={{ fontSize: 11 }} className="text-muted-foreground" />
                 <YAxis tick={{ fontSize: 11 }} allowDecimals={false} className="text-muted-foreground" />
-                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v: number) => [v, t('admin.stat_users')]} />
+                <Tooltip contentStyle={{ fontSize: 12 }} formatter={(v) => [`${v}`, t('admin.stat_users')]} />
                 <Bar dataKey="count" fill="oklch(0.577 0.245 27.325)" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
