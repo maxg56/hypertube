@@ -88,10 +88,13 @@ func min(a, b int) int {
 // findOrCreateOAuthUser looks up or creates a user for the given OAuth identity.
 func findOrCreateOAuthUser(provider, providerID, email, firstName, lastName, avatarURL, login string) (*models.Users, error) {
 	var oauthAcc models.OAuthAccount
-	err := db.DB.Where("provider = ? AND provider_id = ?", provider, providerID).
-		Preload("User").First(&oauthAcc).Error
+	err := db.DB.Where("provider = ? AND provider_id = ?", provider, providerID).First(&oauthAcc).Error
 	if err == nil {
-		return &oauthAcc.User, nil
+		var user models.Users
+		if err := db.DB.First(&user, oauthAcc.UserID).Error; err != nil {
+			return nil, fmt.Errorf("user not found for oauth account: %w", err)
+		}
+		return &user, nil
 	}
 
 	// Link to existing account if email matches

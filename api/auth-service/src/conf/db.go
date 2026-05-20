@@ -42,16 +42,27 @@ func ConnectDatabase() {
 	DB = database
 	log.Println("Database connected")
 
+	// Ensure oauth_accounts table exists — AutoMigrate cannot reliably create it
+	// when the DB was initialized before this feature was added (FK type mismatch).
+	DB.Exec(`
+		CREATE TABLE IF NOT EXISTS oauth_accounts (
+			id          SERIAL PRIMARY KEY,
+			user_id     INT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+			provider    VARCHAR(50)  NOT NULL,
+			provider_id VARCHAR(255) NOT NULL,
+			created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+		)
+	`)
+	DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_accounts_provider_provider_id ON oauth_accounts (provider, provider_id)`)
+
 	if os.Getenv("AUTO_MIGRATE") == "true" {
 		if err := DB.AutoMigrate(
 			&models.Users{},
 			&models.EmailVerification{},
 			&models.PasswordReset{},
-			&models.OAuthAccount{},
 		); err != nil {
 			log.Println("AutoMigrate failed:", err)
 		}
-		DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_accounts_provider_provider_id ON oauth_accounts (provider, provider_id)`)
 	}
 }
 
