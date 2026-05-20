@@ -55,6 +55,9 @@ func readerFromActiveTorrent(t *torrent.Torrent) (ReaderResult, error) {
 		return ReaderResult{}, errors.New("torrent info not yet available")
 	}
 
+	t.DownloadAll()
+	prioritizeForStreaming(t)
+
 	f := largestFile(t)
 	if f == nil {
 		return ReaderResult{}, errors.New("no files in torrent")
