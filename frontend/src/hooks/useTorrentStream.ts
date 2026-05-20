@@ -93,7 +93,7 @@ export function useTorrentStream(initialTorrent: Torrent | null, movieId: number
           return
         }
         setProgress(Math.round((prog ?? 0) * 100))
-        if (status === 'pending' || status === 'downloading' || status === 'ready') {
+        if (status === 'downloading' || status === 'ready') {
           stopPolling()
           setState('streaming')
         }
