@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import LoginForm from '@/components/auth/login-form'
 
 export const metadata: Metadata = {
@@ -12,5 +13,9 @@ export default async function LoginPage({
 }>) {
   const { callbackUrl } = await searchParams
 
-  return <LoginForm callbackUrl={callbackUrl} />
+  return (
+    <Suspense>
+      <LoginForm callbackUrl={callbackUrl} />
+    </Suspense>
+  )
 }
