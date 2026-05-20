@@ -14,6 +14,11 @@ import (
 )
 
 func expiryDuration() time.Duration {
+	if v := os.Getenv("CLEANUP_EXPIRY_MINUTES"); v != "" {
+		if mins, err := strconv.Atoi(v); err == nil && mins > 0 {
+			return time.Duration(mins) * time.Minute
+		}
+	}
 	if v := os.Getenv("CLEANUP_EXPIRY_DAYS"); v != "" {
 		if days, err := strconv.Atoi(v); err == nil && days > 0 {
 			return time.Duration(days) * 24 * time.Hour

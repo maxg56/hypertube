@@ -31,7 +31,7 @@ func ReencodeToHEVC(record *models.TorrentRecord) {
 	outputPath := strings.TrimSuffix(record.FilePath, ext) + ".hevc.mp4"
 
 	cmd := exec.Command("ffmpeg",
-		"-i", record.FilePath,
+		"-i", "file:"+record.FilePath,
 		"-c:v", "libx265",
 		"-preset", hevcPreset(),
 		"-crf", "28",
