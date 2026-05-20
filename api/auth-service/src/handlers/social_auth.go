@@ -168,7 +168,7 @@ func redirectWithTokens(c *gin.Context, frontendURL, callbackURL string, tokens 
 func OAuth42RedirectHandler(c *gin.Context) {
 	clientID := os.Getenv("OAUTH_42_CLIENT_ID")
 	redirectURI := os.Getenv("OAUTH_42_REDIRECT_URI")
-	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:3000")
+	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:8443")
 
 	if clientID == "" || redirectURI == "" {
 		redirectWithError(c, frontendURL, "42 OAuth non configuré")
@@ -202,7 +202,7 @@ func OAuth42RedirectHandler(c *gin.Context) {
 
 // OAuth42CallbackHandler handles GET /auth/oauth/42/callback
 func OAuth42CallbackHandler(c *gin.Context) {
-	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:3000")
+	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:8443")
 
 	if errMsg := c.Query("error"); errMsg != "" {
 		redirectWithError(c, frontendURL, errMsg)
@@ -339,7 +339,7 @@ func fetch42UserInfo(accessToken string) (*oauthUserInfo, error) {
 // OAuthGithubRedirectHandler handles GET /auth/oauth/github
 func OAuthGithubRedirectHandler(c *gin.Context) {
 	clientID := os.Getenv("OAUTH_GITHUB_CLIENT_ID")
-	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:3000")
+	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:8443")
 
 	if clientID == "" {
 		redirectWithError(c, frontendURL, "GitHub OAuth non configuré")
@@ -376,7 +376,7 @@ func OAuthGithubRedirectHandler(c *gin.Context) {
 
 // OAuthGithubCallbackHandler handles GET /auth/oauth/github/callback
 func OAuthGithubCallbackHandler(c *gin.Context) {
-	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:3000")
+	frontendURL := db.GetenvOrDefault("FRONTEND_URL", "http://localhost:8443")
 
 	if errMsg := c.Query("error"); errMsg != "" {
 		redirectWithError(c, frontendURL, errMsg)
