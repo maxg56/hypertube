@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
   const sp = request.nextUrl.searchParams
@@ -17,10 +16,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(dest)
   }
 
-  const store = await cookies()
+  const safeCallback = callbackUrl.startsWith('/') ? callbackUrl : '/'
+  const response = NextResponse.redirect(new URL(safeCallback, base))
   const secure = process.env.NODE_ENV === 'production'
 
-  store.set('access_token', accessToken, {
+  response.cookies.set('access_token', accessToken, {
     httpOnly: true,
     secure,
     sameSite: 'lax',
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     maxAge: expiresIn,
   })
 
-  store.set('refresh_token', refreshToken, {
+  response.cookies.set('refresh_token', refreshToken, {
     httpOnly: true,
     secure,
     sameSite: 'lax',
@@ -36,6 +36,5 @@ export async function GET(request: NextRequest) {
     maxAge: 7 * 24 * 60 * 60,
   })
 
-  const safeCallback = callbackUrl.startsWith('/') ? callbackUrl : '/'
-  return NextResponse.redirect(new URL(safeCallback, base))
+  return response
 }
