@@ -47,6 +47,7 @@ func ConnectDatabase() {
 			&models.Users{},
 			&models.EmailVerification{},
 			&models.PasswordReset{},
+			&models.OAuthAccount{},
 		); err != nil {
 			log.Println("AutoMigrate failed:", err)
 		}

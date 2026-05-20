@@ -15,11 +15,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// noRedirect prevents the HTTP client from following 3xx responses.
+// A reverse proxy must pass redirects through to the browser, not chase them.
+var noRedirect = func(_ *http.Request, _ []*http.Request) error {
+	return http.ErrUseLastResponse
+}
+
 // streamingClient has no timeout — used for video/audio streaming responses.
-var streamingClient = &http.Client{}
+var streamingClient = &http.Client{CheckRedirect: noRedirect}
 
 // defaultClient has a 30-second timeout for all regular requests.
-var defaultClient = &http.Client{Timeout: 30 * time.Second}
+var defaultClient = &http.Client{Timeout: 30 * time.Second, CheckRedirect: noRedirect}
 
 // ProxyRequest creates a handler that proxies requests to the specified service
 func ProxyRequest(serviceName, path string) gin.HandlerFunc {

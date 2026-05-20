@@ -111,9 +111,9 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME}
       SMTP_PASSWORD: ${SMTP_PASSWORD}
       FROM_EMAIL: ${FROM_EMAIL}
-      FROM_NAME: ${FROM_NAME:-Hypertube}
-      FRONTEND_URL: ${FRONTEND_URL}
-      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+      FROM_NAME: ${FROM_NAME}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8443}
+      CLEANUP_INTERVAL_MINUTES: ${CLEANUP_INTERVAL_MINUTES:-30}
     depends_on:
       - postgres
       - redis

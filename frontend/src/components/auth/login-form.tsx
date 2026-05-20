@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { login } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
@@ -38,6 +39,8 @@ export default function LoginForm({
   const { t } = useTranslation()
   const [state, action, pending] = useActionState(login, undefined)
   const { triggerLoginSuccess } = useAuthContext()
+  const searchParams = useSearchParams()
+  const oauthError = searchParams.get('error')
 
   useEffect(() => {
     if (state && !state.message && !state.errors) {
@@ -58,8 +61,10 @@ export default function LoginForm({
       <form action={action} className="space-y-4">
         <input type="hidden" name="callbackUrl" value={safeCallback} />
 
-        {state?.message && (
-          <p role="alert" className="text-sm text-destructive text-center">{state.message}</p>
+        {(state?.message || oauthError) && (
+          <p className="text-sm text-destructive text-center">
+            {state?.message ?? oauthError}
+          </p>
         )}
 
         <div className="space-y-1.5">

@@ -55,6 +55,15 @@ func main() {
 		{
 			oauth.POST("/token", handlers.OAuthTokenHandler)
 		}
+
+		// Social OAuth2 (42 School, GitHub)
+		social := auth.Group("/oauth")
+		{
+			social.GET("/42", handlers.OAuth42RedirectHandler)
+			social.GET("/42/callback", handlers.OAuth42CallbackHandler)
+			social.GET("/github", handlers.OAuthGithubRedirectHandler)
+			social.GET("/github/callback", handlers.OAuthGithubCallbackHandler)
+		}
 	}
 
 	log.Println("Auth service starting on port 8001")

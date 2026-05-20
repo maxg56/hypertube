@@ -7,8 +7,15 @@ const PUBLIC_ROUTES = [
   '/reset-password',
 ]
 
+// Routes that are public but must never redirect authenticated users away
+// (e.g. OAuth callback needs to run regardless of auth state)
+const ALWAYS_PUBLIC_ROUTES = ['/oauth/callback']
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
+  const isAlwaysPublic = ALWAYS_PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
+  if (isAlwaysPublic) return NextResponse.next()
+
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r))
   const accessToken = req.cookies.get('access_token')?.value
   const emailVerified = req.cookies.get('email_verified')?.value
