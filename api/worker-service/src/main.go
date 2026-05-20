@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -118,8 +119,59 @@ func cleanupUnwatchedMovies() {
 }
 
 
+type deleteTorrentRequest struct {
+	TorrentID int    `json:"torrent_id"`
+	InfoHash  string `json:"info_hash"`
+	FilePath  string `json:"file_path"`
+}
+
+func downloadDir() string {
+	if d := os.Getenv("TORRENT_DOWNLOAD_PATH"); d != "" {
+		return d
+	}
+	return "/data/torrents"
+}
+
+func handleDeleteTorrent(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var req deleteTorrentRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	if req.TorrentID == 0 || req.InfoHash == "" {
+		http.Error(w, "torrent_id and info_hash are required", http.StatusBadRequest)
+		return
+	}
+
+	torrentDir := downloadDir() + "/" + req.InfoHash
+	if err := os.RemoveAll(torrentDir); err != nil && !os.IsNotExist(err) {
+		log.Printf("[worker] failed to remove torrent dir %s: %v", torrentDir, err)
+	}
+	if req.FilePath != "" {
+		if err := os.RemoveAll(req.FilePath); err != nil && !os.IsNotExist(err) {
+			log.Printf("[worker] failed to remove file %s: %v", req.FilePath, err)
+		}
+	}
+
+	if err := markTorrentAsExpired(req.TorrentID); err != nil {
+		log.Printf("[worker] db update failed for torrent_id=%d: %v", req.TorrentID, err)
+		http.Error(w, "db update failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("[worker] deleted torrent_id=%d info_hash=%s", req.TorrentID, req.InfoHash)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`{"status":"deleted"}`))
+}
+
 func main() {
-	conf.InitDB();
+	conf.InitDB()
 
 	c := cron.New()
 	_, err := c.AddFunc("*/10 * * * *", cleanupUnwatchedMovies)
@@ -128,7 +180,7 @@ func main() {
 	}
 	c.Start()
 	defer c.Stop()
-	log.Println("cron démarré ")
+	log.Println("cron démarré")
 
 	go cleanupUnwatchedMovies()
 
@@ -144,6 +196,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`{"status":"ok","service":"worker-service"}`))
 	})
+	mux.HandleFunc("/delete-torrent", handleDeleteTorrent)
 
 	log.Printf("worker-service starting on port %s", port)
 	log.Fatal(http.ListenAndServe(":"+port, mux))
