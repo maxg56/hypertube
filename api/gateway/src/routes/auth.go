@@ -28,6 +28,12 @@ func SetupAuthRoutes(r *gin.Engine) {
 		protected.GET("/verify", proxy.ProxyRequest("auth", "/api/v1/auth/verify"))
 	}
 
+	// Social OAuth2 (42 School, GitHub) — public
+	auth.GET("/oauth/42", proxy.ProxyRequest("auth", "/api/v1/auth/oauth/42"))
+	auth.GET("/oauth/42/callback", proxy.ProxyRequest("auth", "/api/v1/auth/oauth/42/callback"))
+	auth.GET("/oauth/github", proxy.ProxyRequest("auth", "/api/v1/auth/oauth/github"))
+	auth.GET("/oauth/github/callback", proxy.ProxyRequest("auth", "/api/v1/auth/oauth/github/callback"))
+
 	// Health check endpoint
 	auth.GET("/", proxy.ProxyRequest("auth", "/health"))
 

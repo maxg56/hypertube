@@ -35,3 +35,13 @@ CREATE TABLE password_resets (
     used       BOOLEAN     DEFAULT FALSE,
     created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE oauth_accounts (
+    id          SERIAL PRIMARY KEY,
+    user_id     INT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    provider    VARCHAR(50)  NOT NULL,
+    provider_id VARCHAR(255) NOT NULL,
+    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_accounts_provider_provider_id ON oauth_accounts (provider, provider_id);

@@ -47,9 +47,11 @@ func ConnectDatabase() {
 			&models.Users{},
 			&models.EmailVerification{},
 			&models.PasswordReset{},
+			&models.OAuthAccount{},
 		); err != nil {
 			log.Println("AutoMigrate failed:", err)
 		}
+		DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_accounts_provider_provider_id ON oauth_accounts (provider, provider_id)`)
 	}
 }
 

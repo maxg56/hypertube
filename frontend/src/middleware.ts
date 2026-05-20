@@ -6,6 +6,7 @@ const PUBLIC_ROUTES = [
   '/forgot-password',
   '/reset-password',
   '/verify-email',
+  '/oauth',
 ]
 
 export function middleware(req: NextRequest) {
