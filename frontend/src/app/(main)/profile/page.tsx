@@ -1,11 +1,13 @@
 'use client'
 import React from 'react'
+import { useActionState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useTranslation } from 'react-i18next'
 import { CheckCircle, XCircle, Loader2, Globe, Lock, Heart } from 'lucide-react'
 import { apiClient } from '@/lib/api'
+import { requestEmailChange } from '@/app/actions/auth'
 
 const LANGUAGES = [
   { code: 'fr', label: '🇫🇷 Français' },
@@ -39,6 +41,7 @@ export default function ProfilePage() {
   const [profile, setProfile] = React.useState<UserProfile | null>(null)
   const [firstName, setFirstName] = React.useState('')
   const [lastName, setLastName] = React.useState('')
+  const [emailInput, setEmailInput] = React.useState('')
   const [selectedLang, setSelectedLang] = React.useState(i18n.language)
   const [isPublic, setIsPublic] = React.useState(true)
   const [favoritesPublic, setFavoritesPublic] = React.useState(true)
@@ -46,7 +49,13 @@ export default function ProfilePage() {
   const [localPreview, setLocalPreview] = React.useState('')
   const [saveStatus, setSaveStatus] = React.useState<SaveStatus>('idle')
   const [errorMsg, setErrorMsg] = React.useState('')
+  const [showEmailDialog, setShowEmailDialog] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
+
+  const [emailChangeState, emailChangeAction, emailChangePending] = useActionState(
+    requestEmailChange,
+    undefined,
+  )
 
   React.useEffect(() => {
     apiClient.get<{ data: { profile: UserProfile } }>('/users/profile')
@@ -55,6 +64,7 @@ export default function ProfilePage() {
         setProfile(p)
         setFirstName(p.first_name)
         setLastName(p.last_name)
+        setEmailInput(p.email)
         setIsPublic(p.is_public ?? true)
         setFavoritesPublic(p.favorites_public ?? true)
         if (p.language) {
@@ -76,6 +86,12 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!profile) return
+
+    if (emailInput !== profile.email) {
+      setShowEmailDialog(true)
+      return
+    }
+
     setSaveStatus('loading')
     setErrorMsg('')
     try {
@@ -108,6 +124,7 @@ export default function ProfilePage() {
     if (profile) {
       setFirstName(profile.first_name)
       setLastName(profile.last_name)
+      setEmailInput(profile.email)
       setIsPublic(profile.is_public ?? true)
       setFavoritesPublic(profile.favorites_public ?? true)
     }
@@ -172,8 +189,14 @@ export default function ProfilePage() {
               )}
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">{t('Email')}</label>
-                <Input value={profile?.email ?? ''} disabled />
+                <label className="text-sm font-medium text-foreground">{t('profile.email_label')}</label>
+                <Input
+                  value={emailInput}
+                  onChange={(e) => setEmailInput(e.target.value)}
+                  disabled={!isEditing}
+                  type="email"
+                  autoComplete="email"
+                />
               </div>
 
               <div className="space-y-1.5">
@@ -250,6 +273,61 @@ export default function ProfilePage() {
           />
         </CardContent>
       </Card>
+
+      {showEmailDialog && (
+        <EmailChangeDialog
+          newEmail={emailInput}
+          pending={emailChangePending}
+          error={emailChangeState?.message}
+          action={emailChangeAction}
+          onClose={() => setShowEmailDialog(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+function EmailChangeDialog({
+  newEmail,
+  pending,
+  error,
+  action,
+  onClose,
+}: {
+  newEmail: string
+  pending: boolean
+  error?: string
+  action: (payload: FormData) => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+      <div className="bg-background border border-border rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
+        <h3 className="text-lg font-semibold mb-2">{t('profile.email_change_dialog_title')}</h3>
+        <p className="text-sm text-muted-foreground mb-4">
+          {t('profile.email_change_dialog_body', { email: newEmail })}
+        </p>
+
+        {error && (
+          <p className="text-sm text-destructive mb-4">{error}</p>
+        )}
+
+        <form action={action} className="flex flex-col gap-3">
+          <input type="hidden" name="new_email" value={newEmail} />
+          <div className="flex gap-2 justify-end">
+            <Button type="button" variant="outline" onClick={onClose} disabled={pending}>
+              {t('profile.cancel')}
+            </Button>
+            <Button type="submit" disabled={pending}>
+              {pending
+                ? t('profile.email_change_sending')
+                : t('profile.email_change_dialog_confirm')}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   )
 }

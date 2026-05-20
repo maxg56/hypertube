@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 export default async function VerifyEmailPage({
   searchParams,
 }: Readonly<{
-  searchParams: Promise<{ email?: string }>
+  searchParams: Promise<{ email?: string; mode?: string }>
 }>) {
-  const { email } = await searchParams
+  const { email, mode } = await searchParams
 
-  return <VerifyEmailForm defaultEmail={email} />
+  return <VerifyEmailForm defaultEmail={email} mode={mode} />
 }

@@ -31,10 +31,17 @@ func main() {
 	{
 		comments := api.Group("/comments")
 		{
+			comments.GET("", handlers.ListAllComments)
 			comments.GET("/user/:userId", handlers.ListCommentsByUser)
-			comments.GET("/:movieId", handlers.ListComments)
-			comments.POST("/:movieId", handlers.CreateComment)
+			comments.GET("/:id", handlers.GetComment)
+			comments.PATCH("/:id", handlers.UpdateComment)
 			comments.DELETE("/:id", handlers.DeleteComment)
+		}
+
+		movies := api.Group("/movies")
+		{
+			movies.GET("/:movieId/comments", handlers.ListComments)
+			movies.POST("/:movieId/comments", handlers.CreateComment)
 		}
 	}
 

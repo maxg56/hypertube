@@ -8,9 +8,11 @@ import {
   ResetPasswordSchema,
   VerifyEmailSchema,
   SendVerificationSchema,
+  RequestEmailChangeSchema,
+  ConfirmEmailChangeSchema,
   type ActionState,
 } from '@/lib/definitions'
-import { setTokens, clearTokens, getAccessToken, getRefreshToken } from '@/lib/session'
+import { setTokens, setEmailVerified, clearTokens, getAccessToken, getRefreshToken } from '@/lib/session'
 
 const API = process.env.API_URL ?? 'https://localhost:8443'
 
@@ -52,6 +54,12 @@ export async function login(_state: ActionState, formData: FormData): Promise<Ac
 
   const data = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
+  await setEmailVerified(data.email_verified === true)
+
+  if (!data.email_verified) {
+    redirect(`/verify-email?email=${encodeURIComponent(data.email ?? '')}`)
+  }
+
   const callbackUrl = formData.get('callbackUrl') as string | null
   redirect(callbackUrl?.startsWith('/') ? callbackUrl : '/')
 }
@@ -92,7 +100,8 @@ export async function register(_state: ActionState, formData: FormData): Promise
 
   const { data } = await res.json()
   await setTokens(data.access_token, data.refresh_token, data.expires_in)
-  redirect('/')
+  await setEmailVerified(false)
+  redirect(`/verify-email?email=${encodeURIComponent(data.user?.email ?? '')}`)
 }
 
 export async function refreshToken(): Promise<boolean> {
@@ -238,5 +247,62 @@ export async function verifyEmail(
     return { message: body.error ?? 'Code invalide ou expiré', values }
   }
 
-  return { success: 'Email vérifié avec succès !' }
+  await setEmailVerified(true)
+  redirect('/')
+}
+
+export async function requestEmailChange(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const validated = RequestEmailChangeSchema.safeParse({
+    new_email: formData.get('new_email'),
+  })
+
+  if (!validated.success) {
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+  }
+
+  const accessToken = await getAccessToken()
+  const res = await apiFetch('/api/v1/auth/request-email-change', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(validated.data),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    return { message: body.error ?? "Impossible d'envoyer le code de vérification" }
+  }
+
+  redirect(`/verify-email?email=${encodeURIComponent(validated.data.new_email)}&mode=change`)
+}
+
+export async function confirmEmailChange(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
+  const validated = ConfirmEmailChangeSchema.safeParse({
+    new_email: formData.get('email'),
+    verification_code: formData.get('verification_code'),
+  })
+
+  if (!validated.success) {
+    return { errors: validated.error.flatten(i => i.message).fieldErrors }
+  }
+
+  const accessToken = await getAccessToken()
+  const res = await apiFetch('/api/v1/auth/confirm-email-change', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify(validated.data),
+  })
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    return { message: body.error ?? 'Code invalide ou expiré' }
+  }
+
+  await setEmailVerified(true)
+  redirect('/profile')
 }

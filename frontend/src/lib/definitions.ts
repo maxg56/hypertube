@@ -52,6 +52,17 @@ export const SendVerificationSchema = z.object({
   email: z.string().email({ message: 'Email invalide' }),
 })
 
+export const RequestEmailChangeSchema = z.object({
+  new_email: z.string().email({ message: 'Email invalide' }),
+})
+
+export const ConfirmEmailChangeSchema = z.object({
+  new_email: z.string().email({ message: 'Email invalide' }),
+  verification_code: z
+    .string()
+    .length(6, { message: 'Code à 6 chiffres requis' }),
+})
+
 export type ActionState =
   | {
       errors?: Record<string, string[]>

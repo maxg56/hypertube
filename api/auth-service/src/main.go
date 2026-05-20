@@ -44,6 +44,10 @@ func main() {
 			auth.POST("/reset-password", handlers.ResetPasswordHandler)
 			auth.POST("/send-email-verification", handlers.SendEmailVerificationHandler)
 			auth.POST("/verify-email", handlers.VerifyEmailHandler)
+
+			authProtected := auth.Group("")
+			authProtected.POST("/request-email-change", handlers.RequestEmailChangeHandler)
+			authProtected.POST("/confirm-email-change", handlers.ConfirmEmailChangeHandler)
 		}
 
 		// OAuth2 token endpoint (RFC 6749)
