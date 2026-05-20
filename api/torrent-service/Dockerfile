@@ -9,7 +9,7 @@ CMD ["air", "-c", ".air.toml"]
 
 FROM golang:1.26-alpine AS builder
 WORKDIR /app
-RUN apk --no-cache add gcc musl-dev
+RUN apk --no-cache add gcc g++ musl-dev
 COPY go.mod go.sum ./
 RUN go mod download
 COPY src/ ./src/

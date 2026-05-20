@@ -246,6 +246,7 @@ services:
       OPENSUBTITLES_USERNAME: ${OPENSUBTITLES_USERNAME:-}
       OPENSUBTITLES_PASSWORD: ${OPENSUBTITLES_PASSWORD:-}
       SUBTITLE_CACHE_PATH: /data/subtitles
+      WORKER_SERVICE_URL: http://worker-service:8006
     volumes:
       - ./api/torrent-service/src:/app/src
       - ./api/torrent-service/go.mod:/app/go.mod
@@ -255,6 +256,7 @@ services:
       - subtitle_data_dev:/data/subtitles
     depends_on:
       - postgres
+      - worker-service
     networks:
       - DB
       - backend
@@ -310,6 +312,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:-password}
       REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
       TORRENT_DOWNLOAD_PATH: /data/torrents
+      CLEANUP_EXPIRY_MINUTES: ${CLEANUP_EXPIRY_MINUTES:-}
+      CLEANUP_EXPIRY_DAYS: ${CLEANUP_EXPIRY_DAYS:-30}
       GIN_MODE: debug
       AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
     volumes:
@@ -329,6 +333,8 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
+    cap_add:
+      - DAC_OVERRIDE
 
   frontend:
     build:

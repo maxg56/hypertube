@@ -128,7 +128,13 @@
     "privacy_account_public_hint": "Les autres utilisateurs peuvent consulter votre profil.",
     "privacy_favorites_public": "Favoris publics",
     "privacy_favorites_public_hint": "Les autres utilisateurs peuvent voir vos films favoris.",
-    "private_account": "Ce compte est privé."
+    "private_account": "Ce compte est privé.",
+    "email_label": "Email",
+    "email_change_dialog_title": "Changer d'adresse email",
+    "email_change_dialog_body": "Un code de vérification sera envoyé à {{email}}. Vous devrez le saisir pour valider le changement.",
+    "email_change_dialog_confirm": "Envoyer le code",
+    "email_change_sending": "Envoi…",
+    "email_change_error": "Impossible d'envoyer le code de vérification."
   },
 
   "auth": {
@@ -137,6 +143,7 @@
     "login_identifier_label": "Nom d'utilisateur ou email",
     "login_identifier_placeholder": "johndoe ou john@example.com",
     "login_password_label": "Mot de passe",
+    "login_password_placeholder": "••••••••",
     "login_forgot_password": "Mot de passe oublié ?",
     "login_submit": "Se connecter",
     "login_submitting": "Connexion…",
@@ -156,6 +163,7 @@
     "register_email_placeholder": "john@example.com",
     "register_password": "Mot de passe",
     "register_password_placeholder": "••••••••",
+    "register_password_hint": "Au moins 8 caractères, une lettre et un chiffre.",
     "register_submit": "S'inscrire",
     "register_submitting": "Inscription…",
     "register_already_account": "Déjà un compte ?",
@@ -190,6 +198,9 @@
     "verify_email_resend": "Renvoyer le code",
     "verify_email_resending": "Envoi…",
     "verify_email_login_link": "Se connecter",
+    "verify_email_change_title": "Confirmer le nouvel email",
+    "verify_email_change_subtitle": "Entrez le code à 6 chiffres envoyé à votre nouvelle adresse email.",
+    "verify_email_change_cancel": "Annuler le changement",
 
     "logout": "Déconnexion"
   },

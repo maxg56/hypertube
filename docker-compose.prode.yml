@@ -3,7 +3,7 @@ services:
     image: caddy:latest
     container_name: caddy-prod
     environment:
-      VITE_HOSTNAME: ${VITE_HOSTNAME:-localhost}
+      HOSTNAME: ${HOSTNAME:-localhost}
     volumes:
       - ./services/proxy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
@@ -25,11 +25,11 @@ services:
       - NET_BIND_SERVICE
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:16-alpine
     environment:
-      POSTGRES_DB: ${DB_NAME:-matcha}
+      POSTGRES_DB: ${DB_NAME:-hypertube}
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
       - ./services/database:/docker-entrypoint-initdb.d
@@ -47,22 +47,8 @@ services:
       - SETGID
       - SETUID
 
-  adminer:
-    image: adminer
-    networks:
-      - DB
-      - backend
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    read_only: true
-    tmpfs:
-      - /tmp
-
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     networks:
       - DB
     restart: unless-stopped
@@ -73,7 +59,8 @@ services:
     cap_add:
       - SETUID
       - SETGID
-    read_only: true
+    volumes:
+      - redis_data_prod:/data
     tmpfs:
       - /tmp
 
@@ -87,14 +74,14 @@ services:
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       GIN_MODE: release
       LOG_LEVEL: ${LOG_LEVEL:-info}
+      REDIS_ADDR: redis:6379
     depends_on:
       - auth-service
       - user-service
-      - match-service
-      - chat-service
-      - notify-service
-      - media-service
-      - paiements-service
+      - library-service
+      - torrent-service
+      - comment-service
+      - worker-service
     networks:
       - DB
       - backend
@@ -109,19 +96,20 @@ services:
       context: ./api/auth-service
       target: production
     environment:
+      PORT: 8001
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
+      DB_NAME: ${DB_NAME:-hypertube}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: 6379
       GIN_MODE: release
       JWT_SECRET: ${JWT_SECRET}
       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
       SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USERNAME: ${SMTP_USERNAME:-your-email@gmail.com}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-your-app-password}
+      SMTP_USERNAME: ${SMTP_USERNAME}
+      SMTP_PASSWORD: ${SMTP_PASSWORD}
       FROM_EMAIL: ${FROM_EMAIL}
       FROM_NAME: ${FROM_NAME}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8443}
@@ -143,133 +131,106 @@ services:
       context: ./api/user-service
       target: production
     environment:
+      PORT: 8002
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
+      DB_NAME: ${DB_NAME:-hypertube}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: 6379
+      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
-      REDIS_DB: ${REDIS_DB:-0}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
       GIN_MODE: release
-    depends_on:
-      - postgres
-    networks:
-      - DB
-      - backend
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-  match-service:
-    build:
-      context: ./api/match-service
-      target: production
-    environment:
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      PORT: 8003
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: 6379
-      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
-      REDIS_DB: ${REDIS_DB:-0}
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      USE_REDIS_CACHE: ${USE_REDIS_CACHE:-true}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - DB
-      - backend
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-  chat-service:
-    build:
-      context: ./api/chat-service
-      target: production
-    environment:
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      ENABLE_DETAILED_LOGS: ${ENABLE_DETAILED_LOGS:-false}
-      METRICS_ENABLED: ${METRICS_ENABLED:-true}
-      RATE_LIMIT_MESSAGES: ${RATE_LIMIT_MESSAGES:-10}
-      RATE_LIMIT_WINDOW_MINUTES: ${RATE_LIMIT_WINDOW_MINUTES:-1}
-      FRONTEND_DOMAIN: ${FRONTEND_DOMAIN}
-      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
-      GIN_MODE: release
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - DB
-      - backend
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-  notify-service:
-    build:
-      context: ./api/notify-service
-    environment:
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      REDIS_HOST: ${REDIS_HOST:-redis}
-      REDIS_PORT: 6379
-      PORT: 8005
-      JWT_SECRET: ${JWT_SECRET}
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - DB
-      - backend
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
-  media-service:
-    build:
-      context: ./api/media-service
-      target: production
-    environment:
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      PORT: 8006
-      JWT_SECRET: ${JWT_SECRET}
-      FLASK_ENV: production
-      FLASK_DEBUG: 0
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+      AVATAR_DIR: /data/avatars
     volumes:
-      - media_uploads_prod:/app/uploads
+      - avatar_data:/data/avatars
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+
+  library-service:
+    build:
+      context: ./api/library-service
+      target: production
+    environment:
+      PORT: 8003
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      TMDB_API_KEY: ${TMDB_API_KEY}
+      REDIS_HOST: redis
+      GIN_MODE: release
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  torrent-service:
+    build:
+      context: ./api/torrent-service
+      target: production
+    environment:
+      PORT: 8004
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      TORRENT_DOWNLOAD_PATH: /data/torrents
+      STREAM_BUFFER_SIZE: ${STREAM_BUFFER_SIZE:-10}
+      GIN_MODE: release
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+      OPENSUBTITLES_API_KEY: ${OPENSUBTITLES_API_KEY:-}
+      OPENSUBTITLES_USERNAME: ${OPENSUBTITLES_USERNAME:-}
+      OPENSUBTITLES_PASSWORD: ${OPENSUBTITLES_PASSWORD:-}
+      SUBTITLE_CACHE_PATH: /data/subtitles
+    volumes:
+      - torrent_data_prod:/data/torrents
+      - subtitle_data_prod:/data/subtitles
+    depends_on:
+      - postgres
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - DAC_OVERRIDE
+
+  comment-service:
+    build:
+      context: ./api/comment-service
+      target: production
+    environment:
+      PORT: 8005
+      DB_HOST: ${DB_HOST:-postgres}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME:-hypertube}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD}
+      GIN_MODE: release
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
     depends_on:
       - postgres
     networks:
@@ -281,33 +242,29 @@ services:
     cap_drop:
       - ALL
 
-  paiements-service:
+  worker-service:
     build:
-      context: ./api/paiements-service
+      context: ./api/worker-service
       target: production
     environment:
+      PORT: 8006
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
+      DB_NAME: ${DB_NAME:-hypertube}
       DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-password}
-      DB_TIMEZONE: ${DB_TIMEZONE:-UTC}
-      PAIEMENTS_SERVICE_PORT: 8085
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_ADDR: ${REDIS_ADDR:-redis:6379}
+      TORRENT_DOWNLOAD_PATH: /data/torrents
       GIN_MODE: release
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      STRIPE_PRICE_MENSUEL: ${STRIPE_PRICE_MENSUEL}
-      STRIPE_PRICE_ANNUEL: ${STRIPE_PRICE_ANNUEL}
-      STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL}
-      STRIPE_CANCEL_URL: ${STRIPE_CANCEL_URL}
-      GATEWAY_URL: http://gateway:8080
-      INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+      AUTO_MIGRATE: ${AUTO_MIGRATE:-true}
+    volumes:
+      - torrent_data_prod:/data/torrents
     depends_on:
       - postgres
       - redis
     networks:
-      - backend
       - DB
+      - backend
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -317,11 +274,10 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: development
+      target: production
     environment:
-      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080}
-      VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8004}
-      VITE_STRIPE_PUBLIC_KEY: ${VITE_STRIPE_PUBLIC_KEY}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      API_URL: http://caddy
     depends_on:
       - gateway
     networks:
@@ -333,30 +289,6 @@ services:
       - ALL
     tmpfs:
       - /tmp
-      - /app/.vite
-      - /app/.cache
-      - /app/.cache/node
-      - /app/.pnpm-store
-      - /app/node_modules/.cache
-
-  user-creation:
-    build: ./api/user-creation
-    environment:
-      DB_HOST: ${DB_HOST:-postgres}
-      DB_PORT: ${DB_PORT:-5432}
-      DB_NAME: ${DB_NAME:-matcha}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASS: ${DB_PASSWORD:-password}
-    networks:
-      - DB
-    depends_on:
-      - postgres
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-
 
 volumes:
   postgres_data_prod:
@@ -371,13 +303,24 @@ volumes:
       type: none
       device: ./volumes/redis
       o: bind
-  media_uploads_prod:
+  avatar_data:
     driver: local
     driver_opts:
       type: none
-      device: ./volumes/media_uploads
+      device: ./volumes/avatars
       o: bind
-  frontend_node_modules:
+  torrent_data_prod:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/torrents
+      o: bind
+  subtitle_data_prod:
+    driver: local
+    driver_opts:
+      type: none
+      device: ./volumes/subtitles
+      o: bind
   caddy_data:
 
 networks:

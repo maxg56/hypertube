@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next'
 import { register } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 
 export default function RegisterForm() {
@@ -21,7 +22,7 @@ export default function RegisterForm() {
 
       <form action={action} className="space-y-4">
         {state?.message && (
-          <p className="text-sm text-destructive text-center">{state.message}</p>
+          <p role="alert" className="text-sm text-destructive text-center">{state.message}</p>
         )}
 
         <div className="grid grid-cols-2 gap-3">
@@ -33,10 +34,12 @@ export default function RegisterForm() {
               type="text"
               autoComplete="given-name"
               placeholder={t('auth.register_first_name_placeholder')}
+              aria-invalid={!!state?.errors?.first_name}
+              aria-describedby={state?.errors?.first_name ? 'err-first_name' : undefined}
               required
             />
             {state?.errors?.first_name && (
-              <p className="text-xs text-destructive">{state.errors.first_name[0]}</p>
+              <p id="err-first_name" role="alert" className="text-xs text-destructive">{state.errors.first_name[0]}</p>
             )}
           </div>
           <div className="space-y-1.5">
@@ -47,10 +50,12 @@ export default function RegisterForm() {
               type="text"
               autoComplete="family-name"
               placeholder={t('auth.register_last_name_placeholder')}
+              aria-invalid={!!state?.errors?.last_name}
+              aria-describedby={state?.errors?.last_name ? 'err-last_name' : undefined}
               required
             />
             {state?.errors?.last_name && (
-              <p className="text-xs text-destructive">{state.errors.last_name[0]}</p>
+              <p id="err-last_name" role="alert" className="text-xs text-destructive">{state.errors.last_name[0]}</p>
             )}
           </div>
         </div>
@@ -63,10 +68,12 @@ export default function RegisterForm() {
             type="text"
             autoComplete="username"
             placeholder={t('auth.register_username_placeholder')}
+            aria-invalid={!!state?.errors?.username}
+            aria-describedby={state?.errors?.username ? 'err-username' : undefined}
             required
           />
           {state?.errors?.username && (
-            <p className="text-xs text-destructive">{state.errors.username[0]}</p>
+            <p id="err-username" role="alert" className="text-xs text-destructive">{state.errors.username[0]}</p>
           )}
         </div>
 
@@ -78,29 +85,49 @@ export default function RegisterForm() {
             type="email"
             autoComplete="email"
             placeholder={t('auth.register_email_placeholder')}
+            aria-invalid={!!state?.errors?.email}
+            aria-describedby={state?.errors?.email ? 'err-email' : undefined}
             required
           />
           {state?.errors?.email && (
-            <p className="text-xs text-destructive">{state.errors.email[0]}</p>
+            <p id="err-email" role="alert" className="text-xs text-destructive">{state.errors.email[0]}</p>
           )}
         </div>
 
         <div className="space-y-1.5">
           <Label htmlFor="password">{t('auth.register_password')}</Label>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="new-password"
             placeholder={t('auth.register_password_placeholder')}
-            required
+            aria-invalid={!!state?.errors?.password}
+            aria-describedby="hint-password err-password"
           />
+          <p id="hint-password" className="text-xs text-muted-foreground">
+            {t('auth.register_password_hint')}
+          </p>
           {state?.errors?.password && (
-            <ul className="text-xs text-destructive space-y-0.5">
+            <ul id="err-password" role="alert" className="text-xs text-destructive space-y-0.5">
               {state.errors.password.map((e) => (
                 <li key={e}>• {e}</li>
               ))}
             </ul>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm_password">{t('auth.register_confirm_password')}</Label>
+          <Input
+            id="confirm_password"
+            name="confirm_password"
+            type="password"
+            autoComplete="new-password"
+            placeholder={t('auth.register_confirm_password_placeholder')}
+            required
+          />
+          {state?.errors?.confirm_password && (
+            <p className="text-xs text-destructive">{state.errors.confirm_password[0]}</p>
           )}
         </div>
 

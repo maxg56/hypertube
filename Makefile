@@ -39,7 +39,7 @@ restart: down all
 prod:
 	@if [ -f ".env" ]; then \
 		echo "Creating volumes..."; \
-		mkdir -p volumes/ volumes/redis volumes/data volumes/media_uploads; \
+		mkdir -p volumes/ volumes/redis volumes/data volumes/torrents volumes/avatars volumes/subtitles ; \
 		echo "Launching containers..."; \
 		$(DOCKER_COMPOSE_CMD) --env-file .env -p $(NAME) -f $(DOCKER_COMPOSE_PATH_PROD) up --build -d; \
 	else \

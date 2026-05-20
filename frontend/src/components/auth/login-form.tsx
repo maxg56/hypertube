@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { login } from '@/app/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { useAuthContext } from '@/context/auth-context'
 
@@ -74,10 +75,12 @@ export default function LoginForm({
             type="text"
             autoComplete="username"
             placeholder={t('auth.login_identifier_placeholder')}
+            aria-invalid={!!state?.errors?.login}
+            aria-describedby={state?.errors?.login ? 'err-login' : undefined}
             required
           />
           {state?.errors?.login && (
-            <p className="text-xs text-destructive">{state.errors.login[0]}</p>
+            <p id="err-login" role="alert" className="text-xs text-destructive">{state.errors.login[0]}</p>
           )}
         </div>
 
@@ -91,16 +94,17 @@ export default function LoginForm({
               {t('auth.login_forgot_password')}
             </Link>
           </div>
-          <Input
+          <PasswordInput
             id="password"
             name="password"
-            type="password"
             autoComplete="current-password"
-            placeholder="••••••••"
+            placeholder={t('auth.login_password_placeholder')}
+            aria-invalid={!!state?.errors?.password}
+            aria-describedby={state?.errors?.password ? 'err-password' : undefined}
             required
           />
           {state?.errors?.password && (
-            <p className="text-xs text-destructive">{state.errors.password[0]}</p>
+            <p id="err-password" role="alert" className="text-xs text-destructive">{state.errors.password[0]}</p>
           )}
         </div>
 

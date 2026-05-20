@@ -11,7 +11,8 @@ CREATE TYPE torrent_status_enum AS ENUM (
     'pending',
     'downloading',
     'ready',
-    'error'
+    'error',
+    'suppr'
 );
 
 CREATE TYPE job_status_enum AS ENUM (
