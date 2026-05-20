@@ -2,6 +2,8 @@ package services
 
 import (
 	"log"
+	"os"
+	"strconv"
 	"time"
 
 	"gorm.io/gorm"
@@ -10,6 +12,15 @@ import (
 	"worker-service/src/models"
 	"worker-service/src/utils"
 )
+
+func expiryDuration() time.Duration {
+	if v := os.Getenv("CLEANUP_EXPIRY_DAYS"); v != "" {
+		if days, err := strconv.Atoi(v); err == nil && days > 0 {
+			return time.Duration(days) * 24 * time.Hour
+		}
+	}
+	return 30 * 24 * time.Hour
+}
 
 type expiredTorrent struct {
 	TorrentID int
@@ -20,7 +31,7 @@ type expiredTorrent struct {
 }
 
 func fetchExpiredTorrents() ([]expiredTorrent, error) {
-	expiry := time.Now().Add(-30 * 24 * time.Hour)
+	expiry := time.Now().Add(-expiryDuration())
 
 	var results []expiredTorrent
 	err := conf.DB.
