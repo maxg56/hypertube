@@ -161,7 +161,7 @@ func checkWatched(tmdbID int, userIDStr string) bool {
 }
 
 func fetchComments(tmdbID int, jwtToken string) []models.Comment {
-	reqURL := fmt.Sprintf("%s/api/v1/comments/%d", commentServiceURL(), tmdbID)
+	reqURL := fmt.Sprintf("%s/api/v1/movies/%d/comments", commentServiceURL(), tmdbID)
 	req, err := http.NewRequest(http.MethodGet, reqURL, nil)
 	if err != nil {
 		return nil
@@ -197,4 +197,5 @@ func fetchComments(tmdbID int, jwtToken string) []models.Comment {
 		return []models.Comment{}
 	}
 	return payload.Data
+
 }

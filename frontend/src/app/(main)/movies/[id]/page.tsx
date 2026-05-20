@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
-import { getAccessToken } from '@/lib/session'
+import { getAccessToken, getCurrentUserId } from '@/lib/session'
 import { MovieHero } from '@/components/Player/MovieHero'
 import { MovieCast } from '@/components/Player/MovieCast'
 import { MoviePlayer } from '@/components/Player/MoviePlayer'
@@ -59,7 +59,7 @@ async function getMovie(id: string): Promise<MovieDetail | null> {
   try {
     const res = await fetch(`${process.env.API_URL ?? 'http://caddy'}/api/v1/library/movies/${id}`, {
       headers: { Authorization: `Bearer ${token ?? ''}` },
-      next: { revalidate: 300 },
+      cache: 'no-store',
     })
     if (res.status === 404) return null
     if (!res.ok) throw new Error(`API error ${res.status}`)
@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
 export default async function MovieDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
-  const movie = await getMovie(id)
+  const [movie, currentUserId] = await Promise.all([getMovie(id), getCurrentUserId()])
   if (!movie) notFound()
 
   return (
@@ -126,7 +126,7 @@ export default async function MovieDetailPage({ params }: { params: Promise<{ id
         </section>
 
         <section className="mt-12">
-          <CommentSection movieId={movie.id} initialComments={movie.comments ?? []} />
+          <CommentSection movieId={movie.id} movieTitle={movie.title} initialComments={movie.comments ?? []} currentUserId={currentUserId ?? undefined} />
         </section>
       </div>
     </div>

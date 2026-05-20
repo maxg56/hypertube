@@ -237,7 +237,11 @@
     "comment_submit": "Publier",
     "comment_submitting": "Publication…",
     "comment_delete": "Supprimer",
+    "comment_edit": "Modifier",
+    "comment_save": "Enregistrer",
+    "comment_cancel": "Annuler",
     "comment_error": "Impossible d'ajouter le commentaire.",
+    "comment_edit_error": "Impossible de modifier le commentaire.",
     "no_comments": "Aucun commentaire pour ce film."
   },
 
