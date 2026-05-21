@@ -20,7 +20,7 @@ all:
 	@if [ -f ".env" ]; then \
 		echo "Creating volumes..."; \
 		mkdir -p volumes/ volumes/redis volumes/data volumes/torrents volumes/avatars volumes/subtitles ; \
-		chmod 777 volumes/torrents volumes/subtitles ; \
+		chmod 777 volumes/torrents volumes/subtitles volumes/avatars ; \
 		echo "Launching containers..."; \
 		$(DOCKER_COMPOSE_CMD) --env-file .env -p $(NAME) -f $(DOCKER_COMPOSE_PATH) up --build -d; \
 	else \
@@ -41,7 +41,7 @@ prod:
 	@if [ -f ".env" ]; then \
 		echo "Creating volumes..."; \
 		mkdir -p volumes/ volumes/redis volumes/data volumes/torrents volumes/avatars volumes/subtitles ; \
-		chmod 777 volumes/torrents volumes/subtitles ; \
+		chmod 777 volumes/torrents volumes/subtitles volumes/avatars ; \
 		echo "Launching containers..."; \
 		$(DOCKER_COMPOSE_CMD) --env-file .env -p $(NAME) -f $(DOCKER_COMPOSE_PATH_PROD) up --build -d; \
 	else \
