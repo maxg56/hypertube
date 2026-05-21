@@ -163,6 +163,20 @@ services:
     cap_add:
       - DAC_OVERRIDE
 
+  adminer:
+    image: adminer
+    networks:
+      - DB
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+  
   library-service:
     build:
       context: ./api/library-service
