@@ -4,8 +4,8 @@
 
 CREATE TABLE users (
     id          SERIAL PRIMARY KEY,
-    username    VARCHAR(50)  UNIQUE NOT NULL,
-    email       VARCHAR(255) UNIQUE NOT NULL,
+    username    VARCHAR(50)  NOT NULL,
+    email       VARCHAR(255) NOT NULL,
     password_hash TEXT        NOT NULL,
     first_name  VARCHAR(100),
     last_name   VARCHAR(100),
@@ -15,8 +15,8 @@ CREATE TABLE users (
     email_verified BOOLEAN   DEFAULT FALSE,
     is_public        BOOLEAN DEFAULT TRUE,
     favorites_public BOOLEAN DEFAULT TRUE,
-    created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
-    updated_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
+    created_at  TIMESTAMP,
+    updated_at  TIMESTAMP
 );
 
 CREATE TABLE email_verifications (
@@ -30,7 +30,7 @@ CREATE TABLE email_verifications (
 CREATE TABLE password_resets (
     id         SERIAL PRIMARY KEY,
     user_id    INT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token      VARCHAR(64) NOT NULL UNIQUE,
+    token      VARCHAR(64) NOT NULL,
     expires_at TIMESTAMP   NOT NULL,
     used       BOOLEAN     DEFAULT FALSE,
     created_at TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
@@ -43,5 +43,10 @@ CREATE TABLE oauth_accounts (
     provider_id VARCHAR(255) NOT NULL,
     created_at  TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX idx_users_username ON users(username);
+CREATE UNIQUE INDEX idx_users_email    ON users(email);
+
+CREATE UNIQUE INDEX idx_password_resets_token ON password_resets(token);
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_oauth_accounts_provider_provider_id ON oauth_accounts (provider, provider_id);

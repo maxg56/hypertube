@@ -32,9 +32,16 @@ func InitDB() {
 			IgnoreRecordNotFoundError: true,
 		},
 	)
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormLogger,
-	})
+	const maxRetries = 10
+	for i := range maxRetries {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+		if err == nil {
+			DB = DB.Session(&gorm.Session{Logger: gormLogger})
+			break
+		}
+		log.Printf("Database not ready, retrying in 2s (%d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(2 * time.Second)
+	}
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

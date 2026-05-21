@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -24,10 +25,17 @@ func InitDB() {
 	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
 
+	const maxRetries = 10
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	for i := range maxRetries {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+		if err == nil {
+			DB = DB.Session(&gorm.Session{Logger: logger.Default.LogMode(logger.Warn)})
+			break
+		}
+		log.Printf("Database not ready, retrying in 2s (%d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(2 * time.Second)
+	}
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}
