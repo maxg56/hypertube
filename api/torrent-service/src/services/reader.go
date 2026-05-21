@@ -65,7 +65,7 @@ func readerFromActiveTorrent(t *torrent.Torrent) (ReaderResult, error) {
 
 	r := f.NewReader()
 	r.SetReadahead(readaheadBytes())
-	filePath := downloadDir() + "/" + strings.ToLower(t.InfoHash().HexString()) + "/" + f.DisplayPath()
+	filePath := downloadDir() + "/" + strings.ToLower(t.InfoHash().HexString()) + "/" + f.Path()
 	return ReaderResult{Reader: r, Size: f.Length(), FileName: f.DisplayPath(), FilePath: filePath}, nil
 }
 

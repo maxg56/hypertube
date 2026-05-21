@@ -141,7 +141,7 @@ func resolveFilePath(t *torrent.Torrent) string {
 	if f == nil {
 		return ""
 	}
-	return downloadDir() + "/" + strings.ToLower(t.InfoHash().HexString()) + "/" + f.DisplayPath()
+	return downloadDir() + "/" + strings.ToLower(t.InfoHash().HexString()) + "/" + f.Path()
 }
 
 func setError(record *models.TorrentRecord, msg string) {

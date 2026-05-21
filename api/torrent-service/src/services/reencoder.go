@@ -1,6 +1,7 @@
 package services
 
 import (
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -25,13 +26,11 @@ func ReencodeToHEVC(record *models.TorrentRecord) {
 		return
 	}
 
-	log.Printf("[reencoder] starting H.265 re-encode for %s: %s", record.InfoHash, record.FilePath)
-
 	ext := filepath.Ext(record.FilePath)
 	outputPath := strings.TrimSuffix(record.FilePath, ext) + ".hevc.mp4"
 
 	cmd := exec.Command("ffmpeg",
-		"-i", "file:"+record.FilePath,
+		"-i", record.FilePath,
 		"-c:v", "libx265",
 		"-preset", hevcPreset(),
 		"-crf", "28",
@@ -41,7 +40,7 @@ func ReencodeToHEVC(record *models.TorrentRecord) {
 		"-y",
 		outputPath,
 	)
-	cmd.Stderr = newPrefixWriter("reencoder")
+	cmd.Stderr = io.Discard
 
 	if err := cmd.Run(); err != nil {
 		log.Printf("[reencoder] failed for %s: %v", record.InfoHash, err)

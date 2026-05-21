@@ -42,7 +42,7 @@ func ProbeCodecs(filePath string) (*CodecInfo, error) {
 		"-v", "quiet",
 		"-print_format", "json",
 		"-show_streams",
-		"file:"+filePath,
+		filePath,
 	).Output()
 	if err != nil {
 		return nil, err
