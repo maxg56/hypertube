@@ -53,6 +53,7 @@ export function useSubtitleTracks(
 
       // 3. Load each language as a blob-URL track (backend downloads if not cached).
       let loaded = 0
+      let userLangLoaded = false
       for (const lang of available) {
         if (cancelled) break
         try {
@@ -71,8 +72,21 @@ export function useSubtitleTracks(
           el.src = url
           if (lang === userLang) el.default = true
           video.appendChild(el)
+
+          // Browsers ignore the `default` attribute on dynamically added tracks —
+          // explicitly activate the track for the user's language.
+          if (lang === userLang) {
+            el.track.mode = 'showing'
+            userLangLoaded = true
+          }
           loaded++
         } catch { /* not available for this language */ }
+      }
+
+      // Fallback: if no track matched the user's language, show the first one.
+      if (loaded > 0 && !userLangLoaded) {
+        const firstTrack = video.textTracks[0]
+        if (firstTrack) firstTrack.mode = 'showing'
       }
 
       if (!cancelled) setStatus(loaded > 0 ? 'available' : 'none')
