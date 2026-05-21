@@ -80,13 +80,14 @@ func imdbIDForTmdb(tmdbID int) string {
 // FetchSubtitle returns the path to a cached VTT subtitle file. It downloads and
 // converts the subtitle from OpenSubtitles if not already cached.
 func FetchSubtitle(movieID int, lang string) (string, error) {
-	if osAPIKey == "" {
-		return "", fmt.Errorf("OPENSUBTITLES_API_KEY not set")
-	}
-
+	// Serve from cache first — no API key needed for already-extracted subtitles.
 	path := subtitleCachePath(movieID, lang)
 	if _, err := os.Stat(path); err == nil {
 		return path, nil
+	}
+
+	if osAPIKey == "" {
+		return "", fmt.Errorf("OPENSUBTITLES_API_KEY not set")
 	}
 
 	if osUsername != "" && osPassword != "" {
