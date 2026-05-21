@@ -6,7 +6,7 @@ CREATE TABLE torrents (
     id           SERIAL PRIMARY KEY,
     movie_id     INT          NOT NULL REFERENCES movies(id) ON DELETE CASCADE,
     magnet_uri   TEXT         NOT NULL,
-    info_hash    VARCHAR(64)  UNIQUE NOT NULL,
+    info_hash    VARCHAR(64)  NOT NULL,
     status       torrent_status_enum DEFAULT 'pending',
     file_path    TEXT,
     file_size    BIGINT,
@@ -19,6 +19,8 @@ CREATE TABLE torrents (
     created_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP,
     updated_at   TIMESTAMP    DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX idx_torrents_info_hash ON torrents(info_hash);
 
 CREATE TABLE watch_history (
     id           SERIAL PRIMARY KEY,

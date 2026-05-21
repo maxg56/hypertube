@@ -11,6 +11,11 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+const (
+	dbMaxRetries = 10
+	dbRetryDelay = 2 * time.Second
+)
+
 var DB *gorm.DB
 
 func InitDB() {
@@ -23,7 +28,6 @@ func InitDB() {
 		getEnv("DB_NAME", "hypertube"),
 	)
 
-	var err error
 	gormLogger := logger.New(
 		log.Default(),
 		logger.Config{
@@ -32,9 +36,17 @@ func InitDB() {
 			IgnoreRecordNotFoundError: true,
 		},
 	)
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: gormLogger,
-	})
+
+	var err error
+	for i := range dbMaxRetries {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: logger.Default.LogMode(logger.Silent)})
+		if err == nil {
+			DB = DB.Session(&gorm.Session{Logger: gormLogger})
+			break
+		}
+		log.Printf("Database not ready, retrying in %s (%d/%d): %v", dbRetryDelay, i+1, dbMaxRetries, err)
+		time.Sleep(dbRetryDelay)
+	}
 	if err != nil {
 		log.Fatal("Failed to connect to database:", err)
 	}

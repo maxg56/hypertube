@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -22,10 +23,18 @@ func InitDB() error {
 		dbEnv("DB_NAME", "hypertube"),
 	)
 
+	const maxRetries = 10
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Silent),
-	})
+	for i := range maxRetries {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+			Logger: logger.Default.LogMode(logger.Silent),
+		})
+		if err == nil {
+			break
+		}
+		log.Printf("Database not ready, retrying in 2s (%d/%d): %v", i+1, maxRetries, err)
+		time.Sleep(2 * time.Second)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}

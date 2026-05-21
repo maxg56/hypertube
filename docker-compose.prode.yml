@@ -216,6 +216,7 @@ services:
     networks:
       - DB
       - backend
+    user: "1001:1001"
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
