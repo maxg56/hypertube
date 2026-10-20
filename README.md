@@ -1,6 +1,17 @@
 # Hypertube
 
+[![CI](https://github.com/maxg56/hypertube/actions/workflows/ci.yml/badge.svg)](https://github.com/maxg56/hypertube/actions/workflows/ci.yml)
+
 A web application to browse and watch movies via torrent streaming.
+
+## Screenshots
+
+| Login | Sign up | Profile |
+|-------|---------|---------|
+| ![Login page](docs/screenshots/login.png) | ![Sign-up page](docs/screenshots/register.png) | ![Profile page](docs/screenshots/profile.png) |
+
+<!-- TODO: add docs/screenshots/catalog.png (movie search) and docs/screenshots/player.png (movie playback),
+     captured from a stack with access to the movie APIs (YTS/TMDB). -->
 
 ## Architecture
 
@@ -81,6 +92,18 @@ Each Go service uses [Air](https://github.com/air-verse/air) for hot reload. Sou
 
 The frontend uses `pnpm dev` with Next.js fast refresh.
 
+**Run the checks locally (same as CI):**
+
+```bash
+# Go services
+cd api/<service> && go build ./... && go vet ./... && go test ./...
+
+# Frontend
+cd frontend && pnpm install --frozen-lockfile && pnpm exec tsc --noEmit && pnpm run build
+```
+
+The GitHub Actions workflow (`.github/workflows/ci.yml`) runs these on every push to `main` and on every pull request.
+
 **Rebuild a single service:**
 
 ```bash
@@ -100,6 +123,7 @@ docker compose -f docker-compose.dev.yml up --build <service-name>
 │   ├── comment-service/  # Movie comments
 │   └── worker-service/   # Background jobs (transcoding, cleanup…)
 ├── frontend/             # Next.js app
+├── docs/screenshots/     # README screenshots
 ├── services/
 │   ├── proxy/            # Caddyfile
 │   └── database/         # SQL init scripts
