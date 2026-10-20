@@ -56,6 +56,8 @@ type mockYTS struct {
 	searchErr     error
 	imdbResult    *models.Movie
 	imdbErr       error
+	byIDResult    *models.Movie
+	byIDErr       error
 }
 
 func (m *mockYTS) Search(_ string, _ int) (*models.SearchResult, error) {
@@ -63,6 +65,9 @@ func (m *mockYTS) Search(_ string, _ int) (*models.SearchResult, error) {
 }
 func (m *mockYTS) List(_ client.ListParams) (*models.SearchResult, error) {
 	return m.searchResult, m.searchErr
+}
+func (m *mockYTS) GetMovieByID(_ int) (*models.Movie, error) {
+	return m.byIDResult, m.byIDErr
 }
 func (m *mockYTS) GetMovieByIMDbID(_ string) (*models.Movie, error) {
 	return m.imdbResult, m.imdbErr
