@@ -138,27 +138,27 @@ func TestResetPasswordHandler(t *testing.T) {
 	}{
 		{
 			name:       "valid token and password",
-			payload:    map[string]interface{}{"token": "valid-token-123", "new_password": "newpassword123"},
+			payload:    map[string]interface{}{"token": "valid-token-123", "new_password": "NewPassword123!"},
 			statusCode: http.StatusOK,
 		},
 		{
 			name:       "expired token",
-			payload:    map[string]interface{}{"token": "expired-token-123", "new_password": "newpassword123"},
+			payload:    map[string]interface{}{"token": "expired-token-123", "new_password": "NewPassword123!"},
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "used token",
-			payload:    map[string]interface{}{"token": "used-token-123", "new_password": "newpassword123"},
+			payload:    map[string]interface{}{"token": "used-token-123", "new_password": "NewPassword123!"},
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "invalid token",
-			payload:    map[string]interface{}{"token": "invalid-token", "new_password": "newpassword123"},
+			payload:    map[string]interface{}{"token": "invalid-token", "new_password": "NewPassword123!"},
 			statusCode: http.StatusBadRequest,
 		},
 		{
 			name:       "missing token",
-			payload:    map[string]interface{}{"new_password": "newpassword123"},
+			payload:    map[string]interface{}{"new_password": "NewPassword123!"},
 			statusCode: http.StatusBadRequest,
 		},
 		{

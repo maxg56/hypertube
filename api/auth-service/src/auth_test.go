@@ -27,7 +27,7 @@ func TestRegisterHandler(t *testing.T) {
 			payload: map[string]interface{}{
 				"username":          "testuser",
 				"email":             "test@example.com",
-				"password":          "password123",
+				"password":          "Password123!",
 				"first_name":        "Test",
 				"last_name":         "User",
 				"birth_date":        "1990-01-15",
@@ -49,7 +49,7 @@ func TestRegisterHandler(t *testing.T) {
 			payload: map[string]interface{}{
 				"username":          "testuser",
 				"email":             "different@example.com",
-				"password":          "password123",
+				"password":          "Password123!",
 				"first_name":        "Another",
 				"last_name":         "User",
 				"birth_date":        "1985-05-20",
