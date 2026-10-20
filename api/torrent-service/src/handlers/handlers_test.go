@@ -43,6 +43,7 @@ func setupTestDB(t *testing.T) {
 		quality    TEXT,
 			source     TEXT,
 		error_msg  TEXT,
+		reencoded  BOOLEAN DEFAULT 0,
 		created_at DATETIME,
 		updated_at DATETIME
 	)`).Error)
