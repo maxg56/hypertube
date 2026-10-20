@@ -23,14 +23,31 @@ func TestGetMovie_InvalidID(t *testing.T) {
 	}
 }
 
-func TestGetMovie_TMDbUnavailable(t *testing.T) {
-	h := &MovieHandler{tmdb: &mockTMDb{available: false}}
+func TestGetMovie_TMDbUnavailable_FallsBackToYTS(t *testing.T) {
+	h := &MovieHandler{
+		tmdb: &mockTMDb{available: false},
+		yts:  &mockYTS{byIDResult: &models.Movie{ID: 1, Title: "The Matrix"}},
+	}
 	c, w := newCtx("GET", "/movies/1")
 	c.Params = gin.Params{{Key: "id", Value: "1"}}
 	h.GetMovie(c)
 
-	if w.Code != http.StatusServiceUnavailable {
-		t.Errorf("expected 503, got %d", w.Code)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+}
+
+func TestGetMovie_TMDbUnavailable_YTSNotFound(t *testing.T) {
+	h := &MovieHandler{
+		tmdb: &mockTMDb{available: false},
+		yts:  &mockYTS{byIDErr: errors.New("YTS down")},
+	}
+	c, w := newCtx("GET", "/movies/2")
+	c.Params = gin.Params{{Key: "id", Value: "2"}}
+	h.GetMovie(c)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
 	}
 }
 
@@ -48,17 +65,31 @@ func TestGetMovie_NotFound(t *testing.T) {
 	}
 }
 
-func TestGetMovie_TMDbError(t *testing.T) {
+func TestGetMovie_TMDbError_FallsBackToYTS(t *testing.T) {
 	h := &MovieHandler{
 		tmdb: &mockTMDb{available: true, movieErr: errors.New("timeout")},
-		yts:  &mockYTS{},
+		yts:  &mockYTS{byIDResult: &models.Movie{ID: 1, Title: "The Matrix"}},
 	}
 	c, w := newCtx("GET", "/movies/1")
 	c.Params = gin.Params{{Key: "id", Value: "1"}}
 	h.GetMovie(c)
 
-	if w.Code != http.StatusBadGateway {
-		t.Errorf("expected 502, got %d", w.Code)
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+}
+
+func TestGetMovie_TMDbError_YTSNotFound(t *testing.T) {
+	h := &MovieHandler{
+		tmdb: &mockTMDb{available: true, movieErr: errors.New("timeout")},
+		yts:  &mockYTS{},
+	}
+	c, w := newCtx("GET", "/movies/3")
+	c.Params = gin.Params{{Key: "id", Value: "3"}}
+	h.GetMovie(c)
+
+	if w.Code != http.StatusNotFound {
+		t.Errorf("expected 404, got %d", w.Code)
 	}
 }
 
